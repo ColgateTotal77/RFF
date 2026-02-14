@@ -1,0 +1,27 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+ios
+.env
+# macOS
+.DS_Store
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+/.idea/
+
+# Module build directories
+modules/book-engine/android/.cxx/
+modules/book-engine/android/build/
+modules/book-engine/android/cmake-build-debug/
+/android/
+/modules/book-engine/android/.gradle/

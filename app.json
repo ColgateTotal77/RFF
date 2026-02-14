@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "RFF",
+    "slug": "RFF",
+    "version": "1.0.0",
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": [],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.colgatetotal77.RFF"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": ["com.ichi2.anki.permission.READ_WRITE_DATABASE"],
+      "package": "com.colgatetotal77.RFF"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6090b552-13af-4341-b420-0e2c137e1c61"
+      }
+    }
+  }
+}

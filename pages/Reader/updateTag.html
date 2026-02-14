@@ -1,0 +1,47 @@
+<script>
+  window.highlightWord = function(word, noteId, colorCode) {
+    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const targetWord = word.toLowerCase();
+    const regex = new RegExp('\\b(' + escapedWord + ')\\b', 'gi');
+
+    const existingSpans = document.querySelectorAll('span.anki-word');
+    existingSpans.forEach(function(span) {
+      if (span.textContent.trim().toLowerCase() === targetWord) {
+        span.setAttribute('data-flag', colorCode);
+      }
+    });
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    const textNodes = [];
+    let node;
+
+    while ((node = walker.nextNode())) {
+      const parent = node.parentNode;
+      if (
+        node.nodeValue.trim() !== '' &&
+        !['SCRIPT', 'STYLE'].includes(parent.nodeName) &&
+        (!parent.classList || !parent.classList.contains('anki-word'))
+      ) {
+        textNodes.push(node);
+      }
+    }
+
+    textNodes.forEach(function(textNode) {
+      const safeText = textNode.nodeValue
+        .replace(/&/g, '&​amp;')
+        .replace(/</g, '&​lt;')
+        .replace(/>/g, '&​gt;');
+
+      const newHtml = safeText.replace(regex, function(match) {
+        return '<span class="anki-word" data-note-id="' + noteId + '" data-flag="' + colorCode + '">' + match + '</span>';
+      });
+
+      if (newHtml !== safeText) {
+        const wrapper = document.createElement('span');
+        wrapper.innerHTML = newHtml;
+        textNode.parentNode.replaceChild(wrapper, textNode);
+        wrapper.outerHTML = wrapper.innerHTML;
+      }
+    });
+  };
+</script>

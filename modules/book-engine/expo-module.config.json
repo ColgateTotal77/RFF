@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["BookEngineModule"]
+  },
+  "android": {
+    "modules": ["com.reader.bookengine.BookEngineModule", "com.reader.bookengine.AnkiModule"]
+  }
+}

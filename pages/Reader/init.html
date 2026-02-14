@@ -1,0 +1,87 @@
+<script>
+  document.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+  });
+
+  window.setFontSize = (size) => {
+    document.body.style.fontSize = size + 'px';
+  };
+  window.setFontFamily = (family) => {
+    document.body.style.fontFamily = family;
+  };
+
+  window.isFetching = false;
+
+  let scrollTimeout;
+  let lastScrollY = 0;
+  window.addEventListener('scroll', () => {
+    if (window.isFetching) return;
+
+    const scrollY = window.scrollY;
+    const bottomY = scrollY + window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const chapters = document.querySelectorAll('div[id^="chapter-"]');
+
+    if (chapters.length === 0) return;
+    if (documentHeight <= window.innerHeight) return;
+
+    const firstChapterHeight = chapters[0].offsetHeight;
+    const lastChapterHeight = chapters[chapters.length - 1].offsetHeight;
+
+    if (scrollY < (firstChapterHeight * 0.45) ) {
+      window.isFetching = true;
+      window.ReactNativeWebView.postMessage('TOP_REACHED');
+    }
+    if (bottomY > (documentHeight - (lastChapterHeight * 0.45))) {
+      window.isFetching = true;
+      window.ReactNativeWebView.postMessage('END_REACHED');
+    }
+
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      if (Math.abs(scrollY - lastScrollY) > 100) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'SCROLL_POSITION_CHANGED',
+          scrollY: scrollY,
+        }));
+        lastScrollY = scrollY;
+      }
+    }, 300);
+  });
+
+  document.addEventListener('selectionchange', () => {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+
+    if (selectedText.length > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      let noteId = null;
+      let colorCode = null;
+
+      const commonAncestor = range.commonAncestorContainer;
+      const highlightedElement = commonAncestor.nodeType === Node.TEXT_NODE
+        ? commonAncestor.parentElement
+        : commonAncestor;
+
+      if (highlightedElement && highlightedElement.classList.contains('anki-word')) {
+        noteId = highlightedElement.getAttribute('data-note-id');
+        colorCode = highlightedElement.getAttribute('data-flag');
+      }
+
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'TEXT_SELECTED',
+        text: selectedText,
+        top: rect.top,
+        left: rect.left + (rect.width / 2),
+        noteId: noteId ? noteId : null,
+        colorCode: colorCode ? colorCode : null
+      }));
+    } else {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'SELECTION_CLEARED'
+      }));
+    }
+  });
+</script>

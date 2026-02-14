@@ -1,0 +1,50 @@
+<script>
+  window.loadNewChapter = function(fileUrl, position, fetchIndex, removeIndex) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', fileUrl, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 0 || xhr.status === 200) {
+          var htmlContent = xhr.responseText;
+          var oldScrollHeight = document.documentElement.scrollHeight;
+          var oldScrollY = window.scrollY;
+
+          var container = document.createElement('div');
+          container.id = "chapter-" + fetchIndex;
+          container.style.opacity = '0';
+          container.innerHTML = htmlContent;
+
+          if (position === "top") {
+            document.body.insertBefore(container, document.body.firstChild);
+          } else {
+            document.body.appendChild(container);
+          }
+
+          var removeId = removeIndex !== undefined && removeIndex !== null ? removeIndex : null;
+          if (removeId !== null) {
+            var chapterToRemove = document.getElementById("chapter-" + removeId);
+            if (chapterToRemove) chapterToRemove.remove();
+          }
+
+          requestAnimationFrame(function() {
+            if (position === "top") {
+              var newScrollHeight = document.documentElement.scrollHeight;
+              var heightDifference = newScrollHeight - oldScrollHeight;
+              window.scrollTo(0, oldScrollY + heightDifference);
+            }
+            container.style.opacity = '1';
+            window.isFetching = false;
+          });
+        } else {
+          console.error("XHR failed to fetch chapter. Status:", xhr.status);
+          window.isFetching = false;
+        }
+      }
+    };
+    xhr.onerror = function() {
+      console.error("XHR Network Error for:", fileUrl);
+      window.isFetching = false;
+    };
+    xhr.send();
+  };
+</script>

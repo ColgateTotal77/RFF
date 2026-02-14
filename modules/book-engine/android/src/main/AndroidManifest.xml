@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.reader.bookengine">
+    <queries>
+        <package android:name="com.ichi2.anki" />
+        <package android:name="com.google.android.apps.translate" />
+    </queries>
+</manifest>

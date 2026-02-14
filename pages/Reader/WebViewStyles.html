@@ -1,0 +1,65 @@
+<style>
+  body {
+    font-size: ${font.fontSize}px !important;
+    font-family: ${font.fontFamily} !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    text-align: justify !important;
+    hyphens: auto !important;
+    word-break: break-word !important;
+    overflow-x: hidden !important;
+    -webkit-touch-callout: none !important;
+  }
+
+  .anki-word {
+    position: relative;
+    display: inline-block;
+  }
+
+  .anki-word::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .anki-word:not([data-flag="0"])::after {
+    display: block;
+  }
+
+  .anki-word[data-flag="1"]::after { background-color: #ff5252; }
+  .anki-word[data-flag="2"]::after { background-color: #ff9800; }
+  .anki-word[data-flag="3"]::after { background-color: #4caf50; }
+  .anki-word[data-flag="4"]::after { background-color: #2196f3; }
+  .anki-word[data-flag="5"]::after { background-color: #e91e63; }
+  .anki-word[data-flag="6"]::after { background-color: #00bcd4; }
+  .anki-word[data-flag="7"]::after { background-color: #9c27b0; }
+  .anki-word[data-flag="8"]::after { background-color: #607d8b; }
+
+  ::selection {
+    background: rgba(100, 150, 255, 0.4);
+  }
+
+  body div, body p, body section, body article, body span {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  body p {
+    margin-top: 1em !important;
+    margin-bottom: 1em !important;
+  }
+
+  div[id^="chapter-"] {
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+</style>
