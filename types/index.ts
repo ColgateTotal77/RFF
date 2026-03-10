@@ -1,3 +1,13 @@
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+
+export type RootStackParamList = {
+  'Reading Now': undefined;
+  Settings: undefined;
+  Reader: undefined;
+};
+export type DrawerTab = keyof RootStackParamList;
+export type RootDrawerNavigationProp = DrawerNavigationProp<RootStackParamList>;
+
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
@@ -6,7 +16,7 @@ export interface Chapter {
   id: string;
   href: string;
   fullPath: string;
-  label?: string;
+  title: string;
 }
 
 export interface Book {

@@ -1,6 +1,6 @@
 import { Appbar } from 'react-native-paper';
 import { useState } from 'react';
-import { SidebarMenu } from 'components/Sidebar/Header/SidebarMenu';
+import { Other } from 'components/Sidebar/Header/Other';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { ParamListBase } from '@react-navigation/native';
 
@@ -17,7 +17,7 @@ export const Header = ({ navigation, title }: Props) => {
       <Appbar.Action icon="menu" onPress={() => navigation.openDrawer()} />
       <Appbar.Content title={title} />
       <Appbar.Action icon="magnify" onPress={() => {}} />
-      <SidebarMenu
+      <Other
         isOpen={isMenuOpen}
         onOpen={() => setIsMenuOpen(true)}
         onClose={() => setIsMenuOpen(false)}

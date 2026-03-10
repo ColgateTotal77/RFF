@@ -11,7 +11,7 @@ interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
 }
 
-export const SidebarMenu = (props: Props) => {
+export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose, navigation } = props;
   const { loadBook } = useBookStore();
 

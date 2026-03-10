@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useBookStore } from 'stores/useBookStore';
 import { useEpubNextChapter, useEpubPrevChapter } from 'lib/useEpubFunctions';
-import { Font } from 'lib/types';
+import { Font } from 'types';
 import observerTemplate from './init.html';
 import styles from './WebViewStyles.html';
 import updateTag from './updateTag.html';
@@ -12,7 +12,8 @@ import { SelectedMenu, SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { BookEngine } from 'modules/book-engine';
 
 export const ReaderScreen = () => {
-  const { currentBook, settings, updateScrollPosition, closeBook, isLoading } = useBookStore();
+  const { currentBook, settings, updateScrollPosition, closeBook, lastJumpTo, isLoading } =
+    useBookStore();
   const font = currentBook?.settings?.font || settings.defaultBookSettings.font;
 
   const webViewRef = useRef<WebView>(null);
@@ -43,6 +44,9 @@ export const ReaderScreen = () => {
   useEffect(() => {
     if (!currentBook || !currentBook.currentChapters.length) return;
 
+    console.log('lastJumpTo: ', lastJumpTo);
+    console.log("currentChapters: ", currentBook.currentChapters)
+
     const loadInitialWindow = async () => {
       try {
         setWebViewSource(null);
@@ -55,6 +59,7 @@ export const ReaderScreen = () => {
           paths,
           currentChapters,
           injectedScriptsAndStyles(font),
+          lastJumpTo,
           currentBook.lastScrollPosition || 0
         );
 
@@ -67,7 +72,7 @@ export const ReaderScreen = () => {
     };
 
     loadInitialWindow();
-  }, [currentBook?.basePath]);
+  }, [currentBook?.basePath, lastJumpTo]);
 
   useEffect(() => {
     if (!webViewRef.current) return;

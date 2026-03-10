@@ -5,8 +5,10 @@ import { SidebarContent } from 'components/Sidebar/SidebarContent';
 import { ReadingNowScreen } from 'pages/ReadingNow';
 import { SettingsScreen } from 'pages/Settings';
 import { ReaderScreen } from 'pages/Reader';
+import { DrawerTab, RootStackParamList } from 'types';
+import { BookHeader } from 'components/Sidebar/BookHeader';
 
-const Drawer = createDrawerNavigator();
+const Drawer = createDrawerNavigator<RootStackParamList>();
 
 export const Sidebar = () => {
   return (
@@ -14,6 +16,9 @@ export const Sidebar = () => {
       drawerContent={(props) => <SidebarContent {...props} />}
       screenOptions={{
         header: ({ navigation, route, options }) => {
+          const currentTab = route.name as DrawerTab;
+
+          if (currentTab === "Reader") return <BookHeader/>
           return <Header navigation={navigation} title={getHeaderTitle(options, route.name)} />;
         },
       }}>

@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, DeepPartial, Setting } from 'lib/types';
+import { Book, DeepPartial, Setting } from 'types';
 import { extractEpub, parseManifest } from 'lib/useEpubFunctions';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
+import { strnumOptions } from 'fast-xml-parser';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -27,10 +28,12 @@ type Store = {
   books: Book[];
   currentBook: Book | null;
   settings: Setting;
+  lastJumpTo: number;
   isLoading: boolean;
 
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
+  jumpToChapter: (chapterIndex: number) => void;
   closeBook: () => Promise<void>;
   removeBook: (basePath: string) => void;
   shiftNext: () => { fetchIndex: number; removeIndex: number | null } | null;
@@ -46,6 +49,7 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       isLoading: false,
+      lastJumpTo: 0,
       settings: {
         defaultBookSettings: {
           font: { fontSize: 30, fontFamily: 'Georgia, serif' },
@@ -67,6 +71,7 @@ export const useBookStore = create<Store>()(
           set((state) => ({
             currentBook: book,
             isLoading: false,
+            lastJumpTo: 0,
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
         } catch (e) {
@@ -87,6 +92,7 @@ export const useBookStore = create<Store>()(
           set((state) => ({
             currentBook: bookToOpen,
             isLoading: false,
+            lastJumpTo: 0,
             books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
           }));
         } catch (e) {
@@ -110,12 +116,11 @@ export const useBookStore = create<Store>()(
         }
       },
 
-      removeBook: (basePath: string) => {
+      removeBook: (basePath: string) =>
         set((state) => ({
           currentBook: null,
           books: state.books.filter((book) => book.basePath !== basePath),
-        }));
-      },
+        })),
 
       shiftNext: () => {
         const { currentBook, books } = get();
@@ -176,18 +181,37 @@ export const useBookStore = create<Store>()(
           settings: deepMerge(state.settings, toUpdate),
         })),
 
-      updateScrollPosition: (scrollY: number) => {
-        const { currentBook, books } = get();
+      updateScrollPosition: (scrollY: number) =>
+        set((state) => {
+          if (!state.currentBook) return state;
 
-        if (!currentBook) return;
+          const updatedBook = { ...state.currentBook, lastScrollPosition: scrollY };
 
-        const updatedBook = { ...currentBook, lastScrollPosition: scrollY };
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
 
-        set({
-          currentBook: updatedBook,
-          books: books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
-        });
-      },
+      jumpToChapter: (chapterIndex: number) =>
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const nextIndex = chapterIndex + 1;
+          const prevIndex = chapterIndex - 1;
+          const newChaptersWindow = [chapterIndex];
+
+          if (prevIndex >= 0) newChaptersWindow.unshift(prevIndex);
+          if (nextIndex <= state.currentBook.chapters.length) newChaptersWindow.push(nextIndex);
+
+          return {
+            currentBook: {
+              ...state.currentBook,
+              currentChapters: newChaptersWindow,
+            },
+            lastJumpTo: chapterIndex,
+          };
+        }),
     }),
     {
       name: 'book-storage',

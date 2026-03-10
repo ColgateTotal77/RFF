@@ -118,7 +118,7 @@ class BookEngineModule : Module() {
             freeAnkiDictionary()
         }
 
-        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, scriptsAndStyles: String, scrollPosition: Int ->
+        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, scriptsAndStyles: String, targetChapterIndex: Int?, scrollPosition: Int? ->
             try {
                 val t1 = System.currentTimeMillis()
 
@@ -179,25 +179,20 @@ class BookEngineModule : Module() {
                         fos.write("\n</div>\n".toByteArray())
                     }
 
-                    val scrollScript = """
-                    <script>
-                        window.addEventListener('load', function() {
-                            window.scrollTo(0, $scrollPosition);
+                    val scriptTemplate = try {
+                        appContext.reactContext?.assets?.open("scrollScript.html")?.bufferedReader().use {
+                            it?.readText() ?: ""
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookEngine", "Failed to load scrollScript.html from assets", e)
+                        ""
+                    }
 
-                            requestAnimationFrame(function() {
-                                setTimeout(function() {
-                                    if (window.ReactNativeWebView) {
-                                        window.ReactNativeWebView.postMessage(JSON.stringify({
-                                            type: 'INITIAL_LOAD_COMPLETE'
-                                        }));
-                                    }
-                                }, 0);
-                            });
-                        });
-                    </script>
-                    """
+                    val finalScrollScript = scriptTemplate
+                        .replace("\$targetChapterIndex", (targetChapterIndex ?: 0).toString())
+                        .replace("\$scrollPosition", (scrollPosition ?: 0).toString())
 
-                    fos.write("\n$scrollScript\n".toByteArray())
+                    fos.write("\n$finalScrollScript\n".toByteArray())
 
                     fos.write(footer.toByteArray())
                 }

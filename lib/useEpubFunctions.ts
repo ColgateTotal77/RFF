@@ -1,6 +1,6 @@
 import { unzip } from 'react-native-zip-archive';
 import { Directory, File, Paths } from 'expo-file-system';
-import { Chapter, Book } from 'lib/types';
+import { Chapter, Book } from 'types';
 import { ensureArray, parser } from 'lib/utils';
 import { useBookStore } from 'stores/useBookStore';
 import { WebView } from 'react-native-webview';
@@ -81,9 +81,42 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
           id,
           href,
           fullPath: `${absoluteBasePath}/${href}`,
+          title: `Chapter`,
         };
       })
       .filter((c): c is Chapter => c !== null);
+
+    const tocId = packageData.spine['@_toc'];
+
+    if (tocId && manifestMap[tocId]) {
+      try {
+        const ncxHref = manifestMap[tocId];
+        const ncxFile = new File(unzippedPath, `${opfDirName ? opfDirName + '/' : ''}${ncxHref}`);
+
+        if (ncxFile.exists) {
+          const ncxXml = await ncxFile.text();
+          const ncxData = parser.parse(ncxXml);
+
+          const navPoints = ensureArray(ncxData?.ncx?.navMap?.navPoint || []);
+
+          navPoints.forEach((navPoint: any) => {
+            const chapterTitle = navPoint.navLabel?.text;
+            const chapterSrc = navPoint.content?.['@_src'];
+
+            if (chapterTitle && chapterSrc) {
+              const baseHref = chapterSrc.split('#')[0];
+
+              const matchingChapter = chapters.find(c => c.href === baseHref);
+              if (matchingChapter) {
+                matchingChapter.title = chapterTitle.trim();
+              }
+            }
+          });
+        }
+      } catch (ncxError) {
+        console.warn('Failed to parse NCX TOC for chapter titles:', ncxError);
+      }
+    }
 
     let coverPath = undefined;
     const metaItems = ensureArray(metadata.meta);
