@@ -1,4 +1,14 @@
 <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const config = window.BookConfig || {};
+
+    const currentFont = config.fontFamily || "sans-serif";
+    const currentFontSize = config.fontSize || 16;
+
+    document.documentElement.style.setProperty('--book-font-family', currentFont);
+    document.documentElement.style.setProperty('--book-font-size', `${currentFontSize}px`);
+  });
+
   document.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });

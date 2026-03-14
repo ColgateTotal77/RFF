@@ -13,7 +13,7 @@ export type DeepPartial<T> = {
 };
 
 export interface Chapter {
-  id: string;
+  id: number;
   href: string;
   fullPath: string;
   title: string;
@@ -49,3 +49,14 @@ export interface DefaultBookSettings {
 export interface Setting {
   defaultBookSettings: DefaultBookSettings;
 }
+
+export interface SearchResult {
+  id: number;
+  chapterIndex: number;
+  snippet: string;
+  occurrenceIndex: number;
+}
+
+export type SearchResultWithTitle = SearchResult & { chapterTitle: string };
+
+export type SearchResultsMapWithTitle = Record<string, SearchResultWithTitle>;

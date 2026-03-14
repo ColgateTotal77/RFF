@@ -1,7 +1,9 @@
 <script>
   window.addEventListener('load', function() {
-    var targetChapterIndex = $targetChapterIndex;
-    var scrollPosition = $scrollPosition;
+    const config = window.BookConfig || {};
+
+    const targetChapterIndex = config.targetChapterIndex
+    const scrollPosition = config.scrollPosition
 
     var targetChapter = document.getElementById('chapter-' + targetChapterIndex);
 

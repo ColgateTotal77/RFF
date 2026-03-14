@@ -2,10 +2,9 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import { Book, DeepPartial, Setting } from 'types';
-import { extractEpub, parseManifest } from 'lib/useEpubFunctions';
+import { extractEpub, parseManifest } from 'lib/useBookExtraction';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
-import { strnumOptions } from 'fast-xml-parser';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',

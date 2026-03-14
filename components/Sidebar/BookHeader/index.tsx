@@ -1,21 +1,54 @@
-import { Appbar } from 'react-native-paper';
+import { Appbar, TextInput } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
 import { MenuChapters } from 'components/Sidebar/BookHeader/MenuChapters';
 import { useBookStore } from 'stores/useBookStore';
 import { useState } from 'react';
 import { View, Modal } from 'react-native';
+import { useTempStore } from 'stores/useTempStore';
+import { BookEngine } from 'modules/book-engine';
+import { SearchResult, SearchResultsMapWithTitle } from 'types';
+import { MenuSearch } from 'components/Sidebar/BookHeader/MenuSearch';
 
 export const BookHeader = () => {
+  const {
+    searchQuery,
+    setSearchQuery,
+    toggleIsSearchModuleOpen,
+    setSearchResults,
+    isSearchModuleOpen,
+  } = useTempStore();
   const { currentBook } = useBookStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChaptersMenuOpen, setIsChaptersMenuOpen] = useState(false);
+
+  const chapters = currentBook?.chapters || [];
+
+  const chaptersPaths = chapters.map((chapter) => chapter.fullPath);
+
+  const onSearchSubmit = async () => {
+    const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, chaptersPaths);
+
+    const chaptersMap: Record<number, {title: string}> = {};
+    for (let i = 0; i < chapters.length; i++) {
+      chaptersMap[i] = { title: chapters[i].title };
+    }
+
+    const searchResultsMapWithTitle: SearchResultsMapWithTitle = {};
+    for (const searchResult of results) {
+      searchResultsMapWithTitle[searchResult.id] = {
+        ...searchResult,
+        chapterTitle: chaptersMap[searchResult.chapterIndex].title,
+      };
+    }
+
+    setSearchResults(searchResultsMapWithTitle);
+  };
 
   return (
     <>
       <Appbar.Header className="bg-white">
         <Appbar.Content title={currentBook?.title} />
-        <Appbar.Action icon="magnify" onPress={() => {}} />
-
+        <Appbar.Action icon="magnify" onPress={toggleIsSearchModuleOpen} />
         <Other
           isOpen={isMenuOpen}
           onOpen={() => setIsMenuOpen(true)}
@@ -35,6 +68,29 @@ export const BookHeader = () => {
             <Appbar.Content title="Chapters" />
           </Appbar.Header>
           <MenuChapters onClose={() => setIsChaptersMenuOpen(false)} />
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isSearchModuleOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={toggleIsSearchModuleOpen}>
+        <View className="flex-1 bg-white">
+          <Appbar.Header className="bg-white">
+            <Appbar.Action icon="close" onPress={toggleIsSearchModuleOpen} />
+            <TextInput
+              placeholder="search..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              mode="flat"
+              style={{ flex: 1 }}
+              returnKeyType="search"
+              autoCapitalize="none"
+              onSubmitEditing={onSearchSubmit}
+            />
+          </Appbar.Header>
+          <MenuSearch onClose={toggleIsSearchModuleOpen} />
         </View>
       </Modal>
     </>

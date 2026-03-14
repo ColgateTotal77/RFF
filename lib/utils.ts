@@ -1,18 +1,6 @@
-import { XMLParser } from 'fast-xml-parser';
-
-export const parser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: '@_',
-});
-
 export const ensureArray = (item: any) => {
   if (!item) return [];
   return Array.isArray(item) ? item : [item];
-};
-
-export const extractBodyContent = (html: string) => {
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  return bodyMatch ? bodyMatch[1] : html;
 };
 
 export const deepMerge = (target: any, source: any): any => {

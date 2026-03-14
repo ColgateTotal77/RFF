@@ -1,0 +1,89 @@
+<style>
+  mark.search-highlight { background-color: #fff59d; color: #000; }
+</style>
+
+<script>
+  window.highlightAll = function(searchQuery, currentChapters) {
+    if (!searchQuery) return;
+
+    var escapedWord = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var regex = new RegExp("(" + escapedWord + ")", 'gi');
+
+    currentChapters.forEach(function(chapterIdx) {
+      var chapterContainer = document.getElementById('chapter-' + chapterIdx);
+      if (!chapterContainer) return;
+
+      var walker = document.createTreeWalker(chapterContainer, NodeFilter.SHOW_TEXT, null, false);
+      var node;
+      var textNodes = [];
+
+      while (node = walker.nextNode()) {
+        if (!['SCRIPT', 'STYLE'].includes(node.parentNode.nodeName) && node.nodeValue.trim() !== '') {
+          textNodes.push(node);
+        }
+      }
+
+      var localOccurrenceIndex = 0;
+
+      textNodes.forEach(function(textNode) {
+        if (textNode.parentNode.nodeName === 'MARK' && textNode.parentNode.classList.contains('search-highlight')) {
+          regex.lastIndex = 0;
+          if (regex.test(textNode.nodeValue)) {
+            localOccurrenceIndex++;
+          }
+          return;
+        }
+
+        if (regex.test(textNode.nodeValue)) {
+          var fragment = document.createDocumentFragment();
+          var lastIndex = 0;
+          regex.lastIndex = 0;
+          var match;
+
+          while ((match = regex.exec(textNode.nodeValue)) !== null) {
+            fragment.appendChild(document.createTextNode(textNode.nodeValue.substring(lastIndex, match.index)));
+
+            var mark = document.createElement('mark');
+            mark.className = 'search-highlight';
+            mark.id = 'search-match-' + chapterIdx + '-' + localOccurrenceIndex;
+
+            mark.textContent = match[0];
+            fragment.appendChild(mark);
+
+            lastIndex = regex.lastIndex;
+            localOccurrenceIndex++;
+          }
+          fragment.appendChild(document.createTextNode(textNode.nodeValue.substring(lastIndex)));
+          textNode.parentNode.replaceChild(fragment, textNode);
+        }
+      });
+    });
+  };
+
+  window.jumpToSearch = function(chapterIndex, occurrenceIndex) {
+    document.querySelectorAll('mark.active-match').forEach(function(el) {
+      el.classList.remove('active-match');
+    });
+
+    var targetId = 'search-match-' + chapterIndex + '-' + occurrenceIndex;
+    var target = document.getElementById(targetId);
+
+    if (target) {
+      target.classList.add('active-match');
+      setTimeout(function() {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    } else {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'WEBVIEW_ERROR', message: 'Target mark not found: ' + targetId }));
+    }
+  };
+
+  window.clearSearch = function() {
+    var marks = document.querySelectorAll('mark.search-highlight');
+    marks.forEach(function(mark) {
+      var parent = mark.parentNode;
+      parent.replaceChild(document.createTextNode(mark.textContent), mark);
+      parent.normalize();
+    });
+  };
+</script>

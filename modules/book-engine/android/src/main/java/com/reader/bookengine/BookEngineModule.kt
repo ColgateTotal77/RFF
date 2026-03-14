@@ -11,6 +11,11 @@ import android.content.ActivityNotFoundException
 import java.io.File
 import kotlinx.coroutines.*
 import android.app.Activity
+import org.jsoup.Jsoup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 
 class BookEngineModule : Module() {
     companion object {
@@ -94,6 +99,72 @@ class BookEngineModule : Module() {
             }
         }
 
+        AsyncFunction("searchInBook") { query: String, chapterPaths: Array<String> ->
+            if (query.trim().isEmpty() || chapterPaths.isEmpty()) {
+                return@AsyncFunction emptyList<Map<String, Any>>()
+            }
+
+            val t1 = System.currentTimeMillis()
+            val lowerQuery = query.lowercase()
+
+            val nestedResults = runBlocking(Dispatchers.IO) {
+
+                chapterPaths.mapIndexed { chapterIndex, path ->
+                    async {
+                        val chapterResults = mutableListOf<Map<String, Any>>()
+
+                        try {
+                            val file = File(path)
+                            if (file.exists()) {
+                                val rawHtml = file.readText()
+                                val plainText = Jsoup.parse(rawHtml).text()
+                                val lowerText = plainText.lowercase()
+
+                                var startIndex = 0
+                                var occurrenceIndex = 0
+
+                                while (true) {
+                                    val matchIndex = lowerText.indexOf(lowerQuery, startIndex)
+                                    if (matchIndex == -1) break
+
+                                    val snippetStart = maxOf(0, matchIndex - 30)
+                                    val snippetEnd = minOf(plainText.length, matchIndex + query.length + 30)
+
+                                    var snippet = plainText.substring(snippetStart, snippetEnd)
+                                    if (snippetStart > 0) snippet = "...$snippet"
+                                    if (snippetEnd < plainText.length) snippet = "$snippet..."
+
+                                    chapterResults.add(mapOf(
+                                        "chapterIndex" to chapterIndex,
+                                        "snippet" to snippet,
+                                        "occurrenceIndex" to occurrenceIndex
+                                    ))
+
+                                    startIndex = matchIndex + query.length
+                                    occurrenceIndex++
+                                }
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("BookEngine", "Failed to search chapter: $path", e)
+                        }
+
+                        chapterResults
+                    }
+                }.awaitAll()
+            }
+
+            val finalResults = nestedResults.flatten().mapIndexed { index, map ->
+                map.toMutableMap().apply {
+                    put("id", index)
+                }
+            }
+
+            val t2 = System.currentTimeMillis()
+            android.util.Log.d("BookEngine", "Parallel Kotlin search took: ${t2 - t1} ms")
+
+            return@AsyncFunction finalResults
+        }
+
         AsyncFunction("loadAnkiDictionary") { ->
             try {
                 val t1 = System.currentTimeMillis()
@@ -118,7 +189,7 @@ class BookEngineModule : Module() {
             freeAnkiDictionary()
         }
 
-        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, scriptsAndStyles: String, targetChapterIndex: Int?, scrollPosition: Int? ->
+        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, options: Map<String, Any> ->
             try {
                 val t1 = System.currentTimeMillis()
 
@@ -158,7 +229,25 @@ class BookEngineModule : Module() {
                 java.io.FileOutputStream(initialFile).use { fos ->
                     fos.write(header.toByteArray())
 
-                    fos.write("\n$scriptsAndStyles\n".toByteArray())
+                    val configJson = org.json.JSONObject(options).toString()
+
+                    val configScript = "\n<script>\nwindow.BookConfig = $configJson;\n</script>\n"
+                    fos.write(configScript.toByteArray())
+
+                    val loadedScripts = try {
+                        appContext.reactContext?.assets?.list("onBookInit")
+                            ?.filter { it.endsWith(".html") }
+                            ?.mapNotNull { fileName ->
+                                appContext.reactContext?.assets?.open("onBookInit/$fileName")?.bufferedReader().use {
+                                    it?.readText()
+                                }
+                            }?.joinToString("\n") ?: ""
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookEngine", "Failed to load HTML files", e)
+                        ""
+                    }
+
+                    fos.write("\n$loadedScripts\n".toByteArray())
 
                     paths.forEachIndexed { i, path ->
                         val chapterIndex = indices[i]
@@ -178,21 +267,6 @@ class BookEngineModule : Module() {
 
                         fos.write("\n</div>\n".toByteArray())
                     }
-
-                    val scriptTemplate = try {
-                        appContext.reactContext?.assets?.open("scrollScript.html")?.bufferedReader().use {
-                            it?.readText() ?: ""
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e("BookEngine", "Failed to load scrollScript.html from assets", e)
-                        ""
-                    }
-
-                    val finalScrollScript = scriptTemplate
-                        .replace("\$targetChapterIndex", (targetChapterIndex ?: 0).toString())
-                        .replace("\$scrollPosition", (scrollPosition ?: 0).toString())
-
-                    fos.write("\n$finalScrollScript\n".toByteArray())
 
                     fos.write(footer.toByteArray())
                 }

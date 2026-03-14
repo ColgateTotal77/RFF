@@ -2,25 +2,30 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useBookStore } from 'stores/useBookStore';
-import { useEpubNextChapter, useEpubPrevChapter } from 'lib/useEpubFunctions';
-import { Font } from 'types';
-import observerTemplate from './init.html';
-import styles from './WebViewStyles.html';
-import updateTag from './updateTag.html';
-import loadNewChapter from './loadNewChapter.html';
+import { useEpubNextChapter, useEpubPrevChapter } from 'lib/useBookNavigation';
 import { SelectedMenu, SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { BookEngine } from 'modules/book-engine';
+import { useTempStore } from 'stores/useTempStore';
+import { Footer } from 'pages/Reader/Footer';
 
 export const ReaderScreen = () => {
   const { currentBook, settings, updateScrollPosition, closeBook, lastJumpTo, isLoading } =
     useBookStore();
+  const {
+    currentSearchResult,
+    resetSearch,
+    isWebViewReady,
+    setIsWebViewReady,
+    searchQuery,
+    isSearchOperation,
+    setIsSearchOperation,
+  } = useTempStore();
   const font = currentBook?.settings?.font || settings.defaultBookSettings.font;
 
   const webViewRef = useRef<WebView>(null);
   const containerRef = useRef<View>(null);
 
   const [webViewSource, setWebViewSource] = useState<{ uri: string } | null>(null);
-  const [isWebViewReady, setIsWebViewReady] = useState(false);
 
   const loadNextChapter = useEpubNextChapter(webViewRef, containerRef);
   const loadPrevChapter = useEpubPrevChapter(webViewRef, containerRef);
@@ -37,15 +42,13 @@ export const ReaderScreen = () => {
     return () => {
       setWebViewSource(null);
       setIsWebViewReady(false);
+      resetSearch();
       closeBook();
     };
   }, [closeBook]);
 
   useEffect(() => {
     if (!currentBook || !currentBook.currentChapters.length) return;
-
-    console.log('lastJumpTo: ', lastJumpTo);
-    console.log("currentChapters: ", currentBook.currentChapters)
 
     const loadInitialWindow = async () => {
       try {
@@ -55,13 +58,12 @@ export const ReaderScreen = () => {
         const { currentChapters, chapters } = currentBook;
         const paths = currentChapters.map((index) => chapters[index].fullPath);
 
-        const generatedFileUrl = await BookEngine.loadInitialHtml(
-          paths,
-          currentChapters,
-          injectedScriptsAndStyles(font),
-          lastJumpTo,
-          currentBook.lastScrollPosition || 0
-        );
+        const generatedFileUrl = await BookEngine.loadInitialHtml(paths, currentChapters, {
+          targetChapterIndex: lastJumpTo,
+          scrollPosition: currentBook.lastScrollPosition || 0,
+          fontSize: font.fontSize,
+          fontFamily: font.fontFamily,
+        });
 
         if (typeof generatedFileUrl === 'string') {
           setWebViewSource({ uri: generatedFileUrl });
@@ -73,6 +75,21 @@ export const ReaderScreen = () => {
 
     loadInitialWindow();
   }, [currentBook?.basePath, lastJumpTo]);
+
+  useEffect(() => {
+    console.log('currentSearchResult: ', JSON.stringify(currentSearchResult, null, 2));
+    if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady) {
+      highlightAllSearched(searchQuery, currentBook?.currentChapters || []);
+    }
+  }, [currentBook?.currentChapters, isWebViewReady]);
+
+  useEffect(() => {
+    console.log('currentSearchResult: ', JSON.stringify(currentSearchResult, null, 2));
+    if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady && isSearchOperation) {
+      onJumpToSearch(currentSearchResult.chapterIndex, currentSearchResult.occurrenceIndex);
+      setIsSearchOperation(false);
+    }
+  }, [isWebViewReady, isSearchOperation]);
 
   useEffect(() => {
     if (!webViewRef.current) return;
@@ -114,21 +131,28 @@ export const ReaderScreen = () => {
     }
   };
 
-  const injectedScriptsAndStyles = (font: Font) => {
-    const stylesWithArgs = styles
-      .replace(/\${font\.fontSize}/g, font.fontSize.toString())
-      .replace(/\${font\.fontFamily}/g, font.fontFamily);
-    return `${stylesWithArgs}\n${observerTemplate}\n${updateTag}\n${loadNewChapter}`;
-  };
-
   const onUpdateTag = (word: string, noteId: string, colorCode: string) => {
     const script = `window.highlightWord(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
     webViewRef.current?.injectJavaScript(script);
   };
 
-  if (!webViewSource) return;
+  const onJumpToSearch = (chapterIndex: number, occurrenceIndex: number) => {
+    const script = `window.jumpToSearch(${chapterIndex}, ${occurrenceIndex}); true;`;
+    webViewRef.current?.injectJavaScript(script);
+  };
 
-  console.log(webViewSource)
+  const highlightAllSearched = (searchQuery: string, currentChapters: number[]) => {
+    const script = `window.highlightAll(${JSON.stringify(searchQuery)}, ${JSON.stringify(currentChapters)}); true;`;
+    webViewRef.current?.injectJavaScript(script);
+  };
+
+  const clearSearch = () => {
+    const script = `window.clearSearch(); true;`;
+    webViewRef.current?.injectJavaScript(script);
+    resetSearch();
+  }
+
+  if (!webViewSource) return;
 
   return (
     <View ref={containerRef} collapsable={false} className="flex-1">
@@ -173,6 +197,10 @@ export const ReaderScreen = () => {
           closeMenu={closeMenu}
           onUpdateTag={onUpdateTag}
         />
+      )}
+
+      {currentSearchResult.chapterIndex > -1 && (
+        <Footer clearSearch={clearSearch} onJumpToSearch={onJumpToSearch} />
       )}
     </View>
   );

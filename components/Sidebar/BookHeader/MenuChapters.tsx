@@ -24,7 +24,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   return (
     <FlatList
       data={currentBook?.chapters}
-      keyExtractor={(chapter) => chapter.id}
+      keyExtractor={(chapter) => chapter.id.toString()}
       renderItem={renderChapter}
       contentContainerClassName="p-4 gap-4"
       initialNumToRender={15}
