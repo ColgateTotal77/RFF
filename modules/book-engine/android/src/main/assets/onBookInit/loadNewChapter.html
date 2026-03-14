@@ -6,12 +6,9 @@
       if (xhr.readyState === 4) {
         if (xhr.status === 0 || xhr.status === 200) {
           var htmlContent = xhr.responseText;
-          var oldScrollHeight = document.documentElement.scrollHeight;
-          var oldScrollY = window.scrollY;
 
           var container = document.createElement('div');
           container.id = "chapter-" + fetchIndex;
-          container.style.opacity = '0';
           container.innerHTML = htmlContent;
 
           if (position === "top") {
@@ -26,15 +23,7 @@
             if (chapterToRemove) chapterToRemove.remove();
           }
 
-          requestAnimationFrame(function() {
-            if (position === "top") {
-              var newScrollHeight = document.documentElement.scrollHeight;
-              var heightDifference = newScrollHeight - oldScrollHeight;
-              window.scrollTo(0, oldScrollY + heightDifference);
-            }
-            container.style.opacity = '1';
-            window.isFetching = false;
-          });
+          window.isFetching = false;
         } else {
           console.error("XHR failed to fetch chapter. Status:", xhr.status);
           window.isFetching = false;
