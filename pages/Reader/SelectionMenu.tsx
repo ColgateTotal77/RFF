@@ -16,7 +16,7 @@ export type SelectedMenu = {
 interface Props {
   selectionMenu: SelectedMenu;
   closeMenu: () => void;
-  onUpdateTag: (word: string, noteId: string, colorCode: string) => void;
+  onUpdateTag: (word: string | null, noteId: string, colorCode: string) => void;
 }
 
 export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) => {
@@ -25,13 +25,12 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
   const modelId = currentBook?.settings?.ankiModelId || settings.defaultBookSettings.ankiModelId;
 
   const onUpdateTagPress = async () => {
-    console.log('+F:', selectionMenu.text);
     const newTagIdNum = Number(selectionMenu.colorCode) + 1;
     if (newTagIdNum > 8) return;
     const newTagId = String(newTagIdNum);
     try {
       Anki.updateNoteTags(selectionMenu.noteId, [`Lookups_${newTagId}`]);
-      onUpdateTag(selectionMenu.text, selectionMenu.noteId!, newTagId);
+      onUpdateTag(null, selectionMenu.noteId!, newTagId);
     } catch (error) {
       console.error('Anki error:', error);
     } finally {
@@ -76,7 +75,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
   return (
     <Surface
       elevation={1}
-      className="absolute z-50 flex-row items-center rounded-lg bg-gray-800 px-2 py-1 shadow-md"
+      className="absolute z-50 flex-row items-center rounded-lg bg-gray-800 px-2 py-2 shadow-md"
       style={{
         top: Math.max(10, selectionMenu.top - 60),
         left: Math.max(10, Math.min(selectionMenu.left - 75, 200)),
@@ -86,6 +85,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
         textColor="white"
         compact={true}
         className="px-1"
+        style={{ borderRadius: 0 }}
         onPress={async () => {
           console.log('Translating:', selectionMenu.text);
           try {
@@ -106,6 +106,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
         textColor="white"
         compact={true}
         className="px-1"
+        style={{ borderRadius: 0 }}
         onPress={() => {
           console.log('Copy:', selectionMenu.text);
           closeMenu();
@@ -120,6 +121,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
           textColor="white"
           compact={true}
           className="px-1"
+          style={{ borderRadius: 0 }}
           onPress={onUpdateTagPress}>
           +F
         </Button>
@@ -129,6 +131,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
           textColor="white"
           compact={true}
           className="px-1"
+          style={{ borderRadius: 0 }}
           onPress={onAddNewCardPress}>
           Anki
         </Button>

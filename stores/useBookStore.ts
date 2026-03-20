@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, DeepPartial, Setting } from 'types';
+import { Book, CurrectCTree, DeepPartial, Setting } from 'types';
 import { extractEpub, parseManifest } from 'lib/useBookExtraction';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
@@ -28,10 +28,11 @@ type Store = {
   currentBook: Book | null;
   settings: Setting;
   lastJumpTo: number;
-  isLoading: boolean;
+  currentCTree: CurrectCTree | null;
 
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
+  setCurrentCTree: (treeData: CurrectCTree) => void;
   jumpToChapter: (chapterIndex: number) => void;
   closeBook: () => Promise<void>;
   removeBook: (basePath: string) => void;
@@ -47,7 +48,7 @@ export const useBookStore = create<Store>()(
     (set, get) => ({
       currentBook: null,
       books: [],
-      isLoading: false,
+      currentCTree: null,
       lastJumpTo: 0,
       settings: {
         defaultBookSettings: {
@@ -56,57 +57,59 @@ export const useBookStore = create<Store>()(
       },
 
       loadBook: async (uri: string) => {
-        set({ currentBook: null, isLoading: true });
+        set({ currentBook: null });
 
         try {
           const unzippedPath = await extractEpub(uri);
           if (!unzippedPath) return;
 
-          const [book, _] = await Promise.all([
-            parseManifest(unzippedPath),
-            BookEngine.loadAnkiDictionary(),
-          ]);
+          const book = await parseManifest(unzippedPath);
 
           set((state) => ({
             currentBook: book,
-            isLoading: false,
             lastJumpTo: 0,
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
         } catch (e) {
           console.error('❌ Failed to load book:', e);
-          set({ isLoading: false });
         }
       },
 
       openBook: async (basePath: string) => {
-        set({ currentBook: null, isLoading: true });
-        const { books } = get();
+        set({ currentBook: null });
+        const { books, settings, currentCTree } = get();
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
 
         try {
-          await BookEngine.loadAnkiDictionary();
+          const deckId =
+            bookToOpen?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
+          console.log('currentCTree?.deckId !== deckId', currentCTree?.deckId !== deckId);
+          console.log('currentCTree?.deckId', currentCTree?.deckId, typeof currentCTree?.deckId);
+          console.log('deckId', deckId, typeof deckId);
+          if (currentCTree?.deckId !== deckId) await BookEngine.loadAnkiDictionary('en', deckId);
 
           set((state) => ({
             currentBook: bookToOpen,
-            isLoading: false,
             lastJumpTo: 0,
             books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
           }));
         } catch (e) {
           console.error('❌ Failed to load book:', e);
-          set({ isLoading: false });
         }
       },
+
+      setCurrentCTree: (treeData: CurrectCTree) =>
+        set((state) => ({
+          ...state,
+          currentCTree: treeData,
+        })),
 
       closeBook: async () => {
         const { currentBook } = get();
         if (!currentBook) return;
 
         try {
-          await BookEngine.unloadAnkiDictionary();
-
           set(() => ({
             currentBook: null,
           }));

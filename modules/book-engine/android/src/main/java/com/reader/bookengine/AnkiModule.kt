@@ -131,71 +131,75 @@ class AnkiModule : Module() {
         }
     }
 
-    fun getAllAnkiWords(context: android.content.Context): AnkiWordsData {
-        val resolver = context.contentResolver
+fun getAllAnkiWords(deckIdString: String, context: android.content.Context): AnkiWordsData {
+    val resolver = context.contentResolver
 
-        val tempWords = mutableListOf<String>()
-        val tempNoteIds = mutableListOf<Long>()
-        val tempColorCodes = mutableListOf<Int>()
+    val tempWords = mutableListOf<String>()
+    val tempNoteIds = mutableListOf<Long>()
+    val tempColorCodes = mutableListOf<Int>()
 
-        try {
-            val notesUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
-            val noteCursor = resolver.query(
-                notesUri,
-                arrayOf("_id", "flds", "tags"),
-                null,
-                null,
-                null
-            )
+    val t1 = System.currentTimeMillis()
+    try {
+        val notesUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
 
-            val t1 = System.currentTimeMillis()
+        val ankiSearchQuery = "did:$deckIdString"
 
-            if (noteCursor != null) {
-                val idIndex = noteCursor.getColumnIndex("_id")
-                val fldsIndex = noteCursor.getColumnIndex("flds")
-                val tagsIndex = noteCursor.getColumnIndex("tags")
+        val noteCursor = resolver.query(
+            notesUri,
+            arrayOf("_id", "flds", "tags"),
+            ankiSearchQuery,
+            null,
+            null
+        )
 
-                while (noteCursor.moveToNext()) {
-                    val flds = noteCursor.getString(fldsIndex)
-                    val fieldsArray = flds.split("\u001F")
-                    if (fieldsArray.isEmpty()) continue;
+        noteCursor?.use { cursor ->
+            val idIndex = cursor.getColumnIndex("_id")
+            val fldsIndex = cursor.getColumnIndex("flds")
+            val tagsIndex = cursor.getColumnIndex("tags")
 
-                    val word = fieldsArray[1].trim()
-                    if (word.isEmpty()) continue;
+            while (cursor.moveToNext()) {
+                val flds = cursor.getString(fldsIndex)
+                val fieldsArray = flds.split("\u001F")
+                if (fieldsArray.isEmpty()) continue
 
-                    val noteId = noteCursor.getLong(idIndex)
-                    val tagsStr = noteCursor.getString(tagsIndex) ?: ""
-                    var colorCode = 0
-                    val lookupIdx = tagsStr.indexOf("Lookups_")
+                val word = fieldsArray[1].trim()
+                if (word.isEmpty()) continue
 
-                    if (lookupIdx != -1 && lookupIdx + 8 < tagsStr.length) {
-                        val numChar = tagsStr[lookupIdx + 8]
-                        if (numChar in '1'..'8') {
-                            colorCode = numChar - '0'
-                        }
+                val noteId = cursor.getLong(idIndex)
+                val tagsStr = cursor.getString(tagsIndex) ?: ""
+                var colorCode = 0
+                val lookupIdx = tagsStr.indexOf("Lookups_")
+
+                if (lookupIdx != -1 && lookupIdx + 8 < tagsStr.length) {
+                    val numChar = tagsStr[lookupIdx + 8]
+                    if (numChar in '1'..'8') {
+                        colorCode = numChar - '0'
                     }
-
-                    tempWords.add(word.replaceFirstChar { char -> char.lowercaseChar() })
-                    tempNoteIds.add(noteId)
-                    tempColorCodes.add(colorCode)
-                    tempWords.add(word.replaceFirstChar { char -> char.uppercaseChar() })
-                    tempNoteIds.add(noteId)
-                    tempColorCodes.add(colorCode)
                 }
-                noteCursor.close()
+
+                tempWords.add(word.replaceFirstChar { it.lowercaseChar() })
+                tempNoteIds.add(noteId)
+                tempColorCodes.add(colorCode)
+
+                tempWords.add(word.replaceFirstChar { it.uppercaseChar() })
+                tempNoteIds.add(noteId)
+                tempColorCodes.add(colorCode)
             }
-            val t2 = System.currentTimeMillis()
-            android.util.Log.d("BookEngine", "Note cursor processing took: ${t2 - t1} ms")
-            return AnkiWordsData(
-                tempWords.toTypedArray(),
-                tempNoteIds.toLongArray(),
-                tempColorCodes.toIntArray()
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("BookEngine", "Failed to fetch Anki words", e)
-            throw Exception("Failed to fetch Anki words: ${e.message}")
+            noteCursor.close()
         }
+        val t2 = System.currentTimeMillis()
+        android.util.Log.d("BookEngine", "Note cursor processing took: ${t2 - t1} ms")
+
+        return AnkiWordsData(
+            tempWords.toTypedArray(),
+            tempNoteIds.toLongArray(),
+            tempColorCodes.toIntArray()
+        )
+    } catch (e: Exception) {
+        android.util.Log.e("BookEngine", "Failed to fetch Anki words for deck ID: $deckIdString", e)
+        throw Exception("Failed to fetch Anki words: ${e.message}")
     }
+}
 
     override fun definition() = ModuleDefinition {
         Name("Anki")

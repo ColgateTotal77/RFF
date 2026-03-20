@@ -97,13 +97,16 @@ Deno.serve(async (req) => {
 
   const actualLemma = aiResponse.lemma.toLowerCase();
 
-  await supabase.from('word_forms').upsert(
-    [
-      { input_word: inputWord, word_lang_code: word_lang_code, lemma: actualLemma },
-      { input_word: actualLemma, word_lang_code: word_lang_code, lemma: actualLemma },
-    ],
-    { onConflict: 'input_word, word_lang_code' }
-  );
+  const uniqueEntries = new Map();
+  uniqueEntries.set(inputWord, { input_word: inputWord, word_lang_code, lemma: actualLemma });
+  uniqueEntries.set(actualLemma, { input_word: actualLemma, word_lang_code, lemma: actualLemma });
+
+  const entries = Array.from(uniqueEntries.values());
+
+  await supabase.from('word_forms').insert(entries, {
+    onConflict: 'input_word, word_lang_code, lemma',
+    ignoreDuplicates: true,
+  });
 
   const { data: newWord, error: upsertError } = await supabase
     .from('words')

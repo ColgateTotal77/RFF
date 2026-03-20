@@ -16,6 +16,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import com.reader.bookengine.database.AppDatabase
+import com.reader.bookengine.database.AppDependencies
+import com.reader.bookengine.database.syncWordFormsFromSupabase
+import com.reader.bookengine.database.WordFormEntity
 
 class BookEngineModule : Module() {
     companion object {
@@ -24,6 +28,95 @@ class BookEngineModule : Module() {
         }
     }
     private val ankiModule = AnkiModule()
+
+    suspend fun loadAnkiDictionary(
+        langCode: String,
+        deckId: String,
+        appDatabase: AppDatabase
+    ): Boolean {
+        try {
+            val t1 = System.currentTimeMillis()
+
+            val context = appContext.reactContext ?: throw Exception("React context is null")
+
+            val ankiData = ankiModule.getAllAnkiWords(deckId, context)
+            if (ankiData.words.isEmpty()) {
+                android.util.Log.w("BookEngine", "Anki returned 0 words. Check deck ID.")
+                return false
+            }
+
+            val ankiBaseMap = mutableMapOf<String, Pair<Long, Int>>()
+            for (i in ankiData.words.indices) {
+                ankiBaseMap[ankiData.words[i].lowercase()] = Pair(ankiData.noteIds[i], ankiData.colorCodes[i])
+            }
+
+            val uniqueLemmas = ankiBaseMap.keys.toList()
+
+            android.util.Log.d("BookEngine", "Found ${uniqueLemmas.size} unique words in Anki.")
+
+            val expandedForms = mutableListOf<WordFormEntity>()
+            val chunkedLemmas = uniqueLemmas.chunked(900)
+
+            for (chunk in chunkedLemmas) {
+                val formsChunk = appDatabase.wordFormDao().getFormsForLemmas(langCode, chunk)
+                expandedForms.addAll(formsChunk)
+                
+                val uppercaseForms = formsChunk.map { form ->
+                    form.copy(inputWord = form.inputWord.replaceFirstChar { it.uppercaseChar() })
+                }
+                expandedForms.addAll(uppercaseForms)
+            }
+
+            android.util.Log.d("BookEngine", "Found ${expandedForms.size} expanded forms in Room DB for lang: $langCode")
+
+            val finalWords = mutableListOf<String>()
+            val finalNoteIds = mutableListOf<Long>()
+            val finalColors = mutableListOf<Int>()
+
+            for ((lemma, data) in ankiBaseMap) {
+                finalWords.add(lemma)
+                finalNoteIds.add(data.first)
+                finalColors.add(data.second)
+
+                finalWords.add(lemma.replaceFirstChar { it.uppercaseChar() })
+                finalNoteIds.add(data.first)
+                finalColors.add(data.second)
+            }
+
+            for (form in expandedForms) {
+                if (form.inputWord.lowercase() == form.lemma.lowercase()) continue
+
+                val baseAnkiData = ankiBaseMap[form.lemma.lowercase()]
+
+                if (baseAnkiData != null) {
+                    finalWords.add(form.inputWord)
+                    finalNoteIds.add(baseAnkiData.first)
+                    finalColors.add(baseAnkiData.second)
+
+                    finalWords.add(form.inputWord.replaceFirstChar { it.uppercaseChar() })
+                    finalNoteIds.add(baseAnkiData.first)
+                    finalColors.add(baseAnkiData.second)
+                }
+            }
+
+            val t2 = System.currentTimeMillis()
+            android.util.Log.d("BookEngine", "Data prep took: ${t2 - t1} ms. Total words ready for C: ${finalWords.size}")
+
+            initAnkiDictionary(
+                finalWords.toTypedArray(),
+                finalNoteIds.toLongArray(),
+                finalColors.toIntArray()
+            )
+
+            val t3 = System.currentTimeMillis()
+            android.util.Log.d("BookEngine", "Load Anki Dictionary in C tree took: ${t3 - t2} ms")
+
+            return true
+        } catch (e: Exception) {
+            android.util.Log.e("BookEngine", "Failed to init dictionary", e)
+            return false
+        }
+    }
 
     private fun findWebView(view: View): WebView? {
         android.util.Log.d("BookEngine", "Searching in view: ${view.javaClass.simpleName}")
@@ -68,6 +161,30 @@ class BookEngineModule : Module() {
 
     override fun definition() = ModuleDefinition {
         Name("BookEngine")
+
+        AsyncFunction("onAppInit") { langCode: String, deckId: String ->
+            android.util.Log.d("BookEngine", "onAppInit called with langCode: $langCode, deckId: $deckId")
+            runBlocking<Unit> {
+                try {
+                    val context = appContext.reactContext ?: throw Exception("React context is null")
+                    val myAppDatabase = AppDependencies.getDatabase(context)
+                    val mySupabaseClient = AppDependencies.supabaseClient
+
+                    android.util.Log.d("BookEngine", "About to call syncWordFormsFromSupabase...")
+                    syncWordFormsFromSupabase(mySupabaseClient, myAppDatabase, context)
+                    android.util.Log.d("BookEngine", "syncWordFormsFromSupabase completed")
+
+                    val success = this@BookEngineModule.loadAnkiDictionary(langCode, deckId, myAppDatabase)
+                    if (!success) {
+                        throw Exception("Failed to load Anki dictionary")
+                    }
+                    android.util.Log.d("BookEngine", "onAppInit completed successfully")
+                } catch (e: Exception) {
+                    android.util.Log.e("BookEngine", "Exception in onAppInit: ${e.message}", e)
+                    throw e
+                }
+            }
+        }
 
         AsyncFunction("openSystemTranslator") { text: String ->
             val activity = appContext.currentActivity ?: throw Exception("No current activity found")
@@ -165,23 +282,15 @@ class BookEngineModule : Module() {
             return@AsyncFunction finalResults
         }
 
-        AsyncFunction("loadAnkiDictionary") { ->
-            try {
-                val t1 = System.currentTimeMillis()
+        AsyncFunction("loadAnkiDictionary") { langCode: String, deckId: String ->
+            runBlocking {
                 val context = appContext.reactContext ?: throw Exception("React context is null")
-                val ankiData = ankiModule.getAllAnkiWords(context)
-                val t2 = System.currentTimeMillis()
-                android.util.Log.d("BookEngine", "Load Anki Cards from DB took: ${t2 - t1} ms")
-                initAnkiDictionary(ankiData.words, ankiData.noteIds, ankiData.colorCodes)
-                val t3 = System.currentTimeMillis()
-                android.util.Log.d(
-                    "BookEngine",
-                    "Load Anki Dictionary in C tree took: ${t3 - t2} ms"
-                )
-                return@AsyncFunction true
-            } catch (e: Exception) {
-                android.util.Log.e("BookEngine", "Failed to init dictionary", e)
-                return@AsyncFunction false
+                val myAppDatabase = AppDependencies.getDatabase(context)
+                val success = this@BookEngineModule.loadAnkiDictionary(langCode, deckId, myAppDatabase)
+                if (!success) {
+                    throw Exception("Failed to load Anki dictionary")
+                }
+                success
             }
         }
 

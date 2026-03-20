@@ -60,3 +60,8 @@ export interface SearchResult {
 export type SearchResultWithTitle = SearchResult & { chapterTitle: string };
 
 export type SearchResultsMapWithTitle = Record<string, SearchResultWithTitle>;
+
+export interface CurrectCTree {
+  langCode: string;
+  deckId: string;
+}

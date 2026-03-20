@@ -9,7 +9,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
 
 export const ReaderScreen = () => {
-  const { currentBook, settings, updateScrollPosition, closeBook, lastJumpTo, isLoading } =
+  const { currentBook, settings, updateScrollPosition, closeBook, lastJumpTo } =
     useBookStore();
   const {
     currentSearchResult,
@@ -77,14 +77,12 @@ export const ReaderScreen = () => {
   }, [currentBook?.basePath, lastJumpTo]);
 
   useEffect(() => {
-    console.log('currentSearchResult: ', JSON.stringify(currentSearchResult, null, 2));
     if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady) {
       highlightAllSearched(searchQuery, currentBook?.currentChapters || []);
     }
   }, [currentBook?.currentChapters, isWebViewReady]);
 
   useEffect(() => {
-    console.log('currentSearchResult: ', JSON.stringify(currentSearchResult, null, 2));
     if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady && isSearchOperation) {
       onJumpToSearch(currentSearchResult.chapterIndex, currentSearchResult.occurrenceIndex);
       setIsSearchOperation(false);
@@ -131,7 +129,7 @@ export const ReaderScreen = () => {
     }
   };
 
-  const onUpdateTag = (word: string, noteId: string, colorCode: string) => {
+  const onUpdateTag = (word: string | null, noteId: string, colorCode: string) => {
     const script = `window.highlightWord(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
     webViewRef.current?.injectJavaScript(script);
   };
@@ -175,7 +173,7 @@ export const ReaderScreen = () => {
         androidLayerType="hardware"
       />
 
-      {(isLoading || !currentBook || !isWebViewReady) && (
+      {(!currentBook || !isWebViewReady) && (
         <View
           style={{
             position: 'absolute',

@@ -1,5 +1,14 @@
 <script>
   window.highlightWord = function(word, noteId, colorCode) {
+
+    if (!word) {
+      const existingSpans = document.querySelectorAll('span.anki-word[data-note-id="' + noteId + '"]');
+      existingSpans.forEach(function(span) {
+        span.setAttribute('data-flag', colorCode);
+      });
+      return;
+    }
+
     const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const targetWord = word.toLowerCase();
     const regex = new RegExp('\\b(' + escapedWord + ')\\b', 'gi');
@@ -40,6 +49,7 @@
         const wrapper = document.createElement('span');
         wrapper.innerHTML = newHtml;
         textNode.parentNode.replaceChild(wrapper, textNode);
+
         wrapper.outerHTML = wrapper.innerHTML;
       }
     });

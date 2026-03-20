@@ -1,5 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'org.jlleitschuh.gradle.ktlint'
+apply plugin: 'com.google.devtools.ksp'
+apply plugin: 'kotlinx-serialization'
 
 group = 'com.reader.bookengine'
 version = '0.7.6'
@@ -33,7 +35,19 @@ android {
   defaultConfig {
     versionCode 1
     versionName "0.7.6"
+
+  def supabaseUrl = System.getenv("EXPO_PUBLIC_SUPABASE_URL") ?: ""
+  def supabaseKey = System.getenv("EXPO_PUBLIC_SUPABASE_ANON_KEY") ?: ""
+
+  buildConfigField "String", "SUPABASE_URL", "\"${supabaseUrl}\""
+  buildConfigField "String", "SUPABASE_ANON_KEY", "\"${supabaseKey}\""
   }
+
+  // Room schema export
+  ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+  }
+
   lintOptions {
     abortOnError false
   }
@@ -47,6 +61,16 @@ android {
 dependencies {
   implementation 'com.github.ankidroid:Anki-Android:api-v1.1.0'
   implementation 'org.jsoup:jsoup:1.17.2'
+
+  implementation 'androidx.room:room-runtime:2.8.4'
+  implementation 'androidx.room:room-ktx:2.8.4'
+  ksp 'androidx.room:room-compiler:2.8.4'
+
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
+
+  implementation platform('io.github.jan-tennert.supabase:bom:2.4.0')
+  implementation 'io.github.jan-tennert.supabase:postgrest-kt'
+  implementation 'io.ktor:ktor-client-android:2.3.11'
 }
 
 ktlint {
