@@ -7,6 +7,7 @@ import { SelectedMenu, SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
+import { useWordAction } from 'hooks/useWordAction';
 
 export const ReaderScreen = () => {
   const { currentBook, settings, updateScrollPosition, closeBook, lastJumpTo } =
@@ -21,6 +22,7 @@ export const ReaderScreen = () => {
     setIsSearchOperation,
   } = useTempStore();
   const font = currentBook?.settings?.font || settings.defaultBookSettings.font;
+  const { addNewCard, updateWordTag, openSystemTranslator } = useWordAction();
 
   const webViewRef = useRef<WebView>(null);
   const containerRef = useRef<View>(null);
@@ -98,36 +100,7 @@ export const ReaderScreen = () => {
   `);
   }, [font]);
 
-  const onMessage = (event: WebViewMessageEvent) => {
-    const data = event.nativeEvent.data;
-
-    try {
-      const parsedData = JSON.parse(data);
-
-      if (parsedData.type === 'TEXT_SELECTED') {
-        setSelectionMenu({
-          visible: true,
-          text: parsedData.text,
-          top: parsedData.top,
-          left: parsedData.left,
-          noteId: parsedData.noteId,
-          colorCode: parsedData.colorCode,
-        });
-      } else if (parsedData.type === 'SELECTION_CLEARED') {
-        closeMenu();
-      } else if (parsedData.type === 'SCROLL_POSITION_CHANGED') {
-        updateScrollPosition(parsedData.scrollY);
-      } else if (parsedData.type === 'INITIAL_LOAD_COMPLETE') {
-        setIsWebViewReady(true);
-      }
-    } catch {
-      if (data === 'END_REACHED') {
-        loadNextChapter();
-      } else if (data === 'TOP_REACHED') {
-        loadPrevChapter();
-      }
-    }
-  };
+  if (!webViewSource) return;
 
   const onUpdateTag = (word: string | null, noteId: string, colorCode: string) => {
     const script = `window.highlightWord(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
@@ -150,9 +123,57 @@ export const ReaderScreen = () => {
     resetSearch();
   }
 
-  if (!webViewSource) return;
+  const onMessage = async (event: WebViewMessageEvent) => {
+    const data = event.nativeEvent.data;
 
-  return (
+    try {
+      const parsedData = JSON.parse(data);
+
+      if (parsedData.type === 'TEXT_SELECTED') {
+        setSelectionMenu({
+          visible: true,
+          text: parsedData.text,
+          top: parsedData.top,
+          left: parsedData.left,
+          noteId: parsedData.noteId,
+          colorCode: parsedData.colorCode,
+        });
+      } else if (parsedData.type === 'SELECTION_CLEARED') {
+        closeMenu();
+      } else if (parsedData.type === 'SCROLL_POSITION_CHANGED') {
+        updateScrollPosition(parsedData.scrollY);
+      } else if (parsedData.type === 'INITIAL_LOAD_COMPLETE') {
+        setIsWebViewReady(true);
+      } else if (parsedData.type === 'DOUBLE_TAP') {
+        await openSystemTranslator(parsedData.text);
+        closeMenu();
+      } else if (parsedData.type === 'TRIPLE_TAP') {
+        if(parsedData.noteId) {
+          updateWordTag({
+            noteId: parsedData.noteId,
+            colorCode: parsedData.colorCode || 0,
+            onUpdateTag,
+          });
+        } else {
+          addNewCard({
+            text: parsedData.text,
+            onUpdateTag,
+          });
+        }
+
+        closeMenu();
+      }
+    } catch {
+      if (data === 'END_REACHED') {
+        loadNextChapter();
+      } else if (data === 'TOP_REACHED') {
+        loadPrevChapter();
+      }
+    }
+  };
+
+
+    return (
     <View ref={containerRef} collapsable={false} className="flex-1">
       <WebView
         ref={webViewRef}

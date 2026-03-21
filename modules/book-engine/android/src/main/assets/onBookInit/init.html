@@ -94,4 +94,76 @@
       }));
     }
   });
+
+  let tapCount = 0;
+  let tapTimer = null;
+  let lastTapText = '';
+  const TAP_DELAY = 200;
+
+  document.addEventListener('touchend', (event) => {
+    const range = document.caretRangeFromPoint(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+    let selectedText = '';
+    let noteId = null;
+    let colorCode = null;
+
+    if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+      const text = range.startContainer.textContent;
+      const offset = range.startOffset;
+
+      const commonAncestor = range.commonAncestorContainer;
+      const highlightedElement = commonAncestor.nodeType === Node.TEXT_NODE
+        ? commonAncestor.parentElement
+        : commonAncestor;
+
+      if (highlightedElement && highlightedElement.classList.contains('anki-word')) {
+        noteId = highlightedElement.getAttribute('data-note-id');
+        colorCode = highlightedElement.getAttribute('data-flag');
+      }
+
+      const start = text.lastIndexOf(' ', offset - 1) + 1;
+      const end = text.indexOf(' ', offset);
+      selectedText = text.substring(start, end === -1 ? text.length : end).trim();
+    }
+
+    if (!selectedText) return;
+
+      if (tapTimer) {
+        clearTimeout(tapTimer);
+      }
+
+      tapCount++;
+
+      if (selectedText !== lastTapText) {
+        tapCount = 1;
+        lastTapText = selectedText;
+      }
+
+      if (tapCount === 1) {
+        tapTimer = setTimeout(() => {
+          if (tapCount === 1) {
+          }
+          tapCount = 0;
+        }, TAP_DELAY);
+      } else if (tapCount === 2) {
+        tapTimer = setTimeout(() => {
+          tapCount = 0;
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'DOUBLE_TAP',
+            text: selectedText,
+            top: event.touches[0]?.clientY || 0,
+            left: event.touches[0]?.clientX || 0
+          }));
+        }, TAP_DELAY);
+      } else if (tapCount === 3) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'TRIPLE_TAP',
+          text: selectedText,
+          noteId: noteId,
+          colorCode: colorCode,
+          top: event.touches[0]?.clientY || 0,
+          left: event.touches[0]?.clientX || 0
+        }));
+        tapCount = 0;
+      }
+  });
 </script>

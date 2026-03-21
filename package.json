@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@epubjs-react-native/core": "^1.4.7",
+    "@react-native-clipboard/clipboard": "^1.16.3",
     "@react-native-vector-icons/material-design-icons": "^12.4.0",
     "@react-navigation/drawer": "^7.8.1",
     "@react-navigation/native": "^7.1.28",

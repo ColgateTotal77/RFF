@@ -1,9 +1,8 @@
 import { Button, Surface } from 'react-native-paper';
 import { View } from 'react-native';
 import { Anki, BookEngine } from 'modules/book-engine';
-import { fetchWordMetadata } from 'lib/supabaseRequests';
 import React from 'react';
-import { useBookStore } from 'stores/useBookStore';
+import { useWordAction } from 'hooks/useWordAction';
 
 export type SelectedMenu = {
   visible: boolean;
@@ -20,56 +19,23 @@ interface Props {
 }
 
 export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) => {
-  const { currentBook, settings } = useBookStore();
-  const deckId = currentBook?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
-  const modelId = currentBook?.settings?.ankiModelId || settings.defaultBookSettings.ankiModelId;
+  const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator } = useWordAction();
 
-  const onUpdateTagPress = async () => {
-    const newTagIdNum = Number(selectionMenu.colorCode) + 1;
-    if (newTagIdNum > 8) return;
-    const newTagId = String(newTagIdNum);
-    try {
-      Anki.updateNoteTags(selectionMenu.noteId, [`Lookups_${newTagId}`]);
-      onUpdateTag(null, selectionMenu.noteId!, newTagId);
-    } catch (error) {
-      console.error('Anki error:', error);
-    } finally {
-      closeMenu();
-    }
+  const onUpdateTagPress = () => {
+    updateWordTag({
+      noteId: selectionMenu.noteId!,
+      colorCode: selectionMenu.colorCode!,
+      onUpdateTag
+    });
+    closeMenu();
   };
 
-  const onAddNewCardPress = async () => {
-    try {
-      if (!modelId || !deckId) {
-        console.error('Missing Anki configuration');
-        return;
-      }
-
-      const metadata = await fetchWordMetadata(selectionMenu.text, 'en', 'ru');
-
-      const ankiFields = [
-        '',
-        metadata?.name || '',
-        '',
-        '',
-        metadata?.translation || '',
-        '',
-        formatExamples(metadata.examples),
-      ];
-
-      const noteId = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1']);
-
-      if (noteId) {
-        console.log('Note created successfully:', noteId, typeof noteId);
-        onUpdateTag(selectionMenu.text, noteId, "1");
-      } else {
-        console.error('Failed to create Anki note');
-      }
-    } catch (error) {
-      console.error('Anki error:', error);
-    } finally {
-      closeMenu();
-    }
+  const onAddNewCardPress = () => {
+    addNewCard({
+      text: selectionMenu.text,
+      onUpdateTag
+    });
+    closeMenu();
   };
 
   return (
@@ -86,16 +52,8 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
         compact={true}
         className="px-1"
         style={{ borderRadius: 0 }}
-        onPress={async () => {
-          console.log('Translating:', selectionMenu.text);
-          try {
-            await BookEngine.openSystemTranslator(selectionMenu.text);
-          } catch (error) {
-            console.error('Translation error:', error);
-          } finally {
-            closeMenu();
-          }
-        }}>
+        onPress={async () => await openSystemTranslator(selectionMenu.text)}
+      >
         Translate
       </Button>
 
@@ -108,8 +66,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
         className="px-1"
         style={{ borderRadius: 0 }}
         onPress={() => {
-          console.log('Copy:', selectionMenu.text);
-          closeMenu();
+          copyToClipboard(selectionMenu.text);
         }}>
         Copy
       </Button>
@@ -122,7 +79,8 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
           compact={true}
           className="px-1"
           style={{ borderRadius: 0 }}
-          onPress={onUpdateTagPress}>
+          onPress={onUpdateTagPress}
+        >
           +F
         </Button>
       ) : (
@@ -132,14 +90,11 @@ export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) 
           compact={true}
           className="px-1"
           style={{ borderRadius: 0 }}
-          onPress={onAddNewCardPress}>
+          onPress={onAddNewCardPress}
+        >
           Anki
         </Button>
       )}
     </Surface>
   );
-};
-
-const formatExamples = (examples: string[]) => {
-  return examples.map((example, index) => `${index + 1}) ${example}`).join('<br>');
 };
