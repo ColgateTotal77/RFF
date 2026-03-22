@@ -73,8 +73,6 @@
       setTimeout(function() {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 50);
-    } else {
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'WEBVIEW_ERROR', message: 'Target mark not found: ' + targetId }));
     }
   };
 

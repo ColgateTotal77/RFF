@@ -1,6 +1,5 @@
 import { Button, Surface } from 'react-native-paper';
 import { View } from 'react-native';
-import { Anki, BookEngine } from 'modules/book-engine';
 import React from 'react';
 import { useWordAction } from 'hooks/useWordAction';
 
@@ -15,26 +14,21 @@ export type SelectedMenu = {
 interface Props {
   selectionMenu: SelectedMenu;
   closeMenu: () => void;
-  onUpdateTag: (word: string | null, noteId: string, colorCode: string) => void;
 }
 
-export const SelectionMenu = ({ selectionMenu, closeMenu, onUpdateTag }: Props) => {
+export const SelectionMenu = ({ selectionMenu, closeMenu }: Props) => {
   const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator } = useWordAction();
 
   const onUpdateTagPress = () => {
     updateWordTag({
       noteId: selectionMenu.noteId!,
       colorCode: selectionMenu.colorCode!,
-      onUpdateTag
     });
     closeMenu();
   };
 
   const onAddNewCardPress = () => {
-    addNewCard({
-      text: selectionMenu.text,
-      onUpdateTag
-    });
+    addNewCard(selectionMenu.text);
     closeMenu();
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useBookStore } from 'stores/useBookStore';
@@ -10,8 +10,14 @@ import { Footer } from 'pages/Reader/Footer';
 import { useWordAction } from 'hooks/useWordAction';
 
 export const ReaderScreen = () => {
-  const { currentBook, settings, updateScrollPosition, closeBook, lastJumpTo } =
-    useBookStore();
+  const {
+    currentBook,
+    settings,
+    updateScrollPosition,
+    closeBook,
+    lastJumpTo,
+    registerWebViewAction,
+  } = useBookStore();
   const {
     currentSearchResult,
     resetSearch,
@@ -45,6 +51,7 @@ export const ReaderScreen = () => {
       setWebViewSource(null);
       setIsWebViewReady(false);
       resetSearch();
+      closeMenu();
       closeBook();
     };
   }, [closeBook]);
@@ -91,37 +98,51 @@ export const ReaderScreen = () => {
     }
   }, [isWebViewReady, isSearchOperation]);
 
-  useEffect(() => {
-    if (!webViewRef.current) return;
-    webViewRef.current.injectJavaScript(`
-    window.setFontSize(${font.fontSize});
-    window.setFontFamily('${font.fontFamily}');
-    true;
-  `);
-  }, [font]);
+  const onUpdateFont = useCallback((fontSize?: number, fontFamily?: string) => {
+    const parts: string[] = [];
+    if (fontSize !== undefined) parts.push(`window.setFontSize(${fontSize})`);
+    if (fontFamily !== undefined) parts.push(`window.setFontFamily('${fontFamily}')`);
+    if (parts.length === 0) return;
 
-  if (!webViewSource) return;
+    const script = `${parts.join('; ')}; true;`;
+    webViewRef.current?.injectJavaScript(script);
+  }, []);
 
-  const onUpdateTag = (word: string | null, noteId: string, colorCode: string) => {
+  const onUpdateTag = useCallback((word: string | null, noteId: string, colorCode: string) => {
     const script = `window.highlightWord(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
     webViewRef.current?.injectJavaScript(script);
-  };
+  }, []);
 
-  const onJumpToSearch = (chapterIndex: number, occurrenceIndex: number) => {
+  const onJumpToSearch = useCallback((chapterIndex: number, occurrenceIndex: number) => {
     const script = `window.jumpToSearch(${chapterIndex}, ${occurrenceIndex}); true;`;
     webViewRef.current?.injectJavaScript(script);
-  };
+  }, []);
+
+  const onScrollToChapter = useCallback((chapterIndex: number) => {
+    const script = `window.scrollToChapter(${chapterIndex}); true;`;
+    webViewRef.current?.injectJavaScript(script);
+  }, []);
 
   const highlightAllSearched = (searchQuery: string, currentChapters: number[]) => {
     const script = `window.highlightAll(${JSON.stringify(searchQuery)}, ${JSON.stringify(currentChapters)}); true;`;
     webViewRef.current?.injectJavaScript(script);
   };
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     const script = `window.clearSearch(); true;`;
     webViewRef.current?.injectJavaScript(script);
     resetSearch();
-  }
+  }, [resetSearch]);
+
+  useEffect(() => {
+    registerWebViewAction('scrollToChapter', onScrollToChapter);
+    registerWebViewAction('jumpToSearch', onJumpToSearch);
+    registerWebViewAction('clearSearch', clearSearch);
+    registerWebViewAction('updateTag', onUpdateTag);
+    registerWebViewAction('updateFont', onUpdateFont);
+  }, [registerWebViewAction, onScrollToChapter, onJumpToSearch, clearSearch, onUpdateTag, onUpdateFont]);
+
+  if (!webViewSource) return;
 
   const onMessage = async (event: WebViewMessageEvent) => {
     const data = event.nativeEvent.data;
@@ -149,16 +170,9 @@ export const ReaderScreen = () => {
         closeMenu();
       } else if (parsedData.type === 'TRIPLE_TAP') {
         if(parsedData.noteId) {
-          updateWordTag({
-            noteId: parsedData.noteId,
-            colorCode: parsedData.colorCode || 0,
-            onUpdateTag,
-          });
+          updateWordTag({ noteId: parsedData.noteId, colorCode: parsedData.colorCode || 0});
         } else {
-          addNewCard({
-            text: parsedData.text,
-            onUpdateTag,
-          });
+          addNewCard(parsedData.text);
         }
 
         closeMenu();
@@ -174,53 +188,55 @@ export const ReaderScreen = () => {
 
 
     return (
-    <View ref={containerRef} collapsable={false} className="flex-1">
-      <WebView
-        ref={webViewRef}
-        originWhitelist={['*']}
-        source={webViewSource}
-        className="flex-1"
-        onMessage={onMessage}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        allowFileAccess={true}
-        allowFileAccessFromFileURLs={true}
-        allowUniversalAccessFromFileURLs={true}
-        textZoom={100}
-        setBuiltInZoomControls={false}
-        setDisplayZoomControls={false}
-        scalesPageToFit={false}
-        showsVerticalScrollIndicator={false}
-        androidLayerType="hardware"
-      />
-
-      {(!currentBook || !isWebViewReady) && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'white',
-          }}>
-          <ActivityIndicator size="large" />
-        </View>
-      )}
-
-      {selectionMenu.visible && (
-        <SelectionMenu
-          selectionMenu={selectionMenu}
-          closeMenu={closeMenu}
-          onUpdateTag={onUpdateTag}
+      <View ref={containerRef} collapsable={false} className="flex-1">
+        <WebView
+          ref={webViewRef}
+          originWhitelist={['*']}
+          source={webViewSource}
+          className="flex-1"
+          onMessage={onMessage}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          allowFileAccess={true}
+          allowFileAccessFromFileURLs={true}
+          allowUniversalAccessFromFileURLs={true}
+          textZoom={100}
+          setBuiltInZoomControls={false}
+          setDisplayZoomControls={false}
+          scalesPageToFit={false}
+          showsVerticalScrollIndicator={false}
+          androidLayerType="hardware"
+          overScrollMode="never"
+          scrollEnabled={true}
+          mixedContentMode="always"
         />
-      )}
 
-      {currentSearchResult.chapterIndex > -1 && (
-        <Footer clearSearch={clearSearch} onJumpToSearch={onJumpToSearch} />
-      )}
-    </View>
-  );
+        {(!currentBook || !isWebViewReady) && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'white',
+            }}>
+            <ActivityIndicator size="large" />
+          </View>
+        )}
+
+        {selectionMenu.visible && (
+          <SelectionMenu
+            selectionMenu={selectionMenu}
+            closeMenu={closeMenu}
+          />
+        )}
+
+        {currentSearchResult.chapterIndex > -1 && (
+          <Footer/>
+        )}
+      </View>
+    );
 };

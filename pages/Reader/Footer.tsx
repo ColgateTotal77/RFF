@@ -1,15 +1,13 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import React from 'react';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
+import { useBookStore } from 'stores/useBookStore';
 
-interface Props {
-  clearSearch: () => void;
-  onJumpToSearch: (chapterIndex: number, occurrenceIndex: number) => void;
-}
+export const Footer = () => {
+  const { clearSearchAction } = useBookStore();
 
-export const Footer = ({ clearSearch, onJumpToSearch }: Props) => {
-  const jumpToNext = useJumpToNextSearchResult(onJumpToSearch);
-  const jumpToPrev = useJumpToPrevSearchResult(onJumpToSearch);
+  const jumpToNext = useJumpToNextSearchResult();
+  const jumpToPrev = useJumpToPrevSearchResult();
 
   return (
     <View className="absolute bottom-[30px] left-0 right-0 flex flex-row justify-center gap-16">
@@ -20,7 +18,7 @@ export const Footer = ({ clearSearch, onJumpToSearch }: Props) => {
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={clearSearch}
+        onPress={clearSearchAction}
         className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-red-500 shadow-md">
         <Text className="text-xl font-bold text-white">✕</Text>
       </TouchableOpacity>

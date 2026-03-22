@@ -4,17 +4,18 @@ import { ChapterCard } from 'components/Sidebar/BookHeader/ChapterCard';
 import { Chapter } from 'types';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
-  const { currentBook, jumpToChapter } = useBookStore();
+  const { currentBook, jumpToChapter, scrollToChapterAction } = useBookStore();
 
   const onPress = (chapter: Chapter) => {
     if (!currentBook) return;
 
-    const index = currentBook.chapters.findIndex((c) => c.id === chapter.id);
-
-    if (index !== -1) {
-      jumpToChapter(index);
-      onClose();
+    if (currentBook.currentChapters.find((c) => c === chapter.id)) {
+      scrollToChapterAction(chapter.id);
+    } else {
+      jumpToChapter(chapter.id);
     }
+
+    onClose();
   };
 
   const renderChapter = ({ item }: { item: Chapter }) => (

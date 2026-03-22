@@ -6,18 +6,12 @@ import { useBookStore } from 'stores/useBookStore';
 interface UpdateWordTag {
   noteId: string;
   colorCode: string;
-  onUpdateTag: (word: string | null, noteId: string, colorCode: string) => void;
-}
-
-interface AddNewCardProps {
-  text: string;
-  onUpdateTag: (word: string | null, noteId: string, colorCode: string) => void;
 }
 
 export const useWordAction = () => {
-  const { currentBook, settings } = useBookStore();
+  const { currentBook, settings, updateTagAction } = useBookStore();
 
-  const addNewCard = async ({ text, onUpdateTag }: AddNewCardProps) => {
+  const addNewCard = async (text: string) => {
     const deckId = currentBook?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
     const modelId = currentBook?.settings?.ankiModelId || settings.defaultBookSettings.ankiModelId;
 
@@ -43,7 +37,7 @@ export const useWordAction = () => {
 
       if (noteId) {
         console.log('Note created successfully:', noteId, typeof noteId);
-        onUpdateTag(text, noteId, '1');
+        updateTagAction(text, noteId, '1');
       } else {
         console.error('Failed to create Anki note');
       }
@@ -52,13 +46,13 @@ export const useWordAction = () => {
     }
   };
 
-  const updateWordTag = async ({colorCode, noteId, onUpdateTag}: UpdateWordTag) => {
+  const updateWordTag = async ({colorCode, noteId}: UpdateWordTag) => {
     const newTagIdNum = Number(colorCode) + 1;
     if (newTagIdNum > 8) return;
     const newTagId = String(newTagIdNum);
     try {
       Anki.updateNoteTags(noteId, [`Lookups_${newTagId}`]);
-      onUpdateTag(null, noteId, newTagId);
+      updateTagAction(null, noteId, newTagId);
     } catch (error) {
       console.error('Anki error:', error);
     }

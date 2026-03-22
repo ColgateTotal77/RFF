@@ -41,6 +41,26 @@ type Store = {
 
   updateSettings: (toUpdate: DeepPartial<Setting>) => void;
   updateScrollPosition: (scrollY: number) => void;
+
+  webViewActions: {
+    scrollToChapter?: (index: number) => void;
+    jumpToSearch?: (chapter: number, occurrence: number) => void;
+    highlightAll?: (query: string, chapters: number[]) => void;
+    clearSearch?: () => void;
+    updateTag?: (word: string | null, noteId: string, colorCode: string) => void;
+    updateFont?: (fontSize?: number, fontFamily?: string) => void;
+  };
+
+  registerWebViewAction: <K extends keyof Store['webViewActions']>(
+    name: K,
+    fn: Store['webViewActions'][K]
+  ) => void;
+
+  scrollToChapterAction: (chapterIndex: number) => void;
+  jumpToSearchAction: (chapter: number, occurrence: number) => void;
+  clearSearchAction: () => void;
+  updateTagAction: (word: string | null, noteId: string, colorCode: string) => void;
+  updateFontAction: (fontSize?: number, fontFamily?: string) => void;
 };
 
 export const useBookStore = create<Store>()(
@@ -50,6 +70,7 @@ export const useBookStore = create<Store>()(
       books: [],
       currentCTree: null,
       lastJumpTo: 0,
+      webViewActions: {},
       settings: {
         defaultBookSettings: {
           font: { fontSize: 30, fontFamily: 'Georgia, serif' },
@@ -199,12 +220,20 @@ export const useBookStore = create<Store>()(
         set((state) => {
           if (!state.currentBook) return state;
 
-          const nextIndex = chapterIndex + 1;
-          const prevIndex = chapterIndex - 1;
+          const middleIndex: number = Math.floor(state.currentBook.currentChapters.length / 2);
+
           const newChaptersWindow = [chapterIndex];
 
-          if (prevIndex >= 0) newChaptersWindow.unshift(prevIndex);
-          if (nextIndex <= state.currentBook.chapters.length) newChaptersWindow.push(nextIndex);
+          console.log('currentChapters: ', state.currentBook.currentChapters);
+
+          for (let i = 1; i <= middleIndex; i++) {
+            const prevIndex = chapterIndex - i;
+            const nextIndex = chapterIndex + i;
+            if (prevIndex >= 0) newChaptersWindow.unshift(prevIndex);
+            if (nextIndex <= state.currentBook.chapters.length) newChaptersWindow.push(nextIndex);
+          }
+
+          console.log('newChaptersWindow: ', newChaptersWindow);
 
           return {
             currentBook: {
@@ -214,6 +243,31 @@ export const useBookStore = create<Store>()(
             lastJumpTo: chapterIndex,
           };
         }),
+
+      registerWebViewAction: (name, fn) =>
+        set((state) => ({
+          webViewActions: { ...state.webViewActions, [name]: fn },
+        })),
+
+      updateFontAction: (fontSize, fontFamily) => {
+        get().webViewActions.updateFont?.(fontSize, fontFamily);
+      },
+
+      scrollToChapterAction: (chapterIndex) => {
+        get().webViewActions.scrollToChapter?.(chapterIndex);
+      },
+
+      jumpToSearchAction: (chapter, occurrence) => {
+        get().webViewActions.jumpToSearch?.(chapter, occurrence);
+      },
+
+      clearSearchAction: () => {
+        get().webViewActions.clearSearch?.();
+      },
+
+      updateTagAction: (word, noteId, colorCode) => {
+        get().webViewActions.updateTag?.(word, noteId, colorCode);
+      },
     }),
     {
       name: 'book-storage',

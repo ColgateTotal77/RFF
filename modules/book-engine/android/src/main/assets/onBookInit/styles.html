@@ -16,6 +16,31 @@
     -webkit-touch-callout: none !important;
   }
 
+  body div, body p, body section, body article, body span {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  body p {
+    margin-top: 1em !important;
+    margin-bottom: 1em !important;
+  }
+
+  div[id^="chapter-"] {
+    contain: layout style paint;
+    content-visibility: auto;
+    contain-intrinsic-size: 0 100vh;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgba(100, 150, 255, 0.4);
+  }
+
   .anki-word {
     position: relative;
   }
@@ -43,27 +68,4 @@
   .anki-word[data-flag="6"]::after { background-color: #00bcd4; }
   .anki-word[data-flag="7"]::after { background-color: #9c27b0; }
   .anki-word[data-flag="8"]::after { background-color: #607d8b; }
-
-  ::selection {
-    background: rgba(100, 150, 255, 0.4);
-  }
-
-  body div, body p, body section, body article, body span {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  body p {
-    margin-top: 1em !important;
-    margin-bottom: 1em !important;
-  }
-
-  div[id^="chapter-"] {
-    min-height: 100vh;
-    box-sizing: border-box;
-  }
 </style>

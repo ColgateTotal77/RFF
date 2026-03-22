@@ -1,0 +1,80 @@
+<script>
+  window.addEventListener('load', function() {
+    const config = window.BookConfig || {};
+
+    const targetChapterIndex = config.targetChapterIndex
+    const scrollPosition = config.scrollPosition
+
+    var targetChapter = document.getElementById('chapter-' + targetChapterIndex);
+
+    if (targetChapter) {
+      targetChapter.scrollIntoView({ behavior: 'auto', block: 'start' });
+    } else {
+      window.scrollTo(0, parseInt(scrollPosition) || 0);
+    }
+
+    requestAnimationFrame(function() {
+      setTimeout(function() {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'INITIAL_LOAD_COMPLETE',
+          }));
+        }
+      }, 50);
+    });
+  });
+
+  let scrollTimeout;
+  let lastScrollY = 0;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking || window.isFetching) return;
+
+    ticking = true;
+
+    window.requestAnimationFrame(() => {
+      const scrollY = window.scrollY;
+      const bottomY = scrollY + window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const chapters = document.querySelectorAll('div[id^="chapter-"]');
+
+      if (chapters.length === 0) return;
+      if (documentHeight <= window.innerHeight) return;
+
+      const firstChapterHeight = chapters[0].offsetHeight;
+      const lastChapterHeight = chapters[chapters.length - 1].offsetHeight;
+
+      if (scrollY < (firstChapterHeight * 0.45)) {
+        window.isFetching = true;
+        window.ReactNativeWebView.postMessage('TOP_REACHED');
+      }
+      if (bottomY > (documentHeight - (lastChapterHeight * 0.45))) {
+        window.isFetching = true;
+        window.ReactNativeWebView.postMessage('END_REACHED');
+      }
+
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (Math.abs(scrollY - lastScrollY) > 100) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'SCROLL_POSITION_CHANGED',
+            scrollY: scrollY,
+          }));
+          lastScrollY = scrollY;
+        }
+      }, 300);
+
+      ticking = false;
+    });
+  }, { passive: true });
+
+
+  window.scrollToChapter = function(chapterIndex) {
+    var targetId = 'chapter-' + chapterIndex;
+    var target = document.getElementById(targetId);
+
+    if (target) {
+      target.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+  };
+</script>

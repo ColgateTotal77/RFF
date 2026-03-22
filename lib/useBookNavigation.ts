@@ -94,12 +94,10 @@ export const useEpubPrevChapter = (
   };
 };
 
-export const useJumpToNextSearchResult = (
-  onJumpToSearch: (chapterIndex: number, occurrenceIndex: number) => void
-) => {
+export const useJumpToNextSearchResult = () => {
   const { currentSearchResult, setCurrentSearchResult, searchResults, setIsWebViewReady, setIsSearchOperation } =
     useTempStore();
-  const { jumpToChapter, currentBook } = useBookStore();
+  const { jumpToChapter, currentBook, jumpToSearchAction } = useBookStore();
 
   return () => {
     const newSearchResult = searchResults[currentSearchResult.id + 1];
@@ -114,7 +112,7 @@ export const useJumpToNextSearchResult = (
         setIsSearchOperation(true);
         jumpToChapter(newSearchResult.chapterIndex);
       } else {
-        onJumpToSearch(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
+        jumpToSearchAction(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
       }
 
       setCurrentSearchResult(newSearchResult);
@@ -122,12 +120,10 @@ export const useJumpToNextSearchResult = (
   };
 };
 
-export const useJumpToPrevSearchResult = (
-  onJumpToSearch: (occurrenceIndex: number, chapterIndex: number) => void
-) => {
+export const useJumpToPrevSearchResult = () => {
   const { currentSearchResult, setCurrentSearchResult, searchResults, setIsWebViewReady, setIsSearchOperation } =
     useTempStore();
-  const { jumpToChapter, currentBook } = useBookStore();
+  const { jumpToChapter, currentBook, jumpToSearchAction } = useBookStore();
 
   return () => {
     const newSearchResult = searchResults[currentSearchResult.id - 1];
@@ -142,7 +138,7 @@ export const useJumpToPrevSearchResult = (
         setIsSearchOperation(true);
         jumpToChapter(newSearchResult.chapterIndex);
       } else {
-        onJumpToSearch(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
+        jumpToSearchAction(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
       }
 
       setCurrentSearchResult(newSearchResult);

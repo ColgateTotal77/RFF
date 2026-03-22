@@ -60,7 +60,7 @@ class BookEngineModule : Module() {
             for (chunk in chunkedLemmas) {
                 val formsChunk = appDatabase.wordFormDao().getFormsForLemmas(langCode, chunk)
                 expandedForms.addAll(formsChunk)
-                
+
                 val uppercaseForms = formsChunk.map { form ->
                     form.copy(inputWord = form.inputWord.replaceFirstChar { it.uppercaseChar() })
                 }
@@ -313,6 +313,13 @@ class BookEngineModule : Module() {
                     firstHtml.substring(0, bodyStartEndIdx + 1)
                 } else "<html><head></head><body>"
 
+                val headEndIdx = header.indexOf("</head>", ignoreCase = true)
+                if (headEndIdx != -1) {
+                    header = header.substring(0, headEndIdx) +
+                        """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">""" +
+                        header.substring(headEndIdx)
+                }
+
                 val baseUrlString = "file://${firstFile.parentFile?.absolutePath}/"
                 val headIdx = header.indexOf("<head", ignoreCase = true)
                 if (headIdx != -1) {
@@ -358,23 +365,22 @@ class BookEngineModule : Module() {
 
                     fos.write("\n$loadedScripts\n".toByteArray())
 
-                    paths.forEachIndexed { i, path ->
+                    val tempFiles = runBlocking(Dispatchers.IO) {
+                        paths.mapIndexed { i, path ->
+                            async {
+                                val tempFile = File(cacheDir, "temp_init_$i.html")
+                                val success = extractChapterToFile(path, tempFile.absolutePath)
+                                i to if (success) tempFile else null
+                            }
+                        }.awaitAll().toMap().toSortedMap()
+                    }
+
+                    tempFiles.forEach { (i, tempFile) ->
                         val chapterIndex = indices[i]
                         fos.write("\n<div id=\"chapter-$chapterIndex\">\n".toByteArray())
-
-                        val tempChapFile = File(cacheDir, "temp_init_$i.html")
-                        val success = extractChapterToFile(path, tempChapFile.absolutePath)
-
-                        if (success) {
-                            tempChapFile.inputStream().use { fis ->
-                                fis.copyTo(fos)
-                            }
-                            tempChapFile.delete()
-                        } else {
-                            android.util.Log.e("BookEngine", "C failed to extract chapter: $path")
-                        }
-
+                        tempFile?.inputStream()?.use { it.copyTo(fos) }
                         fos.write("\n</div>\n".toByteArray())
+                        tempFile?.delete()
                     }
 
                     fos.write(footer.toByteArray())
@@ -383,7 +389,7 @@ class BookEngineModule : Module() {
                 val fileUrl = "file://${initialFile.absolutePath}"
 
                 val t2 = System.currentTimeMillis()
-                android.util.Log.d("BookEngine", "Kotlin loadInitialHtml via File Stream in: ${t2 - t1} ms")
+                android.util.Log.d("BookEngine", "Kotlin loadInitialHtml in: ${t2 - t1} ms")
 
                 return@AsyncFunction fileUrl
 
