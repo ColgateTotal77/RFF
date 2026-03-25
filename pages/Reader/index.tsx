@@ -8,15 +8,18 @@ import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
 import { useWordAction } from 'hooks/useWordAction';
+import { calculateBookProgress } from 'lib/utils';
 
 export const ReaderScreen = () => {
   const {
     currentBook,
     settings,
-    updateScrollPosition,
+    setScrollPosition,
+    setCurrentChapter,
     closeBook,
     lastJumpTo,
     registerWebViewAction,
+    updateMisc
   } = useBookStore();
   const {
     currentSearchResult,
@@ -67,9 +70,12 @@ export const ReaderScreen = () => {
         const { currentChapters, chapters } = currentBook;
         const paths = currentChapters.map((index) => chapters[index].fullPath);
 
+        console.log('lastJumpTo: ', lastJumpTo);
+        console.log('currentBook.currentChapter: ', currentBook.currentChapter);
+
         const generatedFileUrl = await BookEngine.loadInitialHtml(paths, currentChapters, {
-          targetChapterIndex: lastJumpTo,
-          scrollPosition: currentBook.lastScrollPosition || 0,
+          targetChapterIndex: lastJumpTo > -1 ? lastJumpTo : currentBook.currentChapter,
+          currentChapterScroll: currentBook.currentChapterScrollPosition || 0,
           fontSize: font.fontSize,
           fontFamily: font.fontFamily,
         });
@@ -89,14 +95,7 @@ export const ReaderScreen = () => {
     if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady) {
       highlightAllSearched(searchQuery, currentBook?.currentChapters || []);
     }
-  }, [currentBook?.currentChapters, isWebViewReady]);
-
-  useEffect(() => {
-    if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady && isSearchOperation) {
-      onJumpToSearch(currentSearchResult.chapterIndex, currentSearchResult.occurrenceIndex);
-      setIsSearchOperation(false);
-    }
-  }, [isWebViewReady, isSearchOperation]);
+  }, [currentBook?.currentChapters, isWebViewReady, currentSearchResult]);
 
   const onUpdateFont = useCallback((fontSize?: number, fontFamily?: string) => {
     const parts: string[] = [];
@@ -109,11 +108,14 @@ export const ReaderScreen = () => {
   }, []);
 
   const onUpdateTag = useCallback((word: string | null, noteId: string, colorCode: string) => {
-    const script = `window.highlightWord(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
+    const script = `window.updateTag(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
     webViewRef.current?.injectJavaScript(script);
   }, []);
 
   const onJumpToSearch = useCallback((chapterIndex: number, occurrenceIndex: number) => {
+    console.log('chapterIndex', chapterIndex);
+    console.log('occurrenceIndex', occurrenceIndex);
+
     const script = `window.jumpToSearch(${chapterIndex}, ${occurrenceIndex}); true;`;
     webViewRef.current?.injectJavaScript(script);
   }, []);
@@ -129,10 +131,9 @@ export const ReaderScreen = () => {
   };
 
   const clearSearch = useCallback(() => {
-    const script = `window.clearSearch(); true;`;
+    const script = `window.clearSearch(); window._lastSearchQuery = ''; window._lastSearchChapters = []; true;`;
     webViewRef.current?.injectJavaScript(script);
-    resetSearch();
-  }, [resetSearch]);
+  }, []);
 
   useEffect(() => {
     registerWebViewAction('scrollToChapter', onScrollToChapter);
@@ -150,42 +151,78 @@ export const ReaderScreen = () => {
     try {
       const parsedData = JSON.parse(data);
 
-      if (parsedData.type === 'TEXT_SELECTED') {
-        setSelectionMenu({
-          visible: true,
-          text: parsedData.text,
-          top: parsedData.top,
-          left: parsedData.left,
-          noteId: parsedData.noteId,
-          colorCode: parsedData.colorCode,
-        });
-      } else if (parsedData.type === 'SELECTION_CLEARED') {
-        closeMenu();
-      } else if (parsedData.type === 'SCROLL_POSITION_CHANGED') {
-        updateScrollPosition(parsedData.scrollY);
-      } else if (parsedData.type === 'INITIAL_LOAD_COMPLETE') {
-        setIsWebViewReady(true);
-      } else if (parsedData.type === 'DOUBLE_TAP') {
-        await openSystemTranslator(parsedData.text);
-        closeMenu();
-      } else if (parsedData.type === 'TRIPLE_TAP') {
-        if(parsedData.noteId) {
-          updateWordTag({ noteId: parsedData.noteId, colorCode: parsedData.colorCode || 0});
-        } else {
-          addNewCard(parsedData.text);
-        }
+      switch (parsedData.type) {
+        case 'LOG':
+          if (parsedData.logType === 'error') console.error(parsedData.message);
+          else console.log(parsedData.message);
+          break;
 
-        closeMenu();
+        case 'TEXT_SELECTED':
+          setSelectionMenu({
+            visible: true,
+            text: parsedData.text,
+            top: parsedData.top,
+            left: parsedData.left,
+            noteId: parsedData.noteId,
+            colorCode: parsedData.colorCode,
+          });
+          break;
+
+        case 'SELECTION_CLEARED':
+          closeMenu();
+          break;
+
+        case 'SCROLL_POSITION_CHANGED':
+          console.log('SCROLL_POSITION_CHANGED', parsedData);
+          if (!currentBook) return;
+
+          const percent = calculateBookProgress(currentBook, parsedData.currentChapter, parsedData.currentChapterScrollPosition);
+
+          updateMisc({ percent })
+          setScrollPosition(parsedData.currentChapterScrollPosition);
+
+          if (parsedData.currentChapter !== currentBook.currentChapter)
+            setCurrentChapter(parsedData.currentChapter);
+
+          break;
+
+        case 'INITIAL_LOAD_COMPLETE':
+          setIsWebViewReady(true);
+          break;
+
+        case 'END_REACHED':
+          loadNextChapter();
+          break;
+
+        case 'TOP_REACHED':
+          loadPrevChapter();
+          break;
+
+        case 'DOUBLE_TAP':
+          await openSystemTranslator(parsedData.text);
+          closeMenu();
+          break;
+
+        case 'TRIPLE_TAP':
+          console.log("parsedData: ", JSON.stringify(parsedData, null, 2))
+          if(parsedData.noteId) {
+            updateWordTag({ noteId: parsedData.noteId, colorCode: parsedData.colorCode || 0});
+          } else {
+            addNewCard(parsedData.text);
+          }
+          closeMenu();
+          break;
+
+        case 'SEARCH_HIGHLIGHT_COMPLETE':
+          if (currentSearchResult.occurrenceIndex > -1 && isSearchOperation) {
+            onJumpToSearch(currentSearchResult.chapterIndex, currentSearchResult.occurrenceIndex);
+            setIsSearchOperation(false);
+          }
       }
-    } catch {
-      if (data === 'END_REACHED') {
-        loadNextChapter();
-      } else if (data === 'TOP_REACHED') {
-        loadPrevChapter();
-      }
+    } catch (error) {
+      console.log("onMessage error: ", error)
     }
   };
-
 
     return (
       <View ref={containerRef} collapsable={false} className="flex-1">
@@ -234,9 +271,7 @@ export const ReaderScreen = () => {
           />
         )}
 
-        {currentSearchResult.chapterIndex > -1 && (
-          <Footer/>
-        )}
+        <Footer/>
       </View>
     );
 };

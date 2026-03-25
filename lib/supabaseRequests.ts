@@ -18,10 +18,18 @@ export const fetchWordMetadata = async (
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.context) {
+        const errorBody = await error.context.json();
+        console.log('DATABASE ERROR:', JSON.stringify(errorBody, null, 2));
+      } else {
+        console.log('DATABASE ERROR:', error.message);
+      }
+    }
+
     return data;
   } catch (error) {
-    console.error('Error fetching word metadata:', error);
+    console.error('Error fetching word metadata:', JSON.stringify(error));
     return null;
   }
 };

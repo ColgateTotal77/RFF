@@ -4,14 +4,18 @@
 
 <script>
   window.highlightAll = function(searchQuery, currentChapters) {
-    if (!searchQuery) return;
+    window.log('highlightAll: searching for "' + searchQuery + '" in chapters [' + currentChapters.join(',') + ']');
+    if (!searchQuery || window._lastSearchQuery === searchQuery && window._lastSearchChapters === currentChapters.join(',')) return;
 
     var escapedWord = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     var regex = new RegExp("(" + escapedWord + ")", 'gi');
 
     currentChapters.forEach(function(chapterIdx) {
       var chapterContainer = document.getElementById('chapter-' + chapterIdx);
-      if (!chapterContainer) return;
+      if (!chapterContainer) {
+        window.log('highlightAll: chapter-' + chapterIdx + ' not found', 'error');
+        return;
+      }
 
       var walker = document.createTreeWalker(chapterContainer, NodeFilter.SHOW_TEXT, null, false);
       var node;
@@ -57,10 +61,18 @@
           textNode.parentNode.replaceChild(fragment, textNode);
         }
       });
+      if (localOccurrenceIndex > 0) {
+        window.log('highlightAll: chapter-' + chapterIdx + ' has ' + localOccurrenceIndex + ' matches');
+      }
     });
+
+    window._lastSearchQuery = searchQuery;
+    window._lastSearchChapters = currentChapters.join(',');
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SEARCH_HIGHLIGHT_COMPLETE' }));
   };
 
   window.jumpToSearch = function(chapterIndex, occurrenceIndex) {
+    window.log('jumpToSearch: jumping to chapter ' + chapterIndex + ', occurrence ' + occurrenceIndex);
     document.querySelectorAll('mark.active-match').forEach(function(el) {
       el.classList.remove('active-match');
     });
@@ -70,14 +82,15 @@
 
     if (target) {
       target.classList.add('active-match');
-      setTimeout(function() {
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 50);
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.log('jumpToSearch: target not found (search-match-' + chapterIndex + '-' + occurrenceIndex + ')', 'error');
     }
   };
 
   window.clearSearch = function() {
     var marks = document.querySelectorAll('mark.search-highlight');
+    window.log('clearSearch: removing ' + marks.length + ' highlights');
     marks.forEach(function(mark) {
       var parent = mark.parentNode;
       parent.replaceChild(document.createTextNode(mark.textContent), mark);

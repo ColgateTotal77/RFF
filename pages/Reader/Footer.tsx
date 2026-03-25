@@ -2,32 +2,69 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import React from 'react';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
 import { useBookStore } from 'stores/useBookStore';
+import { useTempStore } from 'stores/useTempStore';
 
 export const Footer = () => {
-  const { clearSearchAction } = useBookStore();
+  const { clearSearchAction, currentBook } = useBookStore();
+  const { currentSearchResult, resetSearch } = useTempStore();
+  const { percent = 0, charOffsets = [], totalCharCount = 1 } = currentBook?.misc ?? {};
+
+  const progressPercent = Math.round(percent * 100);
+
+  const chapterMarkers = currentBook?.chapters?.map((_, index) => {
+    const offset = charOffsets[index];
+    return (offset / totalCharCount) * 100;
+  }) ?? [];
 
   const jumpToNext = useJumpToNextSearchResult();
   const jumpToPrev = useJumpToPrevSearchResult();
 
   return (
-    <View className="absolute bottom-[30px] left-0 right-0 flex flex-row justify-center gap-16">
-      <TouchableOpacity
-        onPress={jumpToPrev}
-        className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-gray-200 shadow-md">
-        <Text className="text-xl font-bold text-white">{'<'}</Text>
-      </TouchableOpacity>
+    <View className="absolute bottom-[30px] left-0 right-0 flex flex-col items-center">
+      {currentSearchResult.chapterIndex > -1 ? (
+        <View className="flex flex-row justify-center gap-16">
+          <TouchableOpacity
+            onPress={jumpToPrev}
+            className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-gray-200 shadow-md">
+            <Text className="text-xl font-bold text-white">{'<'}</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={clearSearchAction}
-        className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-red-500 shadow-md">
-        <Text className="text-xl font-bold text-white">✕</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              clearSearchAction()
+              resetSearch();
+            }}
+            className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-red-500 shadow-md">
+            <Text className="text-xl font-bold text-white">✕</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={jumpToNext}
-        className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-gray-200 shadow-md">
-        <Text className="text-xl font-bold text-white">{'>'}</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            onPress={jumpToNext}
+            className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-gray-200 shadow-md">
+            <Text className="text-xl font-bold text-white">{'>'}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View className="mb-4 flex w-[280px] flex-col items-center bg-gray-200">
+          <View className="relative h-6 w-full justify-center">
+            <View className="absolute h-0.5 w-full bg-gray-400" />
+
+            {chapterMarkers.map((position, index) => (
+              <View
+                key={index}
+                className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 bg-gray-500"
+                style={{ left: `${position}%` }}
+              />
+            ))}
+
+            <View
+              className="absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500"
+              style={{ left: `${progressPercent}%` }}
+            />
+          </View>
+          <Text className="mt-1 text-xs text-gray-500">{progressPercent}%</Text>
+        </View>
+      )}
     </View>
   );
 };

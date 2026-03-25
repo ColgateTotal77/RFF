@@ -17,6 +17,7 @@ export interface Chapter {
   href: string;
   fullPath: string;
   title: string;
+  charCount: number;
 }
 
 export interface Book {
@@ -25,8 +26,16 @@ export interface Book {
   chapters: Chapter[];
   basePath: string;
   currentChapters: number[];
-  lastScrollPosition: number;
+  currentChapter: number;
+  currentChapterScrollPosition: number;
   settings: BookSettings;
+  misc: Misc;
+}
+
+export interface Misc {
+  charOffsets: number[];
+  percent: number;
+  totalCharCount: number;
 }
 
 export interface Font {

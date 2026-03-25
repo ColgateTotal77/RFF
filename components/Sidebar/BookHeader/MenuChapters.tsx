@@ -2,9 +2,10 @@ import { useBookStore } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
 import { ChapterCard } from 'components/Sidebar/BookHeader/ChapterCard';
 import { Chapter } from 'types';
+import { calculateBookProgress } from 'lib/utils';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
-  const { currentBook, jumpToChapter, scrollToChapterAction } = useBookStore();
+  const { currentBook, jumpToChapter, scrollToChapterAction, updateMisc, setCurrentChapter } = useBookStore();
 
   const onPress = (chapter: Chapter) => {
     if (!currentBook) return;
@@ -15,12 +16,16 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
       jumpToChapter(chapter.id);
     }
 
+    updateMisc({
+      percent: calculateBookProgress(currentBook, chapter.id, 0),
+    });
+    setCurrentChapter(chapter.id);
     onClose();
   };
 
-  const renderChapter = ({ item }: { item: Chapter }) => (
-    <ChapterCard chapter={item} onPress={() => onPress(item)} />
-  );
+  const renderChapter = ({ item }: { item: Chapter }) => {
+    return <ChapterCard isCurrentChapter={currentBook?.currentChapter === item.id} chapter={item} onPress={() => onPress(item)} />;
+  };
 
   return (
     <FlatList

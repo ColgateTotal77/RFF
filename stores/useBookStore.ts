@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, CurrectCTree, DeepPartial, Setting } from 'types';
+import { Book, CurrectCTree, DeepPartial, Misc, Setting } from 'types';
 import { extractEpub, parseManifest } from 'lib/useBookExtraction';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
@@ -33,14 +33,16 @@ type Store = {
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
   setCurrentCTree: (treeData: CurrectCTree) => void;
-  jumpToChapter: (chapterIndex: number) => void;
+  jumpToChapter: (currentChapter: number) => void;
+  setCurrentChapter: (currentChapter: number) => void;
   closeBook: () => Promise<void>;
   removeBook: (basePath: string) => void;
   shiftNext: () => { fetchIndex: number; removeIndex: number | null } | null;
   shiftPrev: () => { fetchIndex: number; removeIndex: number | null } | null;
 
   updateSettings: (toUpdate: DeepPartial<Setting>) => void;
-  updateScrollPosition: (scrollY: number) => void;
+  setScrollPosition: (scrollY: number) => void;
+  updateMisc: (misc: Partial<Misc>) => void;
 
   webViewActions: {
     scrollToChapter?: (index: number) => void;
@@ -56,7 +58,7 @@ type Store = {
     fn: Store['webViewActions'][K]
   ) => void;
 
-  scrollToChapterAction: (chapterIndex: number) => void;
+  scrollToChapterAction: (currentChapter: number) => void;
   jumpToSearchAction: (chapter: number, occurrence: number) => void;
   clearSearchAction: () => void;
   updateTagAction: (word: string | null, noteId: string, colorCode: string) => void;
@@ -69,7 +71,7 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       currentCTree: null,
-      lastJumpTo: 0,
+      lastJumpTo: -1,
       webViewActions: {},
       settings: {
         defaultBookSettings: {
@@ -88,7 +90,7 @@ export const useBookStore = create<Store>()(
 
           set((state) => ({
             currentBook: book,
-            lastJumpTo: 0,
+            lastJumpTo: -1,
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
         } catch (e) {
@@ -112,7 +114,7 @@ export const useBookStore = create<Store>()(
 
           set((state) => ({
             currentBook: bookToOpen,
-            lastJumpTo: 0,
+            lastJumpTo: -1,
             books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
           }));
         } catch (e) {
@@ -144,6 +146,18 @@ export const useBookStore = create<Store>()(
           currentBook: null,
           books: state.books.filter((book) => book.basePath !== basePath),
         })),
+
+      setCurrentChapter: (currentChapter: number) =>
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const updatedBook = { ...state.currentBook, currentChapter };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
 
       shiftNext: () => {
         const { currentBook, books } = get();
@@ -204,11 +218,11 @@ export const useBookStore = create<Store>()(
           settings: deepMerge(state.settings, toUpdate),
         })),
 
-      updateScrollPosition: (scrollY: number) =>
+      setScrollPosition: (scrollY) =>
         set((state) => {
           if (!state.currentBook) return state;
 
-          const updatedBook = { ...state.currentBook, lastScrollPosition: scrollY };
+          const updatedBook = { ...state.currentBook, currentChapterScrollPosition: scrollY };
 
           return {
             currentBook: updatedBook,
@@ -216,31 +230,45 @@ export const useBookStore = create<Store>()(
           };
         }),
 
-      jumpToChapter: (chapterIndex: number) =>
+      updateMisc: (misc) =>
         set((state) => {
           if (!state.currentBook) return state;
 
-          const middleIndex: number = Math.floor(state.currentBook.currentChapters.length / 2);
+          const updatedBook = {
+            ...state.currentBook,
+            misc: { ...state.currentBook.misc, ...misc },
+          };
 
-          const newChaptersWindow = [chapterIndex];
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
 
-          console.log('currentChapters: ', state.currentBook.currentChapters);
+      jumpToChapter: (currentChapter: number) =>
+        set((state) => {
+          if (!state.currentBook) return state;
 
-          for (let i = 1; i <= middleIndex; i++) {
-            const prevIndex = chapterIndex - i;
-            const nextIndex = chapterIndex + i;
-            if (prevIndex >= 0) newChaptersWindow.unshift(prevIndex);
-            if (nextIndex <= state.currentBook.chapters.length) newChaptersWindow.push(nextIndex);
+          const windowSize = state.currentBook.currentChapters.length;
+          const halfWindow = Math.floor(windowSize / 2);
+
+          let start = Math.max(0, currentChapter - halfWindow);
+          let end = Math.min(state.currentBook.chapters.length, start + windowSize);
+
+          if (end - start < windowSize) {
+            start = Math.max(0, end - windowSize);
           }
 
-          console.log('newChaptersWindow: ', newChaptersWindow);
+          const newChaptersWindow = state.currentBook.chapters
+            .slice(start, end)
+            .map((chapter) => chapter.id);
 
           return {
             currentBook: {
               ...state.currentBook,
               currentChapters: newChaptersWindow,
             },
-            lastJumpTo: chapterIndex,
+            lastJumpTo: currentChapter,
           };
         }),
 
@@ -253,8 +281,8 @@ export const useBookStore = create<Store>()(
         get().webViewActions.updateFont?.(fontSize, fontFamily);
       },
 
-      scrollToChapterAction: (chapterIndex) => {
-        get().webViewActions.scrollToChapter?.(chapterIndex);
+      scrollToChapterAction: (currentChapter) => {
+        get().webViewActions.scrollToChapter?.(currentChapter);
       },
 
       jumpToSearchAction: (chapter, occurrence) => {

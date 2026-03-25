@@ -9,13 +9,15 @@ interface Props {
 }
 
 export const MenuSearch = ({ onClose }: Props) => {
-  const { searchResults, setCurrentSearchResult, setIsWebViewReady, setIsSearchOperation } = useTempStore();
-  const { currentBook, jumpToChapter } = useBookStore();
+  const { searchResults, setCurrentSearchResult, setIsWebViewReady, setIsSearchOperation, currentSearchResult } = useTempStore();
+  const { currentBook, jumpToChapter, clearSearchAction } = useBookStore();
 
   const onPress = (searchResultWithTitle: SearchResultWithTitle) => {
     const isAlreadyLoaded = (currentBook?.currentChapters || []).includes(
       searchResultWithTitle.chapterIndex
     );
+
+    clearSearchAction();
 
     if (!isAlreadyLoaded) {
       setIsWebViewReady(false);
@@ -28,7 +30,11 @@ export const MenuSearch = ({ onClose }: Props) => {
   };
 
   const renderSearchCard = ({ item }: { item: SearchResultWithTitle }) => (
-    <SearchCard searchItem={item} onPress={() => onPress(item)} />
+    <SearchCard
+      isCurrentSearch={item.id === currentSearchResult.id}
+      searchItem={item}
+      onPress={() => onPress(item)}
+    />
   );
 
   return (

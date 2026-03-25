@@ -1,27 +1,31 @@
 <script>
   window.addEventListener('load', function() {
     const config = window.BookConfig || {};
+    const targetChapterIndex = config.targetChapterIndex;
+    const currentChapterScroll = config.currentChapterScroll || 0;
 
-    const targetChapterIndex = config.targetChapterIndex
-    const scrollPosition = config.scrollPosition
-
-    var targetChapter = document.getElementById('chapter-' + targetChapterIndex);
-
-    if (targetChapter) {
-      targetChapter.scrollIntoView({ behavior: 'auto', block: 'start' });
-    } else {
-      window.scrollTo(0, parseInt(scrollPosition) || 0);
+    var targetChapter = null;
+    if(targetChapterIndex >= 0) {
+      targetChapter = document.getElementById('chapter-' + targetChapterIndex);
     }
 
-    requestAnimationFrame(function() {
-      setTimeout(function() {
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'INITIAL_LOAD_COMPLETE',
-          }));
-        }
-      }, 50);
-    });
+    if (targetChapter) {
+      window.log('scroll: jumping to chapter ' + targetChapterIndex);
+      targetChapter.scrollIntoView({ behavior: 'auto', block: 'start' });
+
+      requestAnimationFrame(() => {
+        const offset = targetChapter.offsetHeight * currentChapterScroll;
+        window.scrollBy(0, offset);
+        window.log('scroll: scrolled into chapter by ' + offset);
+      });
+    }
+
+    setTimeout(function() {
+      window.log('scroll: initial load complete');
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'INITIAL_LOAD_COMPLETE',
+      }));
+    }, 50);
   });
 
   let scrollTimeout;
@@ -46,21 +50,34 @@
 
       if (scrollY < (firstChapterHeight * 0.45)) {
         window.isFetching = true;
-        window.ReactNativeWebView.postMessage('TOP_REACHED');
+        window.log('scroll: TOP_REACHED triggered');
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TOP_REACHED' }));
       }
       if (bottomY > (documentHeight - (lastChapterHeight * 0.45))) {
         window.isFetching = true;
-        window.ReactNativeWebView.postMessage('END_REACHED');
+        window.log('scroll: END_REACHED triggered');
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_REACHED' }));
       }
 
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         if (Math.abs(scrollY - lastScrollY) > 100) {
+          let currentChapterIndex = 0;
+          for (let i = 0; i < chapters.length; i++) {
+            const rect = chapters[i].getBoundingClientRect();
+            if (rect.top <= window.innerHeight && rect.bottom > 0) {
+              currentChapterIndex = i;
+              break;
+            }
+          }
+          const rect = chapters[currentChapterIndex].getBoundingClientRect();
+          const currentChapterScrollPosition = Math.abs(Math.min(0, rect.top)) / chapters[currentChapterIndex].offsetHeight;
+
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'SCROLL_POSITION_CHANGED',
-            scrollY: scrollY,
+            currentChapter: currentChapterIndex,
+            currentChapterScrollPosition: currentChapterScrollPosition,
           }));
-          lastScrollY = scrollY;
         }
       }, 300);
 
@@ -74,7 +91,10 @@
     var target = document.getElementById(targetId);
 
     if (target) {
+      window.log('scrollToChapter: scrolling to ' + targetId);
       target.scrollIntoView({ behavior: 'instant', block: 'start' });
+    } else {
+      window.log('scrollToChapter: chapter not found ' + targetId, 'error');
     }
   };
 </script>

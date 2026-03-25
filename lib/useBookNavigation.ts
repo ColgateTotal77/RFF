@@ -4,6 +4,7 @@ import { findNodeHandle, View } from 'react-native';
 import { useBookStore } from 'stores/useBookStore';
 import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
+import { calculateBookProgress } from 'lib/utils';
 
 export const useEpubNextChapter = (
   webViewRef: RefObject<WebView | null>,
@@ -97,7 +98,10 @@ export const useEpubPrevChapter = (
 export const useJumpToNextSearchResult = () => {
   const { currentSearchResult, setCurrentSearchResult, searchResults, setIsWebViewReady, setIsSearchOperation } =
     useTempStore();
-  const { jumpToChapter, currentBook, jumpToSearchAction } = useBookStore();
+  const { jumpToChapter, currentBook, jumpToSearchAction, updateMisc, setCurrentChapter } =
+    useBookStore();
+
+  if (!currentBook) return;
 
   return () => {
     const newSearchResult = searchResults[currentSearchResult.id + 1];
@@ -115,6 +119,14 @@ export const useJumpToNextSearchResult = () => {
         jumpToSearchAction(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
       }
 
+      updateMisc({
+        percent: calculateBookProgress(
+          currentBook,
+          newSearchResult.chapterIndex,
+          0
+        ),
+      });
+      setCurrentChapter(newSearchResult.chapterIndex);
       setCurrentSearchResult(newSearchResult);
     }
   };
@@ -123,7 +135,10 @@ export const useJumpToNextSearchResult = () => {
 export const useJumpToPrevSearchResult = () => {
   const { currentSearchResult, setCurrentSearchResult, searchResults, setIsWebViewReady, setIsSearchOperation } =
     useTempStore();
-  const { jumpToChapter, currentBook, jumpToSearchAction } = useBookStore();
+  const { jumpToChapter, currentBook, jumpToSearchAction, updateMisc, setCurrentChapter } =
+    useBookStore();
+
+  if (!currentBook) return;
 
   return () => {
     const newSearchResult = searchResults[currentSearchResult.id - 1];
@@ -141,6 +156,10 @@ export const useJumpToPrevSearchResult = () => {
         jumpToSearchAction(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
       }
 
+      updateMisc({
+        percent: calculateBookProgress(currentBook, newSearchResult.chapterIndex, 0),
+      });
+      setCurrentChapter(newSearchResult.chapterIndex);
       setCurrentSearchResult(newSearchResult);
     }
   };

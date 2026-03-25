@@ -1,4 +1,10 @@
 <script>
+  window.log = (message, type = 'info') => {
+    window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
+      type: 'LOG', logType: type, message: message
+    }));
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     window.isFetching = false;
     const config = window.BookConfig || {};
@@ -8,6 +14,7 @@
 
     document.documentElement.style.setProperty('--book-font-family', currentFont);
     document.documentElement.style.setProperty('--book-font-size', `${currentFontSize}px`);
+    window.log('DOMContentLoaded: font=' + currentFont + ', size=' + currentFontSize + 'px');
   });
 
   document.addEventListener('contextmenu', (event) => {
@@ -15,9 +22,11 @@
   });
 
   window.setFontSize = (size) => {
+    window.log('setFontSize: ' + size);
     document.body.style.fontSize = size + 'px';
   };
   window.setFontFamily = (family) => {
+    window.log('setFontFamily: ' + family);
     document.body.style.fontFamily = family;
   };
 
@@ -50,6 +59,8 @@
           noteId = highlightedElement.getAttribute('data-note-id');
           colorCode = highlightedElement.getAttribute('data-flag');
         }
+
+        window.log('TEXT_SELECTED: "' + selectedText.substring(0, 20) + (selectedText.length > 20 ? '...' : '') + '"');
 
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'TEXT_SELECTED',
@@ -98,7 +109,6 @@
     }
 
     if (!selectedText) return;
-
       if (tapTimer) {
         clearTimeout(tapTimer);
       }
@@ -110,7 +120,9 @@
         lastTapText = selectedText;
       }
 
-      if (tapCount === 1) {
+    window.log('TAP: word="' + selectedText + '", count=' + tapCount);
+
+    if (tapCount === 1) {
         tapTimer = setTimeout(() => {
           if (tapCount === 1) {
           }

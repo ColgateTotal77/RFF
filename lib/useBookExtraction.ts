@@ -27,29 +27,6 @@ export const extractEpub = async (uri: string | null) => {
     }
 };
 
-const MAX_BOOK_SIZE_MB = 50;
-
-const validateFullBookLoad = async (chapters: Chapter[]): Promise<number[]> => {
-  let totalSize = 0;
-  const indices: number[] = [];
-
-  for (const chapter of chapters) {
-    try {
-      const file = new File('file://' + chapter.fullPath);
-      const info =  file.info();
-      totalSize += info.size || 0;
-    } catch(e) {
-      console.error(e)
-      return indices.length > 2 ? indices : [1, 2];
-    }
-
-    if (totalSize > MAX_BOOK_SIZE_MB * 1024 * 1024) return indices.length > 2 ? indices : [1, 2];
-    indices.push(chapter.id);
-  }
-
-  return indices;
-};
-
 export const parseManifest = async (unzippedPath: string): Promise<Book> => {
   try {
     const containerFile = new File(unzippedPath, 'META-INF', 'container.xml');
@@ -89,21 +66,55 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
       manifestMap[item['@_id']] = item['@_href'];
     });
 
-    const chapters: Chapter[] = spineItems
-      .map((spineItem: any, index: number) => {
-        const id = spineItem['@_idref'];
-        const href = manifestMap[id];
+    let totalSize = 0;
+    let currentChapters: number[] = [];
+    let totalCharCount = 0;
+    const MAX_BOOK_SIZE_MB = 50;
 
-        if (!href) return null;
-        console.log('fullPath: ', `${absoluteBasePath}/${href}`);
-        return {
-          id: index,
-          href,
-          fullPath: `${absoluteBasePath}/${href}`,
-          title: `Chapter`,
-        };
-      })
-      .filter((c): c is Chapter => c !== null);
+    const chapters: Chapter[] = (
+      await Promise.all(
+        spineItems.map(async (spineItem: any, index: number) => {
+          const id = spineItem['@_idref'];
+          const href = manifestMap[id];
+
+          let charCount = 0;
+          if (totalSize !== -1) {
+            try {
+              const file = new File(`file://${absoluteBasePath}/${href}`);
+              const info = file.info();
+              totalSize += info.size || 0;
+              const html = await file.text();
+              const text = html
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+              charCount = text.length;
+              totalCharCount += charCount;
+            } catch (e) {
+              console.error(e);
+              totalSize = -1;
+              currentChapters = currentChapters.length > 2 ? currentChapters : [1, 2];
+            }
+            if (totalSize > MAX_BOOK_SIZE_MB * 1024 * 1024) {
+              currentChapters = currentChapters.length > 2 ? currentChapters : [1, 2];
+              totalSize = -1;
+            }
+            currentChapters.push(index);
+          }
+
+          if (!href) return null;
+          return {
+            id: index,
+            href,
+            fullPath: `${absoluteBasePath}/${href}`,
+            title: `Chapter`,
+            charCount,
+          };
+        })
+      )
+    ).filter((c): c is Chapter => c !== null);
 
     const tocId = packageData.spine['@_toc'];
 
@@ -149,14 +160,24 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
       }
     }
 
+    const charOffsets = chapters.map((_, i) =>
+      chapters.slice(0, i).reduce((sum, ch) => sum + ch.charCount, 0)
+    );
+
     return {
       title: String(title),
       cover: coverPath,
-      chapters,
       basePath: 'file://' + absoluteBasePath,
-      currentChapters: await validateFullBookLoad(chapters),
-      lastScrollPosition: 0,
+      currentChapterScrollPosition: 0,
       settings: {},
+      chapters,
+      currentChapters,
+      currentChapter: 0,
+      misc: {
+        charOffsets,
+        percent: 0,
+        totalCharCount,
+      },
     };
   } catch (error) {
     console.error('Error parsing manifest:', error);

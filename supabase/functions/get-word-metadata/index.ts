@@ -38,8 +38,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (formMappingError) {
-    console.error('Database error:', formMappingError);
-    return new Response(JSON.stringify({}), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ debug_error: formMappingError }), { status: 400, headers: corsHeaders });
   }
 
   const lemma = formMapping ? formMapping.lemma : inputWord;
@@ -53,8 +52,10 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (cachedWordError) {
-    console.error('Database error:', cachedWordError);
-    return new Response(JSON.stringify({}), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ debug_error: cachedWordError }), {
+      status: 400,
+      headers: corsHeaders,
+    });
   }
 
   if (cachedWord) return new Response(JSON.stringify(cachedWord), { headers: corsHeaders });

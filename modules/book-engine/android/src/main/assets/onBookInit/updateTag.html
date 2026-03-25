@@ -1,5 +1,6 @@
 <script>
-  window.highlightWord = function(word, noteId, colorCode) {
+  window.updateTag = function(word, noteId, colorCode) {
+    window.log('updateTag: started for "' + (word || noteId) + '"');
 
     if (!word) {
       const existingSpans = document.querySelectorAll('span.anki-word[data-note-id="' + noteId + '"]');
@@ -35,6 +36,10 @@
       }
     }
 
+    const nodesToProcess = textNodes.length;
+    if (nodesToProcess > 0) window.log('updateTag: processing ' + nodesToProcess + ' nodes');
+    else window.log('updateTag: no nodes to process', 'error');
+
     textNodes.forEach(function(textNode) {
       const safeText = textNode.nodeValue
         .replace(/&/g, '&​amp;')
@@ -53,5 +58,6 @@
         wrapper.outerHTML = wrapper.innerHTML;
       }
     });
+    window.log('updateTag: completed');
   };
 </script>

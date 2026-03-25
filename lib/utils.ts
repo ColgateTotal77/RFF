@@ -1,3 +1,5 @@
+import { Book } from 'types';
+
 export const ensureArray = (item: any) => {
   if (!item) return [];
   return Array.isArray(item) ? item : [item];
@@ -15,4 +17,15 @@ export const deepMerge = (target: any, source: any): any => {
   }
 
   return result;
+};
+
+export const calculateBookProgress = (
+  currentBook: Book,
+  currentChapter: number,
+  currentChapterScrollPosition: number
+) => {
+  const charOffset = currentBook.misc.charOffsets[currentChapter];
+  const charsIntoChapter =
+    currentBook.chapters[currentChapter].charCount * currentChapterScrollPosition;
+  return (charOffset + charsIntoChapter) / currentBook.misc.totalCharCount;
 };

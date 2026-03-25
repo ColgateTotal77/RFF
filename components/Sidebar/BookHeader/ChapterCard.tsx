@@ -6,11 +6,13 @@ import React from 'react';
 interface Props {
   chapter: Chapter;
   onPress: () => void;
+  isCurrentChapter: boolean;
 }
 
-export const ChapterCard = ({ chapter, onPress }: Props) => {
+
+export const ChapterCard = ({ chapter, onPress, isCurrentChapter }: Props) => {
   return (
-    <Card onPress={onPress}>
+    <Card style={isCurrentChapter ? { backgroundColor: '#1e40af' } : undefined} onPress={onPress}>
       <View className="flex justify-between p-4">
         <Text>{chapter.title}</Text>
       </View>
