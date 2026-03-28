@@ -5,7 +5,11 @@ import { Chapter } from 'types';
 import { calculateBookProgress } from 'lib/utils';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
-  const { currentBook, jumpToChapter, scrollToChapterAction, updateMisc, setCurrentChapter } = useBookStore();
+  const currentBook = useBookStore((state) => state.currentBook);
+  const jumpToChapter = useBookStore((state) => state.jumpToChapter);
+  const scrollToChapterAction = useBookStore((state) => state.scrollToChapterAction);
+  const updateMisc = useBookStore((state) => state.updateMisc);
+  const setCurrentChapter = useBookStore((state) => state.setCurrentChapter);
 
   const onPress = (chapter: Chapter) => {
     if (!currentBook) return;

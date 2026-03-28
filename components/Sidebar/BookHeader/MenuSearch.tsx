@@ -9,8 +9,15 @@ interface Props {
 }
 
 export const MenuSearch = ({ onClose }: Props) => {
-  const { searchResults, setCurrentSearchResult, setIsWebViewReady, setIsSearchOperation, currentSearchResult } = useTempStore();
-  const { currentBook, jumpToChapter, clearSearchAction } = useBookStore();
+  const searchResults = useTempStore((state) => state.searchResults);
+  const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
+  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
+  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
+  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+
+  const currentBook = useBookStore((state) => state.currentBook);
+  const jumpToChapter = useBookStore((state) => state.jumpToChapter);
+  const clearSearchAction = useBookStore((state) => state.clearSearchAction);
 
   const onPress = (searchResultWithTitle: SearchResultWithTitle) => {
     const isAlreadyLoaded = (currentBook?.currentChapters || []).includes(

@@ -23,3 +23,21 @@ interface WordFormDao {
 abstract class AppDatabase : RoomDatabase() {
     abstract fun wordFormDao(): WordFormDao
 }
+
+@Entity(tableName = "words")
+data class WordFreqEntity(
+    @PrimaryKey val word: String,
+    val freq_count: Int?,
+    val zipf: Double?
+)
+
+@Dao
+interface WordFreqDao {
+    @Query("SELECT zipf FROM words WHERE word = :word")
+    suspend fun getZipf(word: String): Double?
+}
+
+@Database(entities = [WordFreqEntity::class], version = 1)
+abstract class FreqDatabase : RoomDatabase() {
+    abstract fun wordFreqDao(): WordFreqDao
+}

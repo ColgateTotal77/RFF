@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.room.Room
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.storage.Storage
 
 object AppDependencies {
     @Volatile
@@ -20,6 +21,7 @@ object AppDependencies {
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
         ) {
             install(Postgrest)
+            install(Storage)
         }
     }
 
@@ -35,5 +37,9 @@ object AppDependencies {
             databaseInstance = instance
             instance
         }
+    }
+
+    fun getFrequencyDatabase(context: Context): FrequencyDatabase {
+        return FrequencyDatabase(context, supabaseClient)
     }
 }

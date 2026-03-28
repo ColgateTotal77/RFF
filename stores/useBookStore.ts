@@ -49,7 +49,7 @@ type Store = {
     jumpToSearch?: (chapter: number, occurrence: number) => void;
     highlightAll?: (query: string, chapters: number[]) => void;
     clearSearch?: () => void;
-    updateTag?: (word: string | null, noteId: string, colorCode: string) => void;
+    updateTag?: (word: string | string[] | null, noteId: string, colorCode: string) => void;
     updateFont?: (fontSize?: number, fontFamily?: string) => void;
   };
 
@@ -61,7 +61,7 @@ type Store = {
   scrollToChapterAction: (currentChapter: number) => void;
   jumpToSearchAction: (chapter: number, occurrence: number) => void;
   clearSearchAction: () => void;
-  updateTagAction: (word: string | null, noteId: string, colorCode: string) => void;
+  updateTagAction: (words: string | string[] | null, noteId: string, colorCode: string) => void;
   updateFontAction: (fontSize?: number, fontFamily?: string) => void;
 };
 
@@ -293,8 +293,8 @@ export const useBookStore = create<Store>()(
         get().webViewActions.clearSearch?.();
       },
 
-      updateTagAction: (word, noteId, colorCode) => {
-        get().webViewActions.updateTag?.(word, noteId, colorCode);
+      updateTagAction: (words, noteId, colorCode) => {
+        get().webViewActions.updateTag?.(words, noteId, colorCode);
       },
     }),
     {

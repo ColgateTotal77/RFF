@@ -1,5 +1,6 @@
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { Database } from '../../types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (formMappingError) {
-    return new Response(JSON.stringify({ debug_error: formMappingError }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: formMappingError }), { status: 400, headers: corsHeaders });
   }
 
   const lemma = formMapping ? formMapping.lemma : inputWord;
@@ -52,13 +53,30 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (cachedWordError) {
-    return new Response(JSON.stringify({ debug_error: cachedWordError }), {
+    return new Response(JSON.stringify({ error: cachedWordError }), {
       status: 400,
       headers: corsHeaders,
     });
   }
 
-  if (cachedWord) return new Response(JSON.stringify(cachedWord), { headers: corsHeaders });
+  if (cachedWord) {
+    const { data: wordForms } = await supabase
+      .from('word_forms')
+      .select('input_word')
+      .eq('lemma', cachedWord.name)
+      .eq('word_lang_code', word_lang_code);
+
+    const response = {
+      ...cachedWord,
+      wordForms: [
+        cachedWord.name,
+        ...(wordForms
+          ?.map((w: WordForm) => w.input_word)
+          .filter((w: WordForm) => w !== cachedWord.name) || []),
+      ],
+    };
+    return new Response(JSON.stringify(response), { headers: corsHeaders });
+  }
 
   let aiResponse: AiResponse;
   try {
@@ -89,7 +107,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({}), { headers: corsHeaders });
     }
   } catch (error) {
-    console.error('Error in AI processing:', error);
     return new Response(JSON.stringify({ error: 'Failed to process word' }), {
       status: 500,
       headers: corsHeaders,
@@ -128,11 +145,36 @@ Deno.serve(async (req) => {
     .single();
 
   if (upsertError) {
-    console.error('Database error:', upsertError);
-    return new Response(JSON.stringify({}), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: upsertError }), {
+      status: 400,
+      headers: corsHeaders,
+    });
   }
 
-  return new Response(JSON.stringify(newWord), { headers: corsHeaders });
+  const { data: wordForms, error: wordFormsError } = await supabase
+    .from('word_forms')
+    .select('input_word')
+    .eq('lemma', newWord.name)
+    .eq('word_lang_code', word_lang_code);
+
+  if (wordFormsError) {
+    return new Response(JSON.stringify({ error: wordFormsError }), {
+      status: 400,
+      headers: corsHeaders,
+    });
+  }
+
+  type WordForm = Database['public']['Tables']['word_forms']['Row'];
+
+  const response = {
+    ...newWord,
+    wordForms: [
+      newWord.name,
+      ...wordForms.map((w: WordForm) => w.input_word).filter((w: WordForm) => w !== newWord.name),
+    ],
+  };
+
+  return new Response(JSON.stringify(response), { headers: corsHeaders });
 });
 
 const prompt = (

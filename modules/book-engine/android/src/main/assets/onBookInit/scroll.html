@@ -11,7 +11,7 @@
 
     if (targetChapter) {
       window.log('scroll: jumping to chapter ' + targetChapterIndex);
-      targetChapter.scrollIntoView({ behavior: 'auto', block: 'start' });
+      targetChapter.scrollIntoView({ behavior: 'instant', block: 'start' });
 
       requestAnimationFrame(() => {
         const offset = targetChapter.offsetHeight * currentChapterScroll;
@@ -21,11 +21,11 @@
     }
 
     setTimeout(function() {
-      window.log('scroll: initial load complete');
       window.ReactNativeWebView.postMessage(JSON.stringify({
         type: 'INITIAL_LOAD_COMPLETE',
       }));
-    }, 50);
+      window.log('scroll: initial load complete');
+    }, 0);
   });
 
   let scrollTimeout;

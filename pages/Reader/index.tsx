@@ -11,25 +11,23 @@ import { useWordAction } from 'hooks/useWordAction';
 import { calculateBookProgress } from 'lib/utils';
 
 export const ReaderScreen = () => {
-  const {
-    currentBook,
-    settings,
-    setScrollPosition,
-    setCurrentChapter,
-    closeBook,
-    lastJumpTo,
-    registerWebViewAction,
-    updateMisc
-  } = useBookStore();
-  const {
-    currentSearchResult,
-    resetSearch,
-    isWebViewReady,
-    setIsWebViewReady,
-    searchQuery,
-    isSearchOperation,
-    setIsSearchOperation,
-  } = useTempStore();
+  const currentBook = useBookStore((state) => state.currentBook);
+  const settings = useBookStore((state) => state.settings);
+  const setScrollPosition = useBookStore((state) => state.setScrollPosition);
+  const setCurrentChapter = useBookStore((state) => state.setCurrentChapter);
+  const closeBook = useBookStore((state) => state.closeBook);
+  const lastJumpTo = useBookStore((state) => state.lastJumpTo);
+  const registerWebViewAction = useBookStore((state) => state.registerWebViewAction);
+  const updateMisc = useBookStore((state) => state.updateMisc);
+
+  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+  const resetSearch = useTempStore((state) => state.resetSearch);
+  const isWebViewReady = useTempStore((state) => state.isWebViewReady);
+  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
+  const searchQuery = useTempStore((state) => state.searchQuery);
+  const isSearchOperation = useTempStore((state) => state.isSearchOperation);
+  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
+
   const font = currentBook?.settings?.font || settings.defaultBookSettings.font;
   const { addNewCard, updateWordTag, openSystemTranslator } = useWordAction();
 
@@ -70,9 +68,6 @@ export const ReaderScreen = () => {
         const { currentChapters, chapters } = currentBook;
         const paths = currentChapters.map((index) => chapters[index].fullPath);
 
-        console.log('lastJumpTo: ', lastJumpTo);
-        console.log('currentBook.currentChapter: ', currentBook.currentChapter);
-
         const generatedFileUrl = await BookEngine.loadInitialHtml(paths, currentChapters, {
           targetChapterIndex: lastJumpTo > -1 ? lastJumpTo : currentBook.currentChapter,
           currentChapterScroll: currentBook.currentChapterScrollPosition || 0,
@@ -107,15 +102,15 @@ export const ReaderScreen = () => {
     webViewRef.current?.injectJavaScript(script);
   }, []);
 
-  const onUpdateTag = useCallback((word: string | null, noteId: string, colorCode: string) => {
-    const script = `window.updateTag(${JSON.stringify(word)}, ${noteId}, ${colorCode}); true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
+  const onUpdateTag = useCallback(
+    (words: string | string[] | null, noteId: string, colorCode: string) => {
+      const script = `window.updateTag(${JSON.stringify(words)}, ${noteId}, ${colorCode}); true;`;
+      webViewRef.current?.injectJavaScript(script);
+    },
+    []
+  );
 
   const onJumpToSearch = useCallback((chapterIndex: number, occurrenceIndex: number) => {
-    console.log('chapterIndex', chapterIndex);
-    console.log('occurrenceIndex', occurrenceIndex);
-
     const script = `window.jumpToSearch(${chapterIndex}, ${occurrenceIndex}); true;`;
     webViewRef.current?.injectJavaScript(script);
   }, []);
@@ -173,7 +168,6 @@ export const ReaderScreen = () => {
           break;
 
         case 'SCROLL_POSITION_CHANGED':
-          console.log('SCROLL_POSITION_CHANGED', parsedData);
           if (!currentBook) return;
 
           const percent = calculateBookProgress(currentBook, parsedData.currentChapter, parsedData.currentChapterScrollPosition);
@@ -199,12 +193,11 @@ export const ReaderScreen = () => {
           break;
 
         case 'DOUBLE_TAP':
-          await openSystemTranslator(parsedData.text);
+          await openSystemTranslator(parsedData.text.replace(/[^\w\s]|_/g, ''));
           closeMenu();
           break;
 
         case 'TRIPLE_TAP':
-          console.log("parsedData: ", JSON.stringify(parsedData, null, 2))
           if(parsedData.noteId) {
             updateWordTag({ noteId: parsedData.noteId, colorCode: parsedData.colorCode || 0});
           } else {

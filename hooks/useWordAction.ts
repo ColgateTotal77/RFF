@@ -15,13 +15,15 @@ export const useWordAction = () => {
     const deckId = currentBook?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
     const modelId = currentBook?.settings?.ankiModelId || settings.defaultBookSettings.ankiModelId;
 
+    const cleanedText = text.replace(/[^\w\s]|_/g, '');
+
     try {
       if (!modelId || !deckId) {
         console.error('Missing Anki configuration');
         return;
       }
 
-      const metadata = await fetchWordMetadata(text, 'en', 'ru');
+      const metadata = await fetchWordMetadata(cleanedText, 'en', 'ru');
 
       const ankiFields = [
         '',
@@ -30,14 +32,29 @@ export const useWordAction = () => {
         '',
         metadata?.translation || '',
         '',
-        formatExamples(metadata.examples),
+        formatExamples(metadata?.examples ?? []),
       ];
+      const tier = await BookEngine.getWordFrequencyTier(metadata?.name);
 
-      const noteId = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1']);
+      const noteId = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1', tier]);
 
       if (noteId) {
         console.log('Note created successfully:', noteId, typeof noteId);
-        updateTagAction(text, noteId, '1');
+        console.log('Tier:', tier);
+
+        updateTagAction(metadata?.wordForms || cleanedText, noteId, '1');
+
+        const mirroredCard = [
+          '',
+          metadata?.translation || '',
+          '',
+          '',
+          metadata?.name || '',
+          '',
+          formatExamples(metadata?.examples ?? []),
+        ];
+
+        Anki.addNote(modelId, deckId, mirroredCard, ['Lookups_1', tier]);
       } else {
         console.error('Failed to create Anki note');
       }

@@ -20,6 +20,7 @@ import com.reader.bookengine.database.AppDatabase
 import com.reader.bookengine.database.AppDependencies
 import com.reader.bookengine.database.syncWordFormsFromSupabase
 import com.reader.bookengine.database.WordFormEntity
+import com.reader.bookengine.database.FrequencyDatabase
 
 class BookEngineModule : Module() {
     companion object {
@@ -28,6 +29,7 @@ class BookEngineModule : Module() {
         }
     }
     private val ankiModule = AnkiModule()
+    private var freqDatabase: FrequencyDatabase? = null
 
     suspend fun loadAnkiDictionary(
         langCode: String,
@@ -110,6 +112,11 @@ class BookEngineModule : Module() {
 
             val t3 = System.currentTimeMillis()
             android.util.Log.d("BookEngine", "Load Anki Dictionary in C tree took: ${t3 - t2} ms")
+
+            freqDatabase = AppDependencies.getFrequencyDatabase(context)
+            freqDatabase?.ensureDownloaded(langCode)
+            freqDatabase?.open(langCode)
+            ankiModule.setFrequencyDatabase(freqDatabase)
 
             return true
         } catch (e: Exception) {
@@ -213,6 +220,12 @@ class BookEngineModule : Module() {
                     android.util.Log.e("BookEngine", "Failed to open any translator", e2)
                     throw Exception("No translation app is installed.")
                 }
+            }
+        }
+
+        AsyncFunction("getWordFrequencyTier") { word: String ->
+            runBlocking {
+                freqDatabase?.getFrequencyTier(word) ?: "Top_20000+"
             }
         }
 

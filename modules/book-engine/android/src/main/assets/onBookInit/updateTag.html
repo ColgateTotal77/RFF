@@ -1,8 +1,10 @@
 <script>
-  window.updateTag = function(word, noteId, colorCode) {
-    window.log('updateTag: started for "' + (word || noteId) + '"');
+  window.updateTag = function(words, noteId, colorCode) {
+    const wordArray = Array.isArray(words) ? words : [words];
 
-    if (!word) {
+    window.log('updateTag: started for "' + (wordArray.join(', ') || noteId) + '"');
+
+    if (!words || (Array.isArray(words) && words.length === 0)) {
       const existingSpans = document.querySelectorAll('span.anki-word[data-note-id="' + noteId + '"]');
       existingSpans.forEach(function(span) {
         span.setAttribute('data-flag', colorCode);
@@ -10,16 +12,22 @@
       return;
     }
 
-    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const targetWord = word.toLowerCase();
-    const regex = new RegExp('\\b(' + escapedWord + ')\\b', 'gi');
-
+    const targetWords = new Set(wordArray.map(w => w.toLowerCase().trim()).filter(w => w));
     const existingSpans = document.querySelectorAll('span.anki-word');
     existingSpans.forEach(function(span) {
-      if (span.textContent.trim().toLowerCase() === targetWord) {
+      const spanText = span.textContent.trim().toLowerCase();
+      if (targetWords.has(spanText)) {
         span.setAttribute('data-flag', colorCode);
       }
     });
+
+    const escapedWords = wordArray
+      .filter(w => w && w.trim())
+      .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+    if (escapedWords.length === 0) return;
+
+    const combinedRegex = new RegExp('\\b(' + escapedWords.join('|') + ')\\b', 'gi');
 
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     const textNodes = [];
@@ -37,7 +45,7 @@
     }
 
     const nodesToProcess = textNodes.length;
-    if (nodesToProcess > 0) window.log('updateTag: processing ' + nodesToProcess + ' nodes');
+    if (nodesToProcess > 0) window.log('updateTag: processing ' + nodesToProcess + ' nodes for ' + escapedWords.length + ' words');
     else window.log('updateTag: no nodes to process', 'error');
 
     textNodes.forEach(function(textNode) {
@@ -46,7 +54,7 @@
         .replace(/</g, '&​lt;')
         .replace(/>/g, '&​gt;');
 
-      const newHtml = safeText.replace(regex, function(match) {
+      const newHtml = safeText.replace(combinedRegex, function(match) {
         return '<span class="anki-word" data-note-id="' + noteId + '" data-flag="' + colorCode + '">' + match + '</span>';
       });
 

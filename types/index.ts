@@ -30,7 +30,16 @@ export interface Book {
   currentChapterScrollPosition: number;
   settings: BookSettings;
   misc: Misc;
+  // bookmarks: Bookmark[];
 }
+
+export interface Bookmark {
+  id: string;
+  chapterIndex: number;
+  scrollPosition: number;
+  createdAt: number;
+}
+
 
 export interface Misc {
   charOffsets: number[];
