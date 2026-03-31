@@ -31,12 +31,13 @@
   };
 
 
-  let selectionTimeout;
+  let selectionRafId = null;
   let lastSelectionText = '';
   document.addEventListener('selectionchange', () => {
-    clearTimeout(selectionTimeout);
+    if (selectionRafId) cancelAnimationFrame(selectionRafId);
 
-    selectionTimeout = setTimeout(() => {
+    selectionRafId = requestAnimationFrame(() => {
+      selectionRafId = null;
       const selection = window.getSelection();
       const selectedText = selection.toString().trim();
 
@@ -46,6 +47,9 @@
       if (selectedText.length > 0) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const menuX = rect.left + rect.width;
+        const menuY = rect.top - 60;
         const commonAncestor = range.commonAncestorContainer;
 
         let noteId = null;
@@ -60,23 +64,23 @@
           colorCode = highlightedElement.getAttribute('data-flag');
         }
 
-        window.log('TEXT_SELECTED: "' + selectedText.substring(0, 20) + (selectedText.length > 20 ? '...' : '') + '"');
-
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'TEXT_SELECTED',
           text: selectedText,
-          top: rect.top,
-          left: rect.left + (rect.width / 2),
+          top: menuY,
+          left: menuX,
           noteId: noteId ? noteId : null,
           colorCode: colorCode ? colorCode : null
         }));
+
+        window.log('TEXT_SELECTED: "' + selectedText.substring(0, 20) + (selectedText.length > 20 ? '...' : '') + '"');
       } else {
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'SELECTION_CLEARED'
         }));
         lastSelectionText = '';
       }
-    }, 50);
+    });
   });
 
   let tapCount = 0;

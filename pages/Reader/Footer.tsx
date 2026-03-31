@@ -9,7 +9,8 @@ export const Footer = () => {
   const { currentSearchResult, resetSearch } = useTempStore();
   const { percent = 0, charOffsets = [], totalCharCount = 1 } = currentBook?.misc ?? {};
 
-  const progressPercent = Math.round(percent * 100);
+  const bookProgress = Math.round(percent * 100);
+  const chapterProgress = Math.round((currentBook?.currentChapterScrollPosition || 0) * 100);
 
   const chapterMarkers = currentBook?.chapters?.map((_, index) => {
     const offset = charOffsets[index];
@@ -31,7 +32,7 @@ export const Footer = () => {
 
           <TouchableOpacity
             onPress={() => {
-              clearSearchAction()
+              clearSearchAction();
               resetSearch();
             }}
             className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-red-500 shadow-md">
@@ -45,24 +46,29 @@ export const Footer = () => {
           </TouchableOpacity>
         </View>
       ) : (
-        <View className="mb-4 flex w-[280px] flex-col items-center bg-gray-200">
-          <View className="relative h-6 w-full justify-center">
-            <View className="absolute h-0.5 w-full bg-gray-400" />
+        <View className="mb-4 bg-gray-200 p-2">
+          <View className="flex w-[280px] flex-col items-center">
+            <View className="relative h-6 w-full justify-center">
+              <View className="absolute h-0.5 w-full bg-gray-400" />
 
-            {chapterMarkers.map((position, index) => (
+              {chapterMarkers.map((position, index) => (
+                <View
+                  key={index}
+                  className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 bg-gray-500"
+                  style={{ left: `${position}%` }}
+                />
+              ))}
+
               <View
-                key={index}
-                className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2 bg-gray-500"
-                style={{ left: `${position}%` }}
+                className="absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500"
+                style={{ left: `${bookProgress}%` }}
               />
-            ))}
-
-            <View
-              className="absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500"
-              style={{ left: `${progressPercent}%` }}
-            />
+            </View>
+            <View className="mt-1 flex w-full flex-row justify-between">
+              <Text className="text-xs text-gray-500">Book {bookProgress}%</Text>
+              <Text className="text-xs text-gray-500">Chapter {chapterProgress}%</Text>
+            </View>
           </View>
-          <Text className="mt-1 text-xs text-gray-500">{progressPercent}%</Text>
         </View>
       )}
     </View>
