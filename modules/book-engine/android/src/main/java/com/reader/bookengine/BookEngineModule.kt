@@ -194,7 +194,8 @@ class BookEngineModule : Module() {
         }
 
         AsyncFunction("openSystemTranslator") { text: String ->
-            val activity = appContext.currentActivity ?: throw Exception("No current activity found")
+            val activity = appContext.activityProvider?.currentActivity
+                ?: throw Exception("No current activity found")
 
             val translateIntent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
                 putExtra(Intent.EXTRA_PROCESS_TEXT, text)

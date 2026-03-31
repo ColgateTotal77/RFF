@@ -2,11 +2,11 @@ import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Sidebar } from 'components/Sidebar';
 import { NavigationContainer } from '@react-navigation/native';
-
-import './global.css';
-import BookEngineModule from 'modules/book-engine/src/BookEngineModule';
+import { BookEngine } from 'modules/book-engine';
 import { useEffect } from 'react';
 import { useBookStore } from 'stores/useBookStore';
+
+import './global.css';
 
 function AppContent() {
   return <Sidebar />;
@@ -22,7 +22,7 @@ export default function App() {
         console.log("Starting background dictionary sync...");
         if(!deckId) return;
         setCurrentCTree({langCode: 'en', deckId});
-        BookEngineModule.onAppInit('en', deckId);
+        BookEngine.onAppInit('en', deckId);
       } catch (error) {
         console.error("Failed to sync dictionary:", error);
       }

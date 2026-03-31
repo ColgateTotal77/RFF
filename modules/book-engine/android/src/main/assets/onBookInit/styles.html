@@ -10,10 +10,11 @@
     padding: 20px !important;
     margin: 0 !important;
     text-align: justify !important;
+    text-align-last: left !important;
     hyphens: auto !important;
-    word-break: break-word !important;
     overflow-x: hidden !important;
-    -webkit-touch-callout: none !important;
+    touch-action: pan-y !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   body div, body p, body section, body article, body span {
@@ -25,15 +26,10 @@
     box-sizing: border-box !important;
   }
 
-  body p {
-    margin-top: 1em !important;
-    margin-bottom: 1em !important;
-  }
-
   div[id^="chapter-"] {
     contain: layout style paint;
     content-visibility: auto;
-    contain-intrinsic-size: 0 100vh;
+    contain-intrinsic-size: auto 100vh;
     min-height: 100vh;
   }
 
@@ -41,11 +37,13 @@
     background: rgba(100, 150, 255, 0.4);
   }
 
-  .anki-word {
+  .anki-word[data-flag]:not([data-flag="0"]) {
     position: relative;
+    display: inline-block;
+    will-change: transform;
   }
 
-  .anki-word::after {
+  .anki-word[data-flag]:not([data-flag="0"])::after {
     content: '';
     position: absolute;
     top: -3px;
@@ -53,11 +51,6 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    display: none;
-  }
-
-  .anki-word:not([data-flag="0"])::after {
-    display: block;
   }
 
   .anki-word[data-flag="1"]::after { background-color: #ff5252; }
