@@ -1,39 +1,44 @@
-import { useBookStore } from 'stores/useBookStore';
+import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
 import { ChapterCard } from 'components/Sidebar/BookHeader/ChapterCard';
 import { Chapter } from 'types';
 import { calculateBookProgress } from 'lib/utils';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
-  const currentBook = useBookStore((state) => state.currentBook);
-  const jumpToChapter = useBookStore((state) => state.jumpToChapter);
-  const scrollToChapterAction = useBookStore((state) => state.scrollToChapterAction);
+  const currentBook = useCurrentBook();
+  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
+  const scrollToBlockAction = useBookStore((state) => state.scrollToBlockAction);
   const updateMisc = useBookStore((state) => state.updateMisc);
-  const setCurrentChapter = useBookStore((state) => state.setCurrentChapter);
 
   const onPress = (chapter: Chapter) => {
-    if (!currentBook) return;
+    const firstBlockId = chapter.blockIds[0];
+    if (!firstBlockId && firstBlockId !== 0) return;
 
-    if (currentBook.currentChapters.find((c) => c === chapter.id)) {
-      scrollToChapterAction(chapter.id);
+    if (currentBook.currentBlocks.find((b) => b === firstBlockId)) {
+      scrollToBlockAction(firstBlockId);
     } else {
-      jumpToChapter(chapter.id);
+      jumpToBlock(firstBlockId);
     }
 
     updateMisc({
       percent: calculateBookProgress(currentBook, chapter.id, 0),
     });
-    setCurrentChapter(chapter.id);
     onClose();
   };
 
   const renderChapter = ({ item }: { item: Chapter }) => {
-    return <ChapterCard isCurrentChapter={currentBook?.currentChapter === item.id} chapter={item} onPress={() => onPress(item)} />;
+    return (
+      <ChapterCard
+        isCurrentChapter={item.blockIds.includes(currentBook.currentBlock)}
+        chapter={item}
+        onPress={() => onPress(item)}
+      />
+    );
   };
 
   return (
     <FlatList
-      data={currentBook?.chapters}
+      data={currentBook.chapters}
       keyExtractor={(chapter) => chapter.id.toString()}
       renderItem={renderChapter}
       contentContainerClassName="p-4 gap-4"

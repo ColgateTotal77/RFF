@@ -1,27 +1,21 @@
 import { Button, Surface } from 'react-native-paper';
 import { View } from 'react-native';
 import React from 'react';
-import { useWordAction } from 'hooks/useWordAction';
+import { useWordAction } from 'lib/useWordAction';
+import { useTempStore } from 'stores/useTempStore';
+import { type SelectionMenu as SelectedMenu } from 'types';
 
-export type SelectedMenu = {
-  visible: boolean;
-  text: string;
-  top: number;
-  left: number;
-  noteId?: string;
-  colorCode?: string;
-};
 interface Props {
   selectionMenu: SelectedMenu;
-  closeMenu: () => void;
 }
 
-export const SelectionMenu = ({ selectionMenu, closeMenu }: Props) => {
+export const SelectionMenu = ({ selectionMenu }: Props) => {
   const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator } = useWordAction();
+  const closeMenu = useTempStore((state) => state.closeSelectionMenu);
 
   const onUpdateTagPress = () => {
     updateWordTag({
-      noteId: selectionMenu.noteId!,
+      noteIds: selectionMenu.noteIds!,
       colorCode: selectionMenu.colorCode!,
     });
     closeMenu();
@@ -66,7 +60,7 @@ export const SelectionMenu = ({ selectionMenu, closeMenu }: Props) => {
       </Button>
 
       <View className="mx-1 h-6 w-[1px] bg-gray-500" />
-      {selectionMenu.noteId ? (
+      {selectionMenu.noteIds ? (
         <Button
           mode="text"
           textColor="white"

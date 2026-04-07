@@ -1,11 +1,11 @@
 <script>
-  window.updateTag = function(words, noteId, colorCode) {
+  window.updateTag = function(words, noteIdsString, colorCode) {
     const wordArray = Array.isArray(words) ? words : [words];
 
-    window.log('updateTag: started for "' + (wordArray.join(', ') || noteId) + '"');
+    window.log('updateTag: started for "' + (wordArray.join(', ') || noteIdsString) + '"');
 
     if (!words || (Array.isArray(words) && words.length === 0)) {
-      const existingSpans = document.querySelectorAll('span.anki-word[data-note-id="' + noteId + '"]');
+      const existingSpans = document.querySelectorAll(`span.anki-word[data-note-ids='${noteIdsString}']`);
       existingSpans.forEach(function(span) {
         span.setAttribute('data-flag', colorCode);
       });
@@ -55,7 +55,7 @@
         .replace(/>/g, '&​gt;');
 
       const newHtml = safeText.replace(combinedRegex, function(match) {
-        return '<span class="anki-word" data-note-id="' + noteId + '" data-flag="' + colorCode + '">' + match + '</span>';
+        return `<span class="anki-word" data-note-ids='${noteIdsString}' data-flag="${colorCode}">${match}</span>`;
       });
 
       if (newHtml !== safeText) {

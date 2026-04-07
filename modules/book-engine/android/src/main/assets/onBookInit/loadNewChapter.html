@@ -1,16 +1,16 @@
 <script>
-  window.loadNewChapter = function(fileUrl, position, fetchIndex, removeIndex) {
-    window.log('loadNewChapter: loading chapter ' + fetchIndex + ' from ' + fileUrl);
+  window.loadNewBlock = function(fileUrl, position, fetchIndex, removeIndex) {
+    window.log('loadNewBlock: loading block ' + fetchIndex + ' from ' + fileUrl);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', fileUrl, true);
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4) {
         if (xhr.status === 0 || xhr.status === 200) {
-          window.log('loadNewChapter: chapter ' + fetchIndex + ' loaded successfully');
+          window.log('loadNewBlock: block ' + fetchIndex + ' loaded successfully');
           var htmlContent = xhr.responseText;
 
           var container = document.createElement('div');
-          container.id = "chapter-" + fetchIndex;
+          container.id = "block-" + fetchIndex;
           container.innerHTML = htmlContent;
 
           if (position === "top") {
@@ -21,22 +21,22 @@
 
           var removeId = removeIndex !== undefined && removeIndex !== null ? removeIndex : null;
           if (removeId !== null) {
-            var chapterToRemove = document.getElementById("chapter-" + removeId);
-            if (chapterToRemove) {
-              chapterToRemove.remove();
-              window.log('loadNewChapter: removed chapter ' + removeId);
+            var blockToRemove = document.getElementById("block-" + removeId);
+            if (blockToRemove) {
+              blockToRemove.remove();
+              window.log('loadNewBlock: removed block ' + removeId);
             }
           }
 
           window.isFetching = false;
         } else {
-          window.log('loadNewChapter: XHR failed with status ' + xhr.status, 'error');
+          window.log('loadNewBlock: XHR failed with status ' + xhr.status, 'error');
           window.isFetching = false;
         }
       }
     };
     xhr.onerror = function() {
-      window.log('loadNewChapter: XHR network error for ' + fileUrl, 'error');
+      window.log('loadNewBlock: XHR network error for ' + fileUrl, 'error');
       window.isFetching = false;
     };
     xhr.send();

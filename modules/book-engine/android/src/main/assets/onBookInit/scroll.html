@@ -1,22 +1,23 @@
 <script>
   window.addEventListener('load', function() {
     const config = window.BookConfig || {};
-    const targetChapterIndex = config.targetChapterIndex;
-    const currentChapterScroll = config.currentChapterScroll || 0;
+    const targetBlockIndex = config.targetBlockIndex || 0;
+    const scrollPosition = config.scrollPosition || 0;
 
-    var targetChapter = null;
-    if(targetChapterIndex >= 0) {
-      targetChapter = document.getElementById('chapter-' + targetChapterIndex);
+    var targetBlock = null;
+    if(targetBlockIndex >= 0) {
+      targetBlock = document.getElementById('block-' + targetBlockIndex);
     }
 
-    if (targetChapter) {
-      window.log('scroll: jumping to chapter ' + targetChapterIndex);
-      targetChapter.scrollIntoView({ behavior: 'instant', block: 'start' });
-
+    if (targetBlock) {
       requestAnimationFrame(() => {
-        const offset = targetChapter.offsetHeight * currentChapterScroll;
-        window.scrollBy(0, offset);
-        window.log('scroll: scrolled into chapter by ' + offset);
+        targetBlock.scrollIntoView({ behavior: 'instant', block: 'start' });
+        window.log('scroll: jumping to block ' + targetBlockIndex);
+      });
+    } else {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+        window.log('scroll: scrolled to absolute position ' + scrollPosition);
       });
     }
 
@@ -28,73 +29,87 @@
     }, 0);
   });
 
-  let scrollTimeout;
-  let lastScrollY = 0;
+  let lastSentTime = 0;
   let ticking = false;
+
+  function updateScrollPosition() {
+    const blocks = document.querySelectorAll('div[id^="block-"]');
+    if (blocks.length === 0) return;
+
+    let currentBlockIndex = 0;
+    let currentRect;
+
+    for (let i = 0; i < blocks.length; i++) {
+      currentRect = blocks[i].getBoundingClientRect();
+      if (currentRect.top <= 0 && currentRect.bottom > 0) {
+        currentBlockIndex = i;
+        break;
+      } else if (currentRect.top > 0) {
+        break;
+      }
+    }
+
+    const currentBlockScrollPercent = Math.abs(Math.min(0, currentRect.top)) / blocks[currentBlockIndex].offsetHeight;
+    const currentBlockId = blocks[currentBlockIndex].id;
+    const actualBlockIndex = parseInt(currentBlockId.replace('block-', ''));
+
+    window.ReactNativeWebView.postMessage(JSON.stringify({
+      type: 'SCROLL_POSITION_CHANGED',
+      currentBlock: actualBlockIndex,
+      scrollPosition: window.scrollY,
+      currentBlockScrollPercent: currentBlockScrollPercent,
+    }));
+  }
+
   window.addEventListener('scroll', () => {
-    if (ticking || window.isFetching) return;
+    if (window.isFetching) return;
 
-    ticking = true;
+    if (!ticking) {
+      ticking = true;
 
-    window.requestAnimationFrame(() => {
-      const scrollY = window.scrollY;
-      const bottomY = scrollY + window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const chapters = document.querySelectorAll('div[id^="chapter-"]');
+      window.requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+        const bottomY = scrollY + window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const blocks = document.querySelectorAll('div[id^="block-"]');
 
-      if (chapters.length === 0) return;
-      if (documentHeight <= window.innerHeight) return;
+        if (blocks.length > 0 && documentHeight > window.innerHeight) {
+          const firstBlockHeight = blocks[0].offsetHeight;
+          const lastBlockHeight = blocks[blocks.length - 1].offsetHeight;
 
-      const firstChapterHeight = chapters[0].offsetHeight;
-      const lastChapterHeight = chapters[chapters.length - 1].offsetHeight;
-
-      if (scrollY < (firstChapterHeight * 0.45)) {
-        window.isFetching = true;
-        window.log('scroll: TOP_REACHED triggered');
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TOP_REACHED' }));
-      }
-      if (bottomY > (documentHeight - (lastChapterHeight * 0.45))) {
-        window.isFetching = true;
-        window.log('scroll: END_REACHED triggered');
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_REACHED' }));
-      }
-
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        if (Math.abs(scrollY - lastScrollY) > 100) {
-          let currentChapterIndex = 0;
-          for (let i = 0; i < chapters.length; i++) {
-            const rect = chapters[i].getBoundingClientRect();
-            if (rect.top <= window.innerHeight && rect.bottom > 0) {
-              currentChapterIndex = i;
-              break;
-            }
+          if (scrollY < (firstBlockHeight * 0.45)) {
+            window.isFetching = true;
+            window.log('scroll: TOP_REACHED triggered');
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TOP_REACHED' }));
           }
-          const rect = chapters[currentChapterIndex].getBoundingClientRect();
-          const currentChapterScrollPosition = Math.abs(Math.min(0, rect.top)) / chapters[currentChapterIndex].offsetHeight;
-
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'SCROLL_POSITION_CHANGED',
-            currentChapter: currentChapterIndex,
-            currentChapterScrollPosition: currentChapterScrollPosition,
-          }));
+          if (bottomY > (documentHeight - (lastBlockHeight * 0.45))) {
+            window.isFetching = true;
+            window.log('scroll: END_REACHED triggered');
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_REACHED' }));
+          }
         }
-      }, 300);
 
-      ticking = false;
-    });
+        ticking = false;
+      });
+    }
+
+    const now = Date.now();
+    if (now - lastSentTime > 300) {
+      lastSentTime = now;
+      lastScrollY = window.scrollY;
+      updateScrollPosition();
+    }
   }, { passive: true });
 
-
-  window.scrollToChapter = function(chapterIndex) {
-    var targetId = 'chapter-' + chapterIndex;
+  window.scrollToBlock = function(blockIndex) {
+    var targetId = 'block-' + blockIndex;
     var target = document.getElementById(targetId);
 
     if (target) {
-      window.log('scrollToChapter: scrolling to ' + targetId);
+      window.log('scrollToBlock: scrolling to ' + targetId);
       target.scrollIntoView({ behavior: 'instant', block: 'start' });
     } else {
-      window.log('scrollToChapter: chapter not found ' + targetId, 'error');
+      window.log('scrollToBlock: block not found ' + targetId, 'error');
     }
   };
 </script>

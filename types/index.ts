@@ -12,24 +12,35 @@ export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
+export interface Block {
+  id: number;           // Global index
+  chapterId: number;
+  fullPath: string;
+  charCount: number;
+  charOffset: number;
+}
+
 export interface Chapter {
   id: number;
   href: string;
   fullPath: string;
   title: string;
   charCount: number;
+  charOffset: number;
+  blockIds: number[];
 }
 
 export interface Book {
   title: string;
   cover?: string;
   chapters: Chapter[];
+  blocks: Block[];
+  currentBlocks: number[];
+  currentBlock: number;
   basePath: string;
-  currentChapters: number[];
-  currentChapter: number;
-  currentChapterScrollPosition: number;
   settings: BookSettings;
   misc: Misc;
+  scrollPosition: number;
   // bookmarks: Bookmark[];
 }
 
@@ -40,11 +51,10 @@ export interface Bookmark {
   createdAt: number;
 }
 
-
 export interface Misc {
-  charOffsets: number[];
   percent: number;
   totalCharCount: number;
+  currentBlockScrollPercent: number;
 }
 
 export interface Font {
@@ -70,7 +80,7 @@ export interface Setting {
 
 export interface SearchResult {
   id: number;
-  chapterIndex: number;
+  blockIndex: number;
   snippet: string;
   occurrenceIndex: number;
 }
@@ -83,3 +93,12 @@ export interface CurrectCTree {
   langCode: string;
   deckId: string;
 }
+
+export type SelectionMenu = {
+  visible: boolean;
+  text: string;
+  top: number;
+  left: number;
+  noteIds?: string;
+  colorCode?: string;
+};

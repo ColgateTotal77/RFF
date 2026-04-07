@@ -11,7 +11,8 @@ typedef struct TrieChild {
 
 typedef struct TrieNode {
     int color_code;
-    long note_id;
+    long* note_ids;
+    int note_count;
     TrieChild* children;
 } TrieNode;
 
@@ -25,7 +26,7 @@ StringBuffer* sb_create(size_t initial_cap);
 void sb_append(StringBuffer* sb, const char* str, size_t len);
 void sb_append_char(StringBuffer* sb, char c);
 TrieNode* trie_create_node(void);
-void trie_insert(TrieNode* root, const char* word, long note_id, int color_code);
+void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_count, int color_code);
 TrieNode* trie_search(TrieNode* root, const char* word, size_t len);
 void trie_free(TrieNode* root);
 bool is_word_char(unsigned char c);

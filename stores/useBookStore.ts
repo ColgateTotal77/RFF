@@ -33,9 +33,9 @@ type Store = {
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
   setCurrentCTree: (treeData: CurrectCTree) => void;
-  jumpToChapter: (currentChapter: number) => void;
-  setCurrentChapter: (currentChapter: number) => void;
-  closeBook: () => Promise<void>;
+  jumpToBlock: (currentBlock: number) => void;
+  setCurrentBlock: (currentBlock: number) => void;
+  closeBook: () => void;
   removeBook: (basePath: string) => void;
   shiftNext: () => { fetchIndex: number; removeIndex: number | null } | null;
   shiftPrev: () => { fetchIndex: number; removeIndex: number | null } | null;
@@ -45,11 +45,11 @@ type Store = {
   updateMisc: (misc: Partial<Misc>) => void;
 
   webViewActions: {
-    scrollToChapter?: (index: number) => void;
-    jumpToSearch?: (chapter: number, occurrence: number) => void;
-    highlightAll?: (query: string, chapters: number[]) => void;
+    scrollToBlock?: (index: number) => void;
+    jumpToSearch?: (currentBlock: number, occurrence: number) => void;
+    highlightAll?: (query: string, blocks: number[]) => void;
     clearSearch?: () => void;
-    updateTag?: (word: string | string[] | null, noteId: string, colorCode: string) => void;
+    updateTag?: (word: string | string[] | null, noteIds: string, colorCode: string) => void;
     updateFont?: (fontSize?: number, fontFamily?: string) => void;
   };
 
@@ -58,10 +58,10 @@ type Store = {
     fn: Store['webViewActions'][K]
   ) => void;
 
-  scrollToChapterAction: (currentChapter: number) => void;
-  jumpToSearchAction: (chapter: number, occurrence: number) => void;
+  scrollToBlockAction: (currentBlock: number) => void;
+  jumpToSearchAction: (currentBlock: number, occurrence: number) => void;
   clearSearchAction: () => void;
-  updateTagAction: (words: string | string[] | null, noteId: string, colorCode: string) => void;
+  updateTagAction: (words: string | string[] | null, noteIds: string, colorCode: string) => void;
   updateFontAction: (fontSize?: number, fontFamily?: string) => void;
 };
 
@@ -128,7 +128,7 @@ export const useBookStore = create<Store>()(
           currentCTree: treeData,
         })),
 
-      closeBook: async () => {
+      closeBook: () => {
         const { currentBook } = get();
         if (!currentBook) return;
 
@@ -143,15 +143,15 @@ export const useBookStore = create<Store>()(
 
       removeBook: (basePath: string) =>
         set((state) => ({
-          currentBook: null,
+          currentBook: state.currentBook?.basePath === basePath ? null : state.currentBook,
           books: state.books.filter((book) => book.basePath !== basePath),
         })),
 
-      setCurrentChapter: (currentChapter: number) =>
+      setCurrentBlock: (currentBlock: number) =>
         set((state) => {
           if (!state.currentBook) return state;
 
-          const updatedBook = { ...state.currentBook, currentChapter };
+          const updatedBook = { ...state.currentBook, currentBlock };
 
           return {
             currentBook: updatedBook,
@@ -161,22 +161,21 @@ export const useBookStore = create<Store>()(
 
       shiftNext: () => {
         const { currentBook, books } = get();
-        if (!currentBook || currentBook.currentChapters.length === 0) return null;
+        if (!currentBook) return null;
 
-        const lastRendered = currentBook.currentChapters[currentBook.currentChapters.length - 1];
+        const lastRendered = currentBook.currentBlocks[currentBook.currentBlocks.length - 1];
         const fetchIndex = lastRendered + 1;
 
-        if (fetchIndex >= currentBook.chapters.length) return null;
+        if (fetchIndex >= currentBook.blocks.length) return null;
 
-        let newWindow = [...currentBook.currentChapters, fetchIndex];
+        let newWindow = [...currentBook.currentBlocks, fetchIndex];
         let removeIndex: number | null = null;
 
         if (newWindow.length > 3) {
           removeIndex = newWindow.shift() || null;
         }
 
-        const newChapters = newWindow.sort((a, b) => a - b);
-        const updatedBook = { ...currentBook, currentChapters: newChapters };
+        const updatedBook = { ...currentBook, currentBlocks: newWindow };
 
         set({
           currentBook: updatedBook,
@@ -188,22 +187,21 @@ export const useBookStore = create<Store>()(
 
       shiftPrev: () => {
         const { currentBook, books } = get();
-        if (!currentBook || currentBook.currentChapters.length === 0) return null;
+        if (!currentBook) return null;
 
-        const firstRendered = currentBook.currentChapters[0];
+        const firstRendered = currentBook.currentBlocks[0];
         const fetchIndex = firstRendered - 1;
 
-        if (fetchIndex < 1) return null;
+        if (fetchIndex < 0) return null;
 
-        let newWindow = [fetchIndex, ...currentBook.currentChapters];
+        let newWindow = [fetchIndex, ...currentBook.currentBlocks];
         let removeIndex: number | null = null;
 
         if (newWindow.length > 3) {
           removeIndex = newWindow.pop() || null;
         }
 
-        const newChapters = newWindow.sort((a, b) => a - b);
-        const updatedBook = { ...currentBook, currentChapters: newChapters };
+        const updatedBook = { ...currentBook, currentBlocks: newWindow };
 
         set({
           currentBook: updatedBook,
@@ -222,7 +220,7 @@ export const useBookStore = create<Store>()(
         set((state) => {
           if (!state.currentBook) return state;
 
-          const updatedBook = { ...state.currentBook, currentChapterScrollPosition: scrollY };
+          const updatedBook = { ...state.currentBook, scrollPosition: scrollY };
 
           return {
             currentBook: updatedBook,
@@ -245,30 +243,35 @@ export const useBookStore = create<Store>()(
           };
         }),
 
-      jumpToChapter: (currentChapter: number) =>
+      jumpToBlock: (currentBlock: number) =>
         set((state) => {
           if (!state.currentBook) return state;
 
-          const windowSize = state.currentBook.currentChapters.length;
+          const windowSize = state.currentBook.currentBlocks.length;
           const halfWindow = Math.floor(windowSize / 2);
 
-          let start = Math.max(0, currentChapter - halfWindow);
-          let end = Math.min(state.currentBook.chapters.length, start + windowSize);
+          let start = Math.max(0, currentBlock - halfWindow);
+          let end = Math.min(state.currentBook.blocks.length, start + windowSize);
 
           if (end - start < windowSize) {
             start = Math.max(0, end - windowSize);
           }
 
-          const newChaptersWindow = state.currentBook.chapters
+          const newBlocksWindow = state.currentBook.blocks
             .slice(start, end)
-            .map((chapter) => chapter.id);
+            .map((_, index) => start + index);
+
+          const updatedBook = {
+            ...state.currentBook,
+            currentBlocks: newBlocksWindow,
+            currentBlock,
+            currentBlockScrollPosition: 0,
+          };
 
           return {
-            currentBook: {
-              ...state.currentBook,
-              currentChapters: newChaptersWindow,
-            },
-            lastJumpTo: currentChapter,
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+            lastJumpTo: currentBlock,
           };
         }),
 
@@ -281,20 +284,48 @@ export const useBookStore = create<Store>()(
         get().webViewActions.updateFont?.(fontSize, fontFamily);
       },
 
-      scrollToChapterAction: (currentChapter) => {
-        get().webViewActions.scrollToChapter?.(currentChapter);
+      scrollToBlockAction: (currentBlock) => {
+        get().webViewActions.scrollToBlock?.(currentBlock);
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const updatedBook = {
+            ...state.currentBook,
+            currentBlock,
+            currentBlockScrollPosition: 0,
+          };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        });
       },
 
-      jumpToSearchAction: (chapter, occurrence) => {
-        get().webViewActions.jumpToSearch?.(chapter, occurrence);
+      jumpToSearchAction: (currentBlock, occurrence) => {
+        get().webViewActions.jumpToSearch?.(currentBlock, occurrence);
+
+        set((state) => {
+          if (!state.currentBook || state.currentBook.currentBlock === currentBlock) return state;
+
+          const updatedBook = {
+            ...state.currentBook,
+            currentBlock,
+          };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        });
       },
 
       clearSearchAction: () => {
         get().webViewActions.clearSearch?.();
       },
 
-      updateTagAction: (words, noteId, colorCode) => {
-        get().webViewActions.updateTag?.(words, noteId, colorCode);
+      updateTagAction: (words, noteIds, colorCode) => {
+        get().webViewActions.updateTag?.(words, noteIds, colorCode);
       },
     }),
     {
@@ -304,3 +335,8 @@ export const useBookStore = create<Store>()(
     }
   )
 );
+
+export const useCurrentBook = () => {
+  const book = useBookStore((state) => state.currentBook);
+  return book!;
+};

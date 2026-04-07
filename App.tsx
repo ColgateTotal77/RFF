@@ -13,7 +13,10 @@ function AppContent() {
 }
 
 export default function App() {
-  const {books, settings, setCurrentCTree} = useBookStore()
+  const books = useBookStore((state) => state.books);
+  const settings = useBookStore((state) => state.settings);
+  const setCurrentCTree = useBookStore((state) => state.setCurrentCTree);
+
   const deckId = books[0]?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
 
   useEffect(() => {

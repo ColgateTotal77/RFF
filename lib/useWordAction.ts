@@ -1,19 +1,21 @@
 import { fetchWordMetadata } from 'lib/supabaseRequests';
 import { Anki, BookEngine } from 'modules/book-engine';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { useBookStore } from 'stores/useBookStore';
+import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 
 interface UpdateWordTag {
-  noteId: string;
+  noteIds: string;
   colorCode: string;
 }
 
 export const useWordAction = () => {
-  const { currentBook, settings, updateTagAction } = useBookStore();
+  const currentBook = useCurrentBook();
+  const settings = useBookStore((state) => state.settings);
+  const updateTagAction = useBookStore((state) => state.updateTagAction)!;
 
   const addNewCard = async (text: string) => {
-    const deckId = currentBook?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
-    const modelId = currentBook?.settings?.ankiModelId || settings.defaultBookSettings.ankiModelId;
+    const deckId = currentBook.settings.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
+    const modelId = currentBook.settings.ankiModelId || settings.defaultBookSettings.ankiModelId;
 
     const cleanedText = text.replace(/[^\w\s]|_/g, '');
 
@@ -36,40 +38,25 @@ export const useWordAction = () => {
       ];
       const tier = await BookEngine.getWordFrequencyTier(metadata?.name);
 
-      const noteId = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1', tier]);
+      const noteIdsArray = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1', tier, 'New']);
 
-      if (noteId) {
-        console.log('Note created successfully:', noteId, typeof noteId);
-        console.log('Tier:', tier);
-
-        updateTagAction(metadata?.wordForms || cleanedText, noteId, '1');
-
-        const mirroredCard = [
-          '',
-          metadata?.translation || '',
-          '',
-          '',
-          metadata?.name || '',
-          '',
-          formatExamples(metadata?.examples ?? []),
-        ];
-
-        Anki.addNote(modelId, deckId, mirroredCard, ['Lookups_1', tier]);
-      } else {
-        console.error('Failed to create Anki note');
+      if (noteIdsArray && noteIdsArray.length > 0) {
+        const noteIdsString = JSON.stringify(noteIdsArray);
+        updateTagAction(metadata?.wordForms || cleanedText, noteIdsString, '1');
       }
     } catch (error) {
       console.error('Anki error:', error);
     }
   };
 
-  const updateWordTag = async ({colorCode, noteId}: UpdateWordTag) => {
+  const updateWordTag = async ({ colorCode, noteIds }: UpdateWordTag) => {
     const newTagIdNum = Number(colorCode) + 1;
     if (newTagIdNum > 8) return;
     const newTagId = String(newTagIdNum);
     try {
-      Anki.updateNoteTags(noteId, [`Lookups_${newTagId}`]);
-      updateTagAction(null, noteId, newTagId);
+      const idsArray = JSON.parse(noteIds);
+      Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`]);
+      updateTagAction(null, noteIds, newTagId);
     } catch (error) {
       console.error('Anki error:', error);
     }

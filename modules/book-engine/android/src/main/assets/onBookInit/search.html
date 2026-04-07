@@ -3,21 +3,21 @@
 </style>
 
 <script>
-  window.highlightAll = function(searchQuery, currentChapters) {
-    window.log('highlightAll: searching for "' + searchQuery + '" in chapters [' + currentChapters.join(',') + ']');
-    if (!searchQuery || window._lastSearchQuery === searchQuery && window._lastSearchChapters === currentChapters.join(',')) return;
+  window.highlightAll = function(searchQuery, currentBlocks) {
+    window.log('highlightAll: searching for "' + searchQuery + '" in blocks [' + currentBlocks.join(',') + ']');
+    if (!searchQuery || window._lastSearchQuery === searchQuery && window._lastSearchBlocks === currentBlocks.join(',')) return;
 
     var escapedWord = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     var regex = new RegExp("(" + escapedWord + ")", 'gi');
 
-    currentChapters.forEach(function(chapterIdx) {
-      var chapterContainer = document.getElementById('chapter-' + chapterIdx);
-      if (!chapterContainer) {
-        window.log('highlightAll: chapter-' + chapterIdx + ' not found', 'error');
+    currentBlocks.forEach(function(blockIdx) {
+      var blockContainer = document.getElementById('block-' + blockIdx);
+      if (!blockContainer) {
+        window.log('highlightAll: block-' + blockIdx + ' not found', 'error');
         return;
       }
 
-      var walker = document.createTreeWalker(chapterContainer, NodeFilter.SHOW_TEXT, null, false);
+      var walker = document.createTreeWalker(blockContainer, NodeFilter.SHOW_TEXT, null, false);
       var node;
       var textNodes = [];
 
@@ -31,10 +31,7 @@
 
       textNodes.forEach(function(textNode) {
         if (textNode.parentNode.nodeName === 'MARK' && textNode.parentNode.classList.contains('search-highlight')) {
-          regex.lastIndex = 0;
-          if (regex.test(textNode.nodeValue)) {
-            localOccurrenceIndex++;
-          }
+          // Skip already highlighted elements without incrementing counter
           return;
         }
 
@@ -49,7 +46,7 @@
 
             var mark = document.createElement('mark');
             mark.className = 'search-highlight';
-            mark.id = 'search-match-' + chapterIdx + '-' + localOccurrenceIndex;
+            mark.id = 'search-match-' + blockIdx + '-' + localOccurrenceIndex;
 
             mark.textContent = match[0];
             fragment.appendChild(mark);
@@ -62,29 +59,29 @@
         }
       });
       if (localOccurrenceIndex > 0) {
-        window.log('highlightAll: chapter-' + chapterIdx + ' has ' + localOccurrenceIndex + ' matches');
+        window.log('highlightAll: block-' + blockIdx + ' has ' + localOccurrenceIndex + ' matches');
       }
     });
 
     window._lastSearchQuery = searchQuery;
-    window._lastSearchChapters = currentChapters.join(',');
+    window._lastSearchBlocks = currentBlocks.join(',');
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SEARCH_HIGHLIGHT_COMPLETE' }));
   };
 
-  window.jumpToSearch = function(chapterIndex, occurrenceIndex) {
-    window.log('jumpToSearch: jumping to chapter ' + chapterIndex + ', occurrence ' + occurrenceIndex);
+  window.jumpToSearch = function(blockIndex, occurrenceIndex) {
+    window.log('jumpToSearch: jumping to block ' + blockIndex + ', occurrence ' + occurrenceIndex);
     document.querySelectorAll('mark.active-match').forEach(function(el) {
       el.classList.remove('active-match');
     });
 
-    var targetId = 'search-match-' + chapterIndex + '-' + occurrenceIndex;
+    var targetId = 'search-match-' + blockIndex + '-' + occurrenceIndex;
     var target = document.getElementById(targetId);
 
     if (target) {
       target.classList.add('active-match');
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-      window.log('jumpToSearch: target not found (search-match-' + chapterIndex + '-' + occurrenceIndex + ')', 'error');
+      window.log('jumpToSearch: target not found (search-match-' + blockIndex + '-' + occurrenceIndex + ')', 'error');
     }
   };
 

@@ -1,20 +1,29 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import React from 'react';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
-import { useBookStore } from 'stores/useBookStore';
+import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 
 export const Footer = () => {
-  const { clearSearchAction, currentBook } = useBookStore();
-  const { currentSearchResult, resetSearch } = useTempStore();
-  const { percent = 0, charOffsets = [], totalCharCount = 1 } = currentBook?.misc ?? {};
+  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+  const resetSearch = useTempStore((state) => state.resetSearch);
+  const clearSearchAction = useBookStore((state) => state.clearSearchAction);
+  const currentBook = useCurrentBook();
+  const { percent = 0, currentBlockScrollPercent = 0, totalCharCount = 1 } = currentBook.misc;
 
-  const bookProgress = Math.round(percent * 100);
-  const chapterProgress = Math.round((currentBook?.currentChapterScrollPosition || 0) * 100);
+  const bookProgress = Math.min(100, Math.max(0, Math.round(percent * 100)));
 
-  const chapterMarkers = currentBook?.chapters?.map((_, index) => {
-    const offset = charOffsets[index];
-    return (offset / totalCharCount) * 100;
+  const currentBlock = currentBook.blocks[currentBook.currentBlock];
+  const currentChapter = currentBook.chapters[currentBlock.chapterId];
+  const chapterStartOffset = currentBook.blocks[currentChapter.blockIds[0]].charOffset;
+  const currentChapterOffset =
+    currentBlock.charOffset -
+    chapterStartOffset +
+    currentBlock.charCount * currentBlockScrollPercent;
+  const chapterProgress = Math.min(100, Math.max(0, Math.round((currentChapterOffset / currentChapter.charCount) * 100)));
+
+  const chapterMarkers = currentBook.chapters.map((chapter) => {
+    return (chapter.charOffset / totalCharCount) * 100;
   }) ?? [];
 
   const jumpToNext = useJumpToNextSearchResult();
@@ -22,7 +31,7 @@ export const Footer = () => {
 
   return (
     <View className="absolute bottom-[30px] left-0 right-0 flex flex-col items-center">
-      {currentSearchResult.chapterIndex > -1 ? (
+      {currentSearchResult.blockIndex > -1 ? (
         <View className="flex flex-row justify-center gap-16">
           <TouchableOpacity
             onPress={jumpToPrev}

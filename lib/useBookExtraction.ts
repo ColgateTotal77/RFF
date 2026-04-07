@@ -1,7 +1,7 @@
 import { unzip } from 'react-native-zip-archive';
 import { Directory, File, Paths } from 'expo-file-system';
-import { Chapter, Book } from 'types';
-import { ensureArray } from 'lib/utils';
+import { Chapter, Book, Block } from 'types';
+import { ensureArray, resolvePath } from 'lib/utils';
 import { XMLParser } from 'fast-xml-parser';
 
 export const extractEpub = async (uri: string | null) => {
@@ -13,9 +13,7 @@ export const extractEpub = async (uri: string | null) => {
       const booksDir = new Directory(Paths.document, 'books');
       const targetDir = new Directory(booksDir, `${fileName}_${timestamp}`);
 
-      if (!booksDir.exists) {
-        booksDir.create({ intermediates: true, idempotent: true });
-      }
+      if (!booksDir.exists) booksDir.create({ intermediates: true, idempotent: true });
 
       await unzip(uri, targetDir.uri);
 
@@ -26,6 +24,40 @@ export const extractEpub = async (uri: string | null) => {
       throw new Error('Failed to unzip the book file.');
     }
 };
+
+const BLOCK_SIZE = 5000;
+
+function splitHtmlIntoBlocks(html: string, globalBlockId: number): string[] {
+  const blocks: string[] = [];
+
+  let localGlobalBlockId = globalBlockId;
+
+  const paragraphs = html.split(/(<\/p>\s*)/i);
+  let currentBlock = `<div id="block-${localGlobalBlockId}">`;
+  let currentSize = 0;
+
+  for (const p of paragraphs) {
+    const pText = p.replace(/<[^>]*>/g, ' ');
+    const pSize = pText.length;
+
+    if (currentSize + pSize > BLOCK_SIZE && currentSize > 0) {
+      currentBlock += '</div>';
+      localGlobalBlockId++;
+      blocks.push(currentBlock);
+      currentBlock = `<div id="block-${localGlobalBlockId}">`;
+      currentSize = 0;
+    }
+    currentBlock += p;
+    currentSize += pSize;
+  }
+
+  if (currentSize > 0) {
+    currentBlock += '</div>';
+    blocks.push(currentBlock);
+  }
+
+  return blocks.length > 0 ? blocks : [html];
+}
 
 export const parseManifest = async (unzippedPath: string): Promise<Book> => {
   try {
@@ -66,10 +98,16 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
       manifestMap[item['@_id']] = item['@_href'];
     });
 
-    let totalSize = 0;
-    let currentChapters: number[] = [];
     let totalCharCount = 0;
-    const MAX_BOOK_SIZE_MB = 50;
+    const blocks: Block[] = [];
+    let globalBlockId = 0;
+
+    const blocksDir = new Directory(unzippedPath, '_blocks');
+
+    if (!blocksDir.exists) blocksDir.create({ intermediates: true });
+    const blocksDirPath = blocksDir.uri.replace('file://', '');
+
+    const encoder = new TextEncoder();
 
     const chapters: Chapter[] = (
       await Promise.all(
@@ -77,31 +115,54 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
           const id = spineItem['@_idref'];
           const href = manifestMap[id];
 
-          let charCount = 0;
-          if (totalSize !== -1) {
-            try {
-              const file = new File(`file://${absoluteBasePath}/${href}`);
-              const info = file.info();
-              totalSize += info.size || 0;
-              const html = await file.text();
-              const text = html
-                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          const chapterBlockIds = [];
+          try {
+            const file = new File(`file://${absoluteBasePath}/${href}`);
+            let html = await file.text();
+
+            const chapterDir = href.includes('/') ? href.substring(0, href.lastIndexOf('/')) : '';
+
+            const chapterBasePath = chapterDir
+              ? `${absoluteBasePath}/${chapterDir}`
+              : absoluteBasePath;
+
+            html = html.replace(
+              /<(img|image)[^>]+(?:src|href|xlink:href)=(['"])(.*?)\2/gi,
+              (match, tag, quote, src) => {
+                if (/^(http|https|file|data):/i.test(src)) return match;
+
+                const resolvedSrc = resolvePath(chapterBasePath, src);
+                return match.replace(src, `file:///${resolvedSrc}`);
+              }
+            );
+
+            const blockContents = splitHtmlIntoBlocks(html, globalBlockId);
+
+            for (const blockContent of blockContents) {
+              const blockFileName = `block_${globalBlockId}.html`;
+              const blockPath = `${blocksDirPath}${blockFileName}`;
+              const blockFile = new File(blocksDir, blockFileName);
+              blockFile.write(encoder.encode(blockContent));
+
+              const textOnly = blockContent
                 .replace(/<[^>]*>/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
-              charCount = text.length;
-              totalCharCount += charCount;
-            } catch (e) {
-              console.error(e);
-              totalSize = -1;
-              currentChapters = currentChapters.length > 2 ? currentChapters : [1, 2];
+
+              blocks.push({
+                id: globalBlockId,
+                chapterId: index,
+                fullPath: blockPath,
+                charCount: textOnly.length,
+                charOffset: 0,
+              });
+
+              totalCharCount += textOnly.length;
+              chapterBlockIds.push(globalBlockId);
+              globalBlockId++;
             }
-            if (totalSize > MAX_BOOK_SIZE_MB * 1024 * 1024) {
-              currentChapters = currentChapters.length > 2 ? currentChapters : [1, 2];
-              totalSize = -1;
-            }
-            currentChapters.push(index);
+          } catch (e) {
+            console.error(e);
           }
 
           if (!href) return null;
@@ -110,11 +171,27 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
             href,
             fullPath: `${absoluteBasePath}/${href}`,
             title: `Chapter`,
-            charCount,
+            charCount: 0,
+            blockIds: chapterBlockIds,
           };
         })
       )
     ).filter((c): c is Chapter => c !== null);
+
+    let globalCharOffset = 0;
+    const chapterCharCounts: number[] = new Array(chapters.length).fill(0);
+
+    chapters.forEach((chapter, chapterIndex) => {
+      chapter.charOffset = globalCharOffset;
+
+      for (const block of blocks.filter(b => b.chapterId === chapterIndex)) {
+        block.charOffset = globalCharOffset;
+        globalCharOffset += block.charCount;
+        chapterCharCounts[chapterIndex] += block.charCount;
+      }
+
+      chapter.charCount = chapterCharCounts[chapterIndex];
+    });
 
     const tocId = packageData.spine['@_toc'];
 
@@ -160,23 +237,20 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
       }
     }
 
-    const charOffsets = chapters.map((_, i) =>
-      chapters.slice(0, i).reduce((sum, ch) => sum + ch.charCount, 0)
-    );
-
     return {
       title: String(title),
       cover: coverPath,
       basePath: 'file://' + absoluteBasePath,
-      currentChapterScrollPosition: 0,
       settings: {},
       chapters,
-      currentChapters,
-      currentChapter: 0,
+      currentBlocks: [0, 1],
+      currentBlock: 0,
+      blocks,
+      scrollPosition: 0,
       misc: {
-        charOffsets,
         percent: 0,
         totalCharCount,
+        currentBlockScrollPercent: 0,
       },
     };
   } catch (error) {

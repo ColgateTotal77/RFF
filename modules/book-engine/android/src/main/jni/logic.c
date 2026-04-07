@@ -11,7 +11,7 @@ TrieNode* global_dictionary = NULL;
 
 JNIEXPORT void JNICALL
 Java_com_reader_bookengine_AnkiModule_addWordToAnkiDictionary(
-        JNIEnv* env, jobject thiz, jstring jword, jlong noteId, jint colorCode) {
+        JNIEnv* env, jobject thiz, jstring jword, jlongArray noteIds, jint colorCode) {
 
     if (global_dictionary == NULL) {
         __android_log_print(ANDROID_LOG_DEBUG, "BookEngine", "global_dictionary is NULL");
@@ -20,14 +20,18 @@ Java_com_reader_bookengine_AnkiModule_addWordToAnkiDictionary(
 
     const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
 
-    trie_insert(global_dictionary, word_str, noteId, colorCode);
+    jsize note_count = (*env)->GetArrayLength(env, noteIds);
+    jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
+    trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
+
+    (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, jword, word_str);
 }
 
 JNIEXPORT void JNICALL
 Java_com_reader_bookengine_BookEngineModule_initAnkiDictionary(
-    JNIEnv* env, jobject thiz, jobjectArray words, jlongArray noteIds, jintArray colorCodes) {
+    JNIEnv* env, jobject thiz, jobjectArray words, jobjectArray noteIdsArray, jintArray colorCodes) {
 
     if (global_dictionary != NULL) {
         trie_free(global_dictionary);
@@ -37,20 +41,24 @@ Java_com_reader_bookengine_BookEngineModule_initAnkiDictionary(
     global_dictionary = trie_create_node();
 
     jsize word_count = (*env)->GetArrayLength(env, words);
-    jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
     jint* colors = (*env)->GetIntArrayElements(env, colorCodes, NULL);
 
     for (jsize i = 0; i < word_count; i++) {
         jstring jword = (jstring)(*env)->GetObjectArrayElement(env, words, i);
         const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
 
-        trie_insert(global_dictionary, word_str, notes[i], colors[i]);
+        jlongArray noteIds = (jlongArray)(*env)->GetObjectArrayElement(env, noteIdsArray, i);
+        jsize note_count = (*env)->GetArrayLength(env, noteIds);
+        jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
+        trie_insert(global_dictionary, word_str, notes, note_count, colors[i]);
+
+        (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
         (*env)->ReleaseStringUTFChars(env, jword, word_str);
         (*env)->DeleteLocalRef(env, jword);
+        (*env)->DeleteLocalRef(env, noteIds);
     }
 
-    (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
     (*env)->ReleaseIntArrayElements(env, colorCodes, colors, JNI_ABORT);
 }
 
@@ -65,7 +73,7 @@ Java_com_reader_bookengine_BookEngineModule_freeAnkiDictionary(JNIEnv* env, jobj
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_reader_bookengine_BookEngineModule_extractChapterToFile(
+Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
     JNIEnv* env, jobject thiz, jstring filePath, jstring outputPath) {
 
     const char *pathFrom = (*env)->GetStringUTFChars(env, filePath, 0);
@@ -150,13 +158,23 @@ Java_com_reader_bookengine_BookEngineModule_extractChapterToFile(
             match = trie_search(global_dictionary, word_start, word_len);
         }
 
-        if (match != NULL) {
-            char span_open[256];
-            snprintf(span_open, sizeof(span_open),
-                     "<span class=\"anki-word\" data-note-id=\"%ld\" data-flag=\"%d\">",
-                     match->note_id, match->color_code);
+        if (match != NULL && match->note_count > 0) {
+            sb_append(out, "<span class=\"anki-word\" data-note-ids=\"[", 40);
 
-            sb_append(out, span_open, strlen(span_open));
+            for (int i = 0; i < match->note_count; i++) {
+                char note_id_str[32];
+                snprintf(note_id_str, sizeof(note_id_str), "%ld", match->note_ids[i]);
+                sb_append(out, note_id_str, strlen(note_id_str));
+
+                if (i < match->note_count - 1) {
+                    sb_append(out, ",", 1);
+                }
+            }
+
+            char span_close[64];
+            snprintf(span_close, sizeof(span_close), "]\" data-flag=\"%d\">", match->color_code);
+            sb_append(out, span_close, strlen(span_close));
+
             sb_append(out, word_start, word_len);
             sb_append(out, "</span>", 7);
         } else {

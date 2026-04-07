@@ -1,7 +1,7 @@
 import { Appbar, TextInput } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
 import { MenuChapters } from 'components/Sidebar/BookHeader/MenuChapters';
-import { useBookStore } from 'stores/useBookStore';
+import { useCurrentBook } from 'stores/useBookStore';
 import { useState } from 'react';
 import { View, Modal } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
@@ -10,34 +10,32 @@ import { SearchResult, SearchResultsMapWithTitle } from 'types';
 import { MenuSearch } from 'components/Sidebar/BookHeader/MenuSearch';
 
 export const BookHeader = () => {
-  const {
-    searchQuery,
-    setSearchQuery,
-    toggleIsSearchModuleOpen,
-    setSearchResults,
-    isSearchModuleOpen,
-  } = useTempStore();
-  const { currentBook } = useBookStore();
+  const searchQuery = useTempStore((state) => state.searchQuery);
+  const setSearchQuery = useTempStore((state) => state.setSearchQuery);
+  const toggleIsSearchModuleOpen = useTempStore((state) => state.toggleIsSearchModuleOpen);
+  const setSearchResults = useTempStore((state) => state.setSearchResults);
+  const isSearchModuleOpen = useTempStore((state) => state.isSearchModuleOpen);
+  const currentBook = useCurrentBook();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChaptersMenuOpen, setIsChaptersMenuOpen] = useState(false);
 
-  const chapters = currentBook?.chapters || [];
+  const blockPaths = currentBook.blocks.map((block) => block.fullPath);
 
-  const chaptersPaths = chapters.map((chapter) => chapter.fullPath);
+  const blocksMap: Record<number, { title: string }> = {};
+  for (const chapter of currentBook.chapters) {
+    for (const blockId of chapter.blockIds) {
+      blocksMap[blockId] = { title: chapter.title };
+    }
+  }
 
   const onSearchSubmit = async () => {
-    const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, chaptersPaths);
-
-    const chaptersMap: Record<number, {title: string}> = {};
-    for (let i = 0; i < chapters.length; i++) {
-      chaptersMap[i] = { title: chapters[i].title };
-    }
+    const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, blockPaths);
 
     const searchResultsMapWithTitle: SearchResultsMapWithTitle = {};
     for (const searchResult of results) {
       searchResultsMapWithTitle[searchResult.id] = {
         ...searchResult,
-        chapterTitle: chaptersMap[searchResult.chapterIndex].title,
+        chapterTitle: blocksMap[searchResult.blockIndex].title,
       };
     }
 

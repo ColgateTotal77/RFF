@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 
 data class AnkiWordsData(
     val words: Array<String>,
-    val noteIds: LongArray,
+    val noteIds: Array<LongArray>,
     val colorCodes: IntArray
 )
 
@@ -30,7 +30,7 @@ class AnkiModule : Module() {
         freqDatabase = database
     }
 
-    private external fun addWordToAnkiDictionary(word: String, noteId: Long, colorCode: Int)
+    private external fun addWordToAnkiDictionary(word: String, noteIds: LongArray, colorCode: Int)
     private fun getNoteInfoByModelId(modelId: Long, fieldText: String): NoteInfo? {
         val context = appContext.reactContext ?: throw Exception("React context is null")
 
@@ -156,7 +156,7 @@ class AnkiModule : Module() {
         val resolver = context.contentResolver
 
         val tempWords = mutableListOf<String>()
-        val tempNoteIds = mutableListOf<Long>()
+        val tempNoteIds = mutableListOf<LongArray>()
         val tempColorCodes = mutableListOf<Int>()
 
         val t1 = System.currentTimeMillis()
@@ -173,18 +173,35 @@ class AnkiModule : Module() {
                 null
             )
 
+            data class ParsedNote(val id: Long, val front: String, val back: String, val colorCode: Int)
+            val parsedNotes = mutableListOf<ParsedNote>()
+            val frontLookup = mutableMapOf<String, Long>()
+            val backLookup = mutableMapOf<String, Long>()
+
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
                 val tagsIndex = cursor.getColumnIndex("tags")
 
+                val configuredFrontIndex = 1
+                val configuredBackIndex = 4
+                val fallbackBackIndex = 3
+
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
                     val fieldsArray = flds.split("\u001F")
-                    if (fieldsArray.isEmpty()) continue
 
-                    val word = fieldsArray[1].trim()
-                    if (word.isEmpty()) continue
+                    val maxRequiredIndex = maxOf(configuredFrontIndex, configuredBackIndex, fallbackBackIndex)
+                    if (fieldsArray.size <= maxRequiredIndex) continue
+
+                    val front = fieldsArray[configuredFrontIndex].trim()
+                    var back = fieldsArray[configuredBackIndex].trim()
+
+                    if (back.isEmpty()) {
+                        back = fieldsArray[fallbackBackIndex].trim()
+                    }
+
+                    if (front.isEmpty()) continue
 
                     val noteId = cursor.getLong(idIndex)
                     val tagsStr = cursor.getString(tagsIndex) ?: ""
@@ -198,26 +215,47 @@ class AnkiModule : Module() {
                         }
                     }
 
-                    tempWords.add(word.replaceFirstChar { it.lowercaseChar() })
-                    tempNoteIds.add(noteId)
-                    tempColorCodes.add(colorCode)
+                    parsedNotes.add(ParsedNote(noteId, front, back, colorCode))
 
-                    tempWords.add(word.replaceFirstChar { it.uppercaseChar() })
-                    tempNoteIds.add(noteId)
-                    tempColorCodes.add(colorCode)
+                    frontLookup[front.lowercase()] = noteId
+                    backLookup[back.lowercase()] = noteId
                 }
-                noteCursor.close()
+            }
+
+            for (note in parsedNotes) {
+                var mirroredId = frontLookup[note.back.lowercase()] ?: -1L
+                if(mirroredId == -1L) {
+                    mirroredId = backLookup[note.front.lowercase()] ?: -1L
+                }
+
+                val noteIds = if (mirroredId != -1L) {
+                    if (note.id != mirroredId) {
+                        longArrayOf(note.id, mirroredId)
+                    } else {
+                        longArrayOf(note.id)
+                    }
+                } else {
+                    longArrayOf(note.id)
+                }
+
+                tempWords.add(note.front.replaceFirstChar { it.lowercaseChar() })
+                tempNoteIds.add(noteIds)
+                tempColorCodes.add(note.colorCode)
+
+                tempWords.add(note.front.replaceFirstChar { it.uppercaseChar() })
+                tempNoteIds.add(noteIds)
+                tempColorCodes.add(note.colorCode)
             }
             val t2 = System.currentTimeMillis()
             android.util.Log.d("BookEngine", "Note cursor processing took: ${t2 - t1} ms")
 
             return AnkiWordsData(
                 tempWords.toTypedArray(),
-                tempNoteIds.toLongArray(),
+                tempNoteIds.toTypedArray(),
                 tempColorCodes.toIntArray()
             )
         } catch (e: Exception) {
-            android.util.Log.e("BookEngine", "Failed to fetch Anki words for deck ID: $deckIdString", e)
+            android.util.Log.e("BookEngine", "Failed to fetch Anki words", e)
             throw Exception("Failed to fetch Anki words: ${e.message}")
         }
     }
@@ -290,25 +328,32 @@ class AnkiModule : Module() {
                 if (note != null) throw Exception("Card already exists!")
 
                 val ankiApi = AddContentApi(context)
-                val noteId = ankiApi.addNote(modelId, deckId, fields, tags)
 
-                val isSuccessCreating = noteId != null
-                if (isSuccessCreating) addWordToAnkiDictionary(fields[1], noteId, 1)
+                val mainNoteId = ankiApi.addNote(modelId, deckId, fields, tags)
+                    ?: throw Exception("Failed to create main note")
 
-                return@AsyncFunction noteId
+                val mirroredFields = fields.clone()
+                val temp = mirroredFields[1]
+                mirroredFields[1] = mirroredFields[4]
+                mirroredFields[3] = temp
+                mirroredFields[4] = ""
+
+                val mirroredNoteId = ankiApi.addNote(modelId, deckId, mirroredFields, tags)
+                    ?: throw Exception("Failed to create mirrored note")
+
+                val combinedIds = longArrayOf(mainNoteId, mirroredNoteId)
+                addWordToAnkiDictionary(fields[1], combinedIds, 1)
+
+                return@AsyncFunction combinedIds
             } catch (e: Exception) {
-                val fieldsString = fields.joinToString(prefix = "[", postfix = "]")
-                val tagsString = tags?.joinToString(prefix = "[", postfix = "]") ?: "none"
-                val errorDetails = "Model: $modelId, Deck: $deckId, Fields: $fieldsString, Tags: $tagsString"
-
-                android.util.Log.e("BookEngine", "Failed to add note. $errorDetails", e)
-                throw Exception("Failed to add Anki note. $errorDetails. Error: ${e.message}")
+                throw Exception("Failed to add Anki note: ${e.message}")
             }
         }
 
-        AsyncFunction("updateNoteTags") { noteIdString: String, newTags: Array<String> ->
-            val noteId = noteIdString.toLong()
-            updateNoteTags(noteId, newTags);
+        AsyncFunction("updateNoteTags") { noteIds: LongArray, newTags: Array<String> ->
+            for (noteId in noteIds) {
+                updateNoteTags(noteId, newTags)
+            }
         }
     }
 }

@@ -1,20 +1,19 @@
 import { RefObject } from 'react';
 import { WebView } from 'react-native-webview';
 import { findNodeHandle, View } from 'react-native';
-import { useBookStore } from 'stores/useBookStore';
+import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
 import { calculateBookProgress } from 'lib/utils';
 
-export const useEpubNextChapter = (
+export const useEpubNextBlock = (
   webViewRef: RefObject<WebView | null>,
   containerRef: RefObject<View | null>
 ) => {
-  const { currentBook, shiftNext } = useBookStore();
+  const currentBook = useCurrentBook();
+  const shiftNext = useBookStore((state) => state.shiftNext);
 
   return async () => {
-    if (!currentBook) return;
-
     const shiftResult = shiftNext();
 
     if (!shiftResult) {
@@ -27,9 +26,9 @@ export const useEpubNextChapter = (
     console.log('Shift result:', { fetchIndex, removeIndex });
 
     try {
-      const nextChapter = currentBook.chapters[fetchIndex];
+      const nextBlock = currentBook.blocks[fetchIndex];
 
-      if (!nextChapter) {
+      if (!nextBlock) {
         webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
         return;
       }
@@ -37,29 +36,28 @@ export const useEpubNextChapter = (
       const reactTag = findNodeHandle(containerRef.current);
 
       if (reactTag) {
-        BookEngine.injectChapter(reactTag, nextChapter.fullPath, fetchIndex, removeIndex, 'bottom');
+        BookEngine.injectBlock(reactTag, nextBlock.fullPath, fetchIndex, removeIndex, 'bottom');
       } else {
         console.error('No react tag found');
         webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
       }
 
-      console.log('currentChapters:', currentBook.currentChapters);
+      console.log('currentBlocks:', currentBook.currentBlocks);
     } catch (e) {
-      console.error('Failed to natively inject next chapter:', e);
+      console.error('Failed to natively inject next block:', e);
       webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
     }
   };
 };
 
-export const useEpubPrevChapter = (
+export const useEpubPrevBlock = (
   webViewRef: RefObject<WebView | null>,
   containerRef: RefObject<View | null>
 ) => {
-  const { currentBook, shiftPrev } = useBookStore();
+  const currentBook = useCurrentBook();
+  const shiftPrev = useBookStore((state) => state.shiftPrev);
 
   return async () => {
-    if (!currentBook) return;
-
     const shiftResult = shiftPrev();
 
     if (!shiftResult) {
@@ -72,95 +70,88 @@ export const useEpubPrevChapter = (
     console.log('Shift result:', { fetchIndex, removeIndex });
 
     try {
-      const prevChapter = currentBook.chapters[fetchIndex];
+      const prevBlock = currentBook.blocks[fetchIndex];
 
-      if (!prevChapter) {
+      if (!prevBlock) {
         webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
         return;
       }
 
       const reactTag = findNodeHandle(containerRef.current);
       if (reactTag) {
-        BookEngine.injectChapter(reactTag, prevChapter.fullPath, fetchIndex, removeIndex, 'top');
+        BookEngine.injectBlock(reactTag, prevBlock.fullPath, fetchIndex, removeIndex, 'top');
       } else {
         console.error('No react tag found');
         webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
       }
 
-      console.log('currentChapters:', currentBook.currentChapters);
+      console.log('currentBlocks:', currentBook.currentBlocks);
     } catch (e) {
-      console.error('Failed to natively inject prev chapter:', e);
+      console.error('Failed to natively inject prev block:', e);
       webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
     }
   };
 };
 
 export const useJumpToNextSearchResult = () => {
-  const { currentSearchResult, setCurrentSearchResult, searchResults, setIsWebViewReady, setIsSearchOperation } =
-    useTempStore();
-  const { jumpToChapter, currentBook, jumpToSearchAction, updateMisc, setCurrentChapter } =
-    useBookStore();
-
-  if (!currentBook) return;
+  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+  const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
+  const searchResults = useTempStore((state) => state.searchResults);
+  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
+  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
+  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
+  const jumpToSearchAction = useBookStore((state) => state.jumpToSearchAction);
+  const updateMisc = useBookStore((state) => state.updateMisc);
+  const currentBook = useCurrentBook();
 
   return () => {
     const newSearchResult = searchResults[currentSearchResult.id + 1];
 
-    if (newSearchResult) {
-      const isAlreadyLoaded = (currentBook?.currentChapters || []).includes(
-        newSearchResult.chapterIndex
-      );
+    if (!newSearchResult) return;
 
-      if (!isAlreadyLoaded) {
-        setIsWebViewReady(false);
-        setIsSearchOperation(true);
-        jumpToChapter(newSearchResult.chapterIndex);
-      } else {
-        jumpToSearchAction(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
-      }
-
-      updateMisc({
-        percent: calculateBookProgress(
-          currentBook,
-          newSearchResult.chapterIndex,
-          0
-        ),
-      });
-      setCurrentChapter(newSearchResult.chapterIndex);
-      setCurrentSearchResult(newSearchResult);
+    if (!currentBook.currentBlocks.includes(newSearchResult.blockIndex)) {
+      setIsWebViewReady(false);
+      setIsSearchOperation(true);
+      jumpToBlock(newSearchResult.blockIndex);
+    } else {
+      jumpToSearchAction(newSearchResult.blockIndex, newSearchResult.occurrenceIndex);
     }
+
+    updateMisc({
+      percent: calculateBookProgress(currentBook, newSearchResult.blockIndex, 0),
+    });
+
+    setCurrentSearchResult(newSearchResult);
   };
 };
 
 export const useJumpToPrevSearchResult = () => {
-  const { currentSearchResult, setCurrentSearchResult, searchResults, setIsWebViewReady, setIsSearchOperation } =
-    useTempStore();
-  const { jumpToChapter, currentBook, jumpToSearchAction, updateMisc, setCurrentChapter } =
-    useBookStore();
-
-  if (!currentBook) return;
+  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+  const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
+  const searchResults = useTempStore((state) => state.searchResults);
+  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
+  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
+  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
+  const jumpToSearchAction = useBookStore((state) => state.jumpToSearchAction);
+  const updateMisc = useBookStore((state) => state.updateMisc);
+  const currentBook = useCurrentBook();
 
   return () => {
     const newSearchResult = searchResults[currentSearchResult.id - 1];
 
-    if (newSearchResult) {
-      const isAlreadyLoaded = (currentBook?.currentChapters || []).includes(
-        newSearchResult.chapterIndex
-      );
+    if (!newSearchResult) return;
 
-      if (!isAlreadyLoaded) {
-        setIsWebViewReady(false);
-        setIsSearchOperation(true);
-        jumpToChapter(newSearchResult.chapterIndex);
-      } else {
-        jumpToSearchAction(newSearchResult.chapterIndex, newSearchResult.occurrenceIndex);
-      }
-
-      updateMisc({
-        percent: calculateBookProgress(currentBook, newSearchResult.chapterIndex, 0),
-      });
-      setCurrentChapter(newSearchResult.chapterIndex);
-      setCurrentSearchResult(newSearchResult);
+    if (!currentBook.currentBlocks.includes(newSearchResult.blockIndex)) {
+      setIsWebViewReady(false);
+      setIsSearchOperation(true);
+      jumpToBlock(newSearchResult.blockIndex);
+    } else {
+      jumpToSearchAction(newSearchResult.blockIndex, newSearchResult.occurrenceIndex);
     }
-  };
+
+    updateMisc({
+      percent: calculateBookProgress(currentBook, newSearchResult.blockIndex, 0),
+    });
+    setCurrentSearchResult(newSearchResult);
+  }
 };

@@ -28,10 +28,13 @@ void sb_append_char(StringBuffer* sb, char c) {
 }
 
 TrieNode* trie_create_node() {
-    return calloc(1, sizeof(TrieNode));
+    TrieNode* node = calloc(1, sizeof(TrieNode));
+    node->note_ids = NULL;
+    node->note_count = 0;
+    return node;
 }
 
-void trie_insert(TrieNode* root, const char* word, long note_id, int color_code) {
+void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_count, int color_code) {
     TrieNode* curr = root;
     for (int i = 0; word[i] != '\0'; i++) {
         unsigned char c = (unsigned char)word[i];
@@ -59,7 +62,18 @@ void trie_insert(TrieNode* root, const char* word, long note_id, int color_code)
 
         curr = next_node;
     }
-    curr->note_id = note_id;
+
+    if (curr->note_ids) {
+        free(curr->note_ids);
+    }
+
+    curr->note_ids = malloc(note_count * sizeof(long));
+    if (curr->note_ids) {
+        memcpy(curr->note_ids, note_ids, note_count * sizeof(long));
+        curr->note_count = note_count;
+    } else {
+        curr->note_count = 0;
+    }
     curr->color_code = color_code;
 }
 
@@ -94,6 +108,11 @@ void trie_free(TrieNode* root) {
         free(child);
         child = next;
     }
+
+    if (root->note_ids) {
+        free(root->note_ids);
+    }
+
     free(root);
 }
 

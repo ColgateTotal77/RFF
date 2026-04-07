@@ -1,10 +1,10 @@
 import { PermissionsAndroid, View, Alert } from 'react-native';
 import { Anki } from 'modules/book-engine';
-import { useBookStore } from 'stores/useBookStore';
 import { useEffect, useState } from 'react';
 import { Dropdown } from 'components/Dropdown';
 import { ANKI_PERMISSION } from 'lib/constants';
 import { Card, Text, Button } from 'react-native-paper';
+import { useBookStore } from 'stores/useBookStore';
 
 export const SettingsScreen = () => {
   const {

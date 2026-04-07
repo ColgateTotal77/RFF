@@ -21,11 +21,29 @@ export const deepMerge = (target: any, source: any): any => {
 
 export const calculateBookProgress = (
   currentBook: Book,
-  currentChapter: number,
-  currentChapterScrollPosition: number
+  currentBlock: number,
+  currentBlockScrollPosition: number
 ) => {
-  const charOffset = currentBook.misc.charOffsets[currentChapter];
+  const currentChapter = currentBook.chapters.find((ch) => ch.blockIds.includes(currentBlock));
+
+  if (!currentChapter) return 0;
+
+  const block = currentBook.blocks[currentBlock];
   const charsIntoChapter =
-    currentBook.chapters[currentChapter].charCount * currentChapterScrollPosition;
-  return (charOffset + charsIntoChapter) / currentBook.misc.totalCharCount;
+    block.charOffset -
+    currentBook.blocks[currentChapter.blockIds[0]].charOffset +
+    block.charCount * currentBlockScrollPosition;
+
+  return (currentChapter.charOffset + charsIntoChapter) / currentBook.misc.totalCharCount;
+};
+
+export const resolvePath = (base: string, relative: string) => {
+  const stack = base.split('/').filter(Boolean);
+  const parts = relative.split('/');
+  for (const part of parts) {
+    if (part === '.') continue;
+    if (part === '..') stack.pop();
+    else stack.push(part);
+  }
+  return stack.join('/');
 };

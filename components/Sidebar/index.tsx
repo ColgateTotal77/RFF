@@ -7,10 +7,13 @@ import { SettingsScreen } from 'pages/Settings';
 import { ReaderScreen } from 'pages/Reader';
 import { DrawerTab, RootStackParamList } from 'types';
 import { BookHeader } from 'components/Sidebar/BookHeader';
+import { useBookStore } from 'stores/useBookStore';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
 export const Sidebar = () => {
+  const currentBook = useBookStore(state => state.currentBook);
+
   return (
     <Drawer.Navigator
       drawerContent={(props) => <SidebarContent {...props} />}
@@ -18,7 +21,7 @@ export const Sidebar = () => {
         header: ({ navigation, route, options }) => {
           const currentTab = route.name as DrawerTab;
 
-          if (currentTab === "Reader") return <BookHeader/>
+          if (currentTab === "Reader" && currentBook) return <BookHeader/>
           return <Header navigation={navigation} title={getHeaderTitle(options, route.name)} />;
         },
       }}>

@@ -1,4 +1,4 @@
-import { useBookStore } from 'stores/useBookStore';
+import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
 import { SearchResultWithTitle } from 'types';
 import { useTempStore } from 'stores/useTempStore';
@@ -15,20 +15,16 @@ export const MenuSearch = ({ onClose }: Props) => {
   const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
 
-  const currentBook = useBookStore((state) => state.currentBook);
-  const jumpToChapter = useBookStore((state) => state.jumpToChapter);
+  const currentBook = useCurrentBook();
+  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
   const clearSearchAction = useBookStore((state) => state.clearSearchAction);
 
   const onPress = (searchResultWithTitle: SearchResultWithTitle) => {
-    const isAlreadyLoaded = (currentBook?.currentChapters || []).includes(
-      searchResultWithTitle.chapterIndex
-    );
-
     clearSearchAction();
 
-    if (!isAlreadyLoaded) {
+    if (!currentBook.currentBlocks.includes(searchResultWithTitle.blockIndex)) {
       setIsWebViewReady(false);
-      jumpToChapter(searchResultWithTitle.chapterIndex);
+      jumpToBlock(searchResultWithTitle.blockIndex);
     }
 
     setIsSearchOperation(true);
@@ -48,7 +44,7 @@ export const MenuSearch = ({ onClose }: Props) => {
     <FlatList
       data={Object.values(searchResults)}
       keyExtractor={(searchResultWithTitle) =>
-        `${searchResultWithTitle.chapterIndex}-${searchResultWithTitle.occurrenceIndex}`
+        `${searchResultWithTitle.blockIndex}-${searchResultWithTitle.occurrenceIndex}`
       }
       renderItem={renderSearchCard}
       contentContainerClassName="p-4 gap-4"

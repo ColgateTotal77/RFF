@@ -23,7 +23,7 @@ export const Other = (props: Props) => {
 
     if (!result.canceled) {
       onClose();
-      loadBook(result.assets[0].uri);
+      await loadBook(result.assets[0].uri);
       navigation.navigate('Reader');
     }
   };

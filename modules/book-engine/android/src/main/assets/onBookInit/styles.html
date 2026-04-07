@@ -17,7 +17,7 @@
     -webkit-tap-highlight-color: transparent !important;
   }
 
-  body div, body p, body section, body article, body span {
+  body div, body p, body section, body article, body span, body img {
     padding-left: 0 !important;
     padding-right: 0 !important;
     margin-left: 0 !important;
@@ -26,10 +26,15 @@
     box-sizing: border-box !important;
   }
 
-  div[id^="chapter-"] {
-    contain: layout style paint;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 100vh;
+  img {
+    display: block !important;
+    height: auto !important;
+    max-width: 100% !important;
+    margin: 10px 0 !important;
+    object-fit: contain !important;
+  }
+
+  div[id^="block-"] {
     min-height: 100vh;
   }
 
@@ -39,8 +44,6 @@
 
   .anki-word[data-flag]:not([data-flag="0"]) {
     position: relative;
-    display: inline-block;
-    will-change: transform;
   }
 
   .anki-word[data-flag]:not([data-flag="0"])::after {

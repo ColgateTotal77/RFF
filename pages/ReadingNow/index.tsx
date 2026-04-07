@@ -3,12 +3,17 @@ import { useBookStore } from 'stores/useBookStore';
 import { useNavigation } from '@react-navigation/native';
 import { BookCard } from 'pages/ReadingNow/BookCard';
 import { Book, RootDrawerNavigationProp } from 'types';
+import { useTempStore } from 'stores/useTempStore';
 
 export const ReadingNowScreen = () => {
-  const { books, openBook } = useBookStore();
+  const books = useBookStore(state => state.books);
+  const openBook = useBookStore(state => state.openBook);
+  const closeMenu = useTempStore((state) => state.closeSelectionMenu);
+
   const navigation = useNavigation<RootDrawerNavigationProp>();
 
   const onPress = (basePath: string) => {
+    closeMenu();
     openBook(basePath);
     navigation.navigate('Reader');
   };

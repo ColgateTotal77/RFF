@@ -47,7 +47,7 @@ class BookEngineModule : Module() {
                 return false
             }
 
-            val ankiBaseMap = mutableMapOf<String, Pair<Long, Int>>()
+            val ankiBaseMap = mutableMapOf<String, Pair<LongArray, Int>>()
             for (i in ankiData.words.indices) {
                 ankiBaseMap[ankiData.words[i].lowercase()] = Pair(ankiData.noteIds[i], ankiData.colorCodes[i])
             }
@@ -72,7 +72,7 @@ class BookEngineModule : Module() {
             android.util.Log.d("BookEngine", "Found ${expandedForms.size} expanded forms in Room DB for lang: $langCode")
 
             val finalWords = mutableListOf<String>()
-            val finalNoteIds = mutableListOf<Long>()
+            val finalNoteIds = mutableListOf<LongArray>()
             val finalColors = mutableListOf<Int>()
 
             for ((lemma, data) in ankiBaseMap) {
@@ -106,7 +106,7 @@ class BookEngineModule : Module() {
 
             initAnkiDictionary(
                 finalWords.toTypedArray(),
-                finalNoteIds.toLongArray(),
+                finalNoteIds.toTypedArray(),
                 finalColors.toIntArray()
             )
 
@@ -157,11 +157,11 @@ class BookEngineModule : Module() {
         }
     }
 
-    private external fun extractChapterToFile(filePath: String, outputPath: String): Boolean
+    private external fun extractBlockToFile(filePath: String, outputPath: String): Boolean
 
     private external fun initAnkiDictionary(
         words: Array<String>,
-        noteIds: LongArray,
+        noteIds: Array<LongArray>,
         colorCodes: IntArray
     )
     private external fun freeAnkiDictionary()
@@ -230,8 +230,8 @@ class BookEngineModule : Module() {
             }
         }
 
-        AsyncFunction("searchInBook") { query: String, chapterPaths: Array<String> ->
-            if (query.trim().isEmpty() || chapterPaths.isEmpty()) {
+        AsyncFunction("searchInBook") { query: String, blockPaths: Array<String> ->
+            if (query.trim().isEmpty() || blockPaths.isEmpty()) {
                 return@AsyncFunction emptyList<Map<String, Any>>()
             }
 
@@ -240,9 +240,9 @@ class BookEngineModule : Module() {
 
             val nestedResults = runBlocking(Dispatchers.IO) {
 
-                chapterPaths.mapIndexed { chapterIndex, path ->
+                blockPaths.mapIndexed { blockIndex, path ->
                     async {
-                        val chapterResults = mutableListOf<Map<String, Any>>()
+                        val blockResults = mutableListOf<Map<String, Any>>()
 
                         try {
                             val file = File(path)
@@ -265,8 +265,8 @@ class BookEngineModule : Module() {
                                     if (snippetStart > 0) snippet = "...$snippet"
                                     if (snippetEnd < plainText.length) snippet = "$snippet..."
 
-                                    chapterResults.add(mapOf(
-                                        "chapterIndex" to chapterIndex,
+                                    blockResults.add(mapOf(
+                                        "blockIndex" to blockIndex,
                                         "snippet" to snippet,
                                         "occurrenceIndex" to occurrenceIndex
                                     ))
@@ -276,10 +276,10 @@ class BookEngineModule : Module() {
                                 }
                             }
                         } catch (e: Exception) {
-                            android.util.Log.e("BookEngine", "Failed to search chapter: $path", e)
+                            android.util.Log.e("BookEngine", "Failed to search block: $path", e)
                         }
 
-                        chapterResults
+                        blockResults
                     }
                 }.awaitAll()
             }
@@ -383,17 +383,15 @@ class BookEngineModule : Module() {
                         paths.mapIndexed { i, path ->
                             async {
                                 val tempFile = File(cacheDir, "temp_init_$i.html")
-                                val success = extractChapterToFile(path, tempFile.absolutePath)
+                                val success = extractBlockToFile(path, tempFile.absolutePath)
                                 i to if (success) tempFile else null
                             }
                         }.awaitAll().toMap().toSortedMap()
                     }
 
                     tempFiles.forEach { (i, tempFile) ->
-                        val chapterIndex = indices[i]
-                        fos.write("\n<div id=\"chapter-$chapterIndex\">\n".toByteArray())
+                        val blockIndex = indices[i]
                         tempFile?.inputStream()?.use { it.copyTo(fos) }
-                        fos.write("\n</div>\n".toByteArray())
                         tempFile?.delete()
                     }
 
@@ -413,25 +411,25 @@ class BookEngineModule : Module() {
             }
         }
 
-        AsyncFunction("injectChapter") { viewTag: Int, path: String, fetchIndex: Int, removeIndex: Int?, position: String ->
+        AsyncFunction("injectBlock") { viewTag: Int, path: String, fetchIndex: Int, removeIndex: Int?, position: String ->
             val t1 = System.currentTimeMillis()
 
             val cacheDir = appContext.reactContext?.cacheDir ?: throw Exception("No cache dir")
             cacheDir.listFiles { _, name -> name.startsWith("initial_book_$viewTag") }?.forEach { it.delete() }
 
             val timestamp = System.currentTimeMillis()
-            val tempFile = File(cacheDir, "temp_chapter_${fetchIndex}_$timestamp.html")
+            val tempFile = File(cacheDir, "temp_block_${fetchIndex}_$timestamp.html")
 
             val outputPath = tempFile.absolutePath
 
-            val success = extractChapterToFile(path, outputPath)
+            val success = extractBlockToFile(path, outputPath)
 
             if (!success) {
-                android.util.Log.e("BookEngine", "C failed to write chapter to file")
+                android.util.Log.e("BookEngine", "C failed to write block to file")
             }
 
             val fileUrl = "file://$outputPath"
-            val jsScript = "window.loadNewChapter('$fileUrl', '$position', $fetchIndex, ${removeIndex ?: "null"});"
+            val jsScript = "window.loadNewBlock('$fileUrl', '$position', $fetchIndex, ${removeIndex ?: "null"});"
 
             appContext.activityProvider?.currentActivity?.runOnUiThread {
                 val activity = appContext.activityProvider?.currentActivity ?: return@runOnUiThread
