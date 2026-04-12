@@ -30,7 +30,8 @@ class AnkiModule : Module() {
         freqDatabase = database
     }
 
-    private external fun addWordToAnkiDictionary(word: String, noteIds: LongArray, colorCode: Int)
+    private external fun upsertWordToAnkiDictionary(word: String, noteIds: LongArray, colorCode: Int)
+
     private fun getNoteInfoByModelId(modelId: Long, fieldText: String): NoteInfo? {
         val context = appContext.reactContext ?: throw Exception("React context is null")
 
@@ -97,7 +98,7 @@ class AnkiModule : Module() {
         }
     }
 
-    private fun updateNoteTags(noteId: Long, newTags: Array<String>) {
+    private fun updateNoteTags(noteId: Long, newTags: Array<String>): Pair<String, Int> {
         val context = appContext.reactContext ?: throw Exception("React context is null")
         val resolver = context.contentResolver
 
@@ -106,6 +107,7 @@ class AnkiModule : Module() {
 
         var currentTagsStr = ""
         var word = ""
+        var colorCode = 0
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 currentTagsStr = cursor.getString(0) ?: ""
@@ -139,17 +141,22 @@ class AnkiModule : Module() {
             existingTags.add(wordTier)
         }
 
-        val updatedTagsStr = if (existingTags.isEmpty()) ""
+        val tagsWithTierStr = if (existingTags.isEmpty()) ""
         else " ${existingTags.joinToString(" ")} "
 
         val values = ContentValues()
-        values.put("tags", updatedTagsStr)
+        values.put("tags", tagsWithTierStr)
 
         val rowsUpdated = resolver.update(noteUri, values, null, null)
 
         if (rowsUpdated == 0) {
             throw Exception("Failed to update tags for Note ID $noteId in database.")
         }
+
+        val match = Regex("Lookups_([1-8])").find(tagsWithTierStr)
+        colorCode = match?.groupValues?.get(1)?.toInt() ?: 0
+
+        return Pair(word, colorCode)
     }
 
     fun getAllAnkiWords(deckIdString: String, context: android.content.Context): AnkiWordsData {
@@ -178,6 +185,9 @@ class AnkiModule : Module() {
             val frontLookup = mutableMapOf<String, Long>()
             val backLookup = mutableMapOf<String, Long>()
 
+            val lookupsRegex = Regex("Lookups_([1-8])")
+            val fieldSeparator = "\u001F"
+
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
@@ -189,7 +199,7 @@ class AnkiModule : Module() {
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
-                    val fieldsArray = flds.split("\u001F")
+                    val fieldsArray = flds.split(fieldSeparator)
 
                     val maxRequiredIndex = maxOf(configuredFrontIndex, configuredBackIndex, fallbackBackIndex)
                     if (fieldsArray.size <= maxRequiredIndex) continue
@@ -205,15 +215,9 @@ class AnkiModule : Module() {
 
                     val noteId = cursor.getLong(idIndex)
                     val tagsStr = cursor.getString(tagsIndex) ?: ""
-                    var colorCode = 0
-                    val lookupIdx = tagsStr.indexOf("Lookups_")
 
-                    if (lookupIdx != -1 && lookupIdx + 8 < tagsStr.length) {
-                        val numChar = tagsStr[lookupIdx + 8]
-                        if (numChar in '1'..'8') {
-                            colorCode = numChar - '0'
-                        }
-                    }
+                    val match = lookupsRegex.find(tagsStr)
+                    var colorCode = match?.groupValues?.get(1)?.toInt() ?: 0
 
                     parsedNotes.add(ParsedNote(noteId, front, back, colorCode))
 
@@ -238,11 +242,7 @@ class AnkiModule : Module() {
                     longArrayOf(note.id)
                 }
 
-                tempWords.add(note.front.replaceFirstChar { it.lowercaseChar() })
-                tempNoteIds.add(noteIds)
-                tempColorCodes.add(note.colorCode)
-
-                tempWords.add(note.front.replaceFirstChar { it.uppercaseChar() })
+                tempWords.add(note.front.lowercase())
                 tempNoteIds.add(noteIds)
                 tempColorCodes.add(note.colorCode)
             }
@@ -324,12 +324,19 @@ class AnkiModule : Module() {
             val deckId = deckIdString.toLong()
 
             try {
-                val note = getNoteInfoByModelId(modelId, fields[1])
+                val word = fields[1]
+
+                val note = getNoteInfoByModelId(modelId, word)
                 if (note != null) throw Exception("Card already exists!")
 
                 val ankiApi = AddContentApi(context)
 
-                val mainNoteId = ankiApi.addNote(modelId, deckId, fields, tags)
+                val tier = runBlocking {
+                    freqDatabase?.getFrequencyTier(word) ?: "Top_20000+"
+                }
+                val tagsWithTier = tags + tier
+
+                val mainNoteId = ankiApi.addNote(modelId, deckId, fields, tagsWithTier)
                     ?: throw Exception("Failed to create main note")
 
                 val mirroredFields = fields.clone()
@@ -338,11 +345,11 @@ class AnkiModule : Module() {
                 mirroredFields[3] = temp
                 mirroredFields[4] = ""
 
-                val mirroredNoteId = ankiApi.addNote(modelId, deckId, mirroredFields, tags)
+                val mirroredNoteId = ankiApi.addNote(modelId, deckId, mirroredFields, tagsWithTier)
                     ?: throw Exception("Failed to create mirrored note")
 
                 val combinedIds = longArrayOf(mainNoteId, mirroredNoteId)
-                addWordToAnkiDictionary(fields[1], combinedIds, 1)
+                upsertWordToAnkiDictionary(fields[1], combinedIds, 1)
 
                 return@AsyncFunction combinedIds
             } catch (e: Exception) {
@@ -352,7 +359,8 @@ class AnkiModule : Module() {
 
         AsyncFunction("updateNoteTags") { noteIds: LongArray, newTags: Array<String> ->
             for (noteId in noteIds) {
-                updateNoteTags(noteId, newTags)
+                val (word, colorCode) = updateNoteTags(noteId, newTags)
+                upsertWordToAnkiDictionary(word, noteIds, colorCode)
             }
         }
     }

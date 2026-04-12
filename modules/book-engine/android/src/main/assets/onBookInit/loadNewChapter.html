@@ -9,14 +9,19 @@
           window.log('loadNewBlock: block ' + fetchIndex + ' loaded successfully');
           var htmlContent = xhr.responseText;
 
-          var container = document.createElement('div');
-          container.id = "block-" + fetchIndex;
-          container.innerHTML = htmlContent;
+          var tempDiv = document.createElement('div');
+          tempDiv.innerHTML = htmlContent;
+          var blockElement = tempDiv.querySelector('[id^="block-"]');
+
+          if (!blockElement) {
+            window.log('loadNewBlock: ERROR - no block element found in content', 'error');
+            return;
+          }
 
           if (position === "top") {
-            document.body.insertBefore(container, document.body.firstChild);
+            document.body.insertBefore(blockElement, document.body.firstChild);
           } else {
-            document.body.appendChild(container);
+            document.body.appendChild(blockElement);
           }
 
           var removeId = removeIndex !== undefined && removeIndex !== null ? removeIndex : null;

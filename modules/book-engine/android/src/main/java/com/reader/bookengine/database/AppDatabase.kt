@@ -19,11 +19,6 @@ interface WordFormDao {
     suspend fun getFormsForLemmas(langCode: String, lemmas: List<String>): List<WordFormEntity>
 }
 
-@Database(entities = [WordFormEntity::class], version = 1)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun wordFormDao(): WordFormDao
-}
-
 @Entity(tableName = "words")
 data class WordFreqEntity(
     @PrimaryKey val word: String,
@@ -37,7 +32,61 @@ interface WordFreqDao {
     suspend fun getZipf(word: String): Double?
 }
 
-@Database(entities = [WordFreqEntity::class], version = 1)
+@Entity(
+    tableName = "blocks",
+    indices = [Index("bookBasePath")]
+)
+data class BlockEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val bookBasePath: String,
+    val blockId: Int,
+    val title: String,
+    val content: String
+)
+
+data class FullBlockMatch(
+    val blockId: Int,
+    val title: String,
+    val content: String
+)
+
+@Dao
+interface BlockDao {
+    @Insert
+    suspend fun insertAll(blocks: List<BlockEntity>)
+
+    @Query("""
+        SELECT blockId, title, content
+        FROM blocks
+        WHERE bookBasePath = :bookBasePath AND content LIKE '%' || :query || '%'
+    """)
+    suspend fun searchAllMatches(query: String, bookBasePath: String): List<FullBlockMatch>
+
+    @Query("""
+        DELETE FROM blocks
+        WHERE bookBasePath = :bookBasePath
+    """)
+    suspend fun delete(bookBasePath: String)
+}
+
+@Database(
+    entities = [WordFreqEntity::class],
+    version = 1
+)
 abstract class FreqDatabase : RoomDatabase() {
+    abstract fun wordFreqDao(): WordFreqDao
+}
+
+@Database(
+    entities = [
+        WordFormEntity::class,
+        BlockEntity::class,
+        WordFreqEntity::class
+    ],
+    version = 3
+)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun wordFormDao(): WordFormDao
+    abstract fun blockDao(): BlockDao
     abstract fun wordFreqDao(): WordFreqDao
 }

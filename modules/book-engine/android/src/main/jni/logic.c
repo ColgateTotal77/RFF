@@ -10,7 +10,7 @@
 TrieNode* global_dictionary = NULL;
 
 JNIEXPORT void JNICALL
-Java_com_reader_bookengine_AnkiModule_addWordToAnkiDictionary(
+Java_com_reader_bookengine_AnkiModule_upsertWordToAnkiDictionary(
         JNIEnv* env, jobject thiz, jstring jword, jlongArray noteIds, jint colorCode) {
 
     if (global_dictionary == NULL) {
@@ -23,8 +23,14 @@ Java_com_reader_bookengine_AnkiModule_addWordToAnkiDictionary(
     jsize note_count = (*env)->GetArrayLength(env, noteIds);
     jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
-    trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
+    char* lower_word = strdup(word_str);
+    for (char* p = lower_word; *p; p++) {
+        *p = tolower((unsigned char)*p);
+    }
 
+    trie_insert(global_dictionary, lower_word, notes, note_count, colorCode);
+
+    free(lower_word);
     (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, jword, word_str);
 }
@@ -47,12 +53,18 @@ Java_com_reader_bookengine_BookEngineModule_initAnkiDictionary(
         jstring jword = (jstring)(*env)->GetObjectArrayElement(env, words, i);
         const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
 
+        char* lower_word = strdup(word_str);
+        for (char* p = lower_word; *p; p++) {
+            *p = tolower((unsigned char)*p);
+        }
+
         jlongArray noteIds = (jlongArray)(*env)->GetObjectArrayElement(env, noteIdsArray, i);
         jsize note_count = (*env)->GetArrayLength(env, noteIds);
         jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
-        trie_insert(global_dictionary, word_str, notes, note_count, colors[i]);
+        trie_insert(global_dictionary, lower_word, notes, note_count, colors[i]);
 
+        free(lower_word);
         (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
         (*env)->ReleaseStringUTFChars(env, jword, word_str);
         (*env)->DeleteLocalRef(env, jword);
@@ -93,21 +105,8 @@ Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
     fclose(file);
     (*env)->ReleaseStringUTFChars(env, filePath, pathFrom);
 
-    char *body_start = strstr(buffer, "<body");
-    if (!body_start) body_start = strstr(buffer, "<BODY");
-    char *body_end = strstr(buffer, "</body");
-    if (!body_end) body_end = strstr(buffer, "</BODY");
-
     char *content_start = buffer;
     size_t content_length = size;
-
-    if (body_start && body_end && body_end > body_start) {
-        content_start = strchr(body_start, '>');
-        if (content_start && content_start < body_end) {
-            content_start++;
-            content_length = body_end - content_start;
-        }
-    }
 
     char temp_end_char = content_start[content_length];
     content_start[content_length] = '\0';

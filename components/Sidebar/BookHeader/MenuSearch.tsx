@@ -1,8 +1,8 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
-import { SearchResultWithTitle } from 'types';
 import { useTempStore } from 'stores/useTempStore';
 import { SearchCard } from 'components/Sidebar/BookHeader/SearchCard';
+import { SearchResult } from 'types';
 
 interface Props {
   onClose: () => void;
@@ -19,22 +19,22 @@ export const MenuSearch = ({ onClose }: Props) => {
   const jumpToBlock = useBookStore((state) => state.jumpToBlock);
   const clearSearchAction = useBookStore((state) => state.clearSearchAction);
 
-  const onPress = (searchResultWithTitle: SearchResultWithTitle) => {
+  const onPress = (searchResult: SearchResult) => {
     clearSearchAction();
 
-    if (!currentBook.currentBlocks.includes(searchResultWithTitle.blockIndex)) {
+    if (!currentBook.currentBlocks.includes(searchResult.blockId)) {
       setIsWebViewReady(false);
-      jumpToBlock(searchResultWithTitle.blockIndex);
+      jumpToBlock(searchResult.blockId);
     }
 
     setIsSearchOperation(true);
-    setCurrentSearchResult(searchResultWithTitle);
+    setCurrentSearchResult(searchResult);
     onClose();
   };
 
-  const renderSearchCard = ({ item }: { item: SearchResultWithTitle }) => (
+  const renderSearchCard = ({ item }: { item: SearchResult }) => (
     <SearchCard
-      isCurrentSearch={item.id === currentSearchResult.id}
+      isCurrentSearch={ item.id === currentSearchResult.id }
       searchItem={item}
       onPress={() => onPress(item)}
     />
@@ -43,9 +43,7 @@ export const MenuSearch = ({ onClose }: Props) => {
   return (
     <FlatList
       data={Object.values(searchResults)}
-      keyExtractor={(searchResultWithTitle) =>
-        `${searchResultWithTitle.blockIndex}-${searchResultWithTitle.occurrenceIndex}`
-      }
+      keyExtractor={(searchResults) => searchResults.id.toString()}
       renderItem={renderSearchCard}
       contentContainerClassName="p-4 gap-4"
       initialNumToRender={15}

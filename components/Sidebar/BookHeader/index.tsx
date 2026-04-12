@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { View, Modal } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
-import { SearchResult, SearchResultsMapWithTitle } from 'types';
+import { SearchResult } from 'types';
 import { MenuSearch } from 'components/Sidebar/BookHeader/MenuSearch';
 
 export const BookHeader = () => {
@@ -19,27 +19,9 @@ export const BookHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChaptersMenuOpen, setIsChaptersMenuOpen] = useState(false);
 
-  const blockPaths = currentBook.blocks.map((block) => block.fullPath);
-
-  const blocksMap: Record<number, { title: string }> = {};
-  for (const chapter of currentBook.chapters) {
-    for (const blockId of chapter.blockIds) {
-      blocksMap[blockId] = { title: chapter.title };
-    }
-  }
-
   const onSearchSubmit = async () => {
-    const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, blockPaths);
-
-    const searchResultsMapWithTitle: SearchResultsMapWithTitle = {};
-    for (const searchResult of results) {
-      searchResultsMapWithTitle[searchResult.id] = {
-        ...searchResult,
-        chapterTitle: blocksMap[searchResult.blockIndex].title,
-      };
-    }
-
-    setSearchResults(searchResultsMapWithTitle);
+    const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, currentBook.basePath);
+    setSearchResults(results);
   };
 
   return (

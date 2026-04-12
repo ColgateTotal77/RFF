@@ -1,19 +1,22 @@
 import { create } from 'zustand'
-import { SearchResultWithTitle, SearchResultsMapWithTitle, SelectionMenu } from 'types';
+import {
+  SelectionMenu,
+  SearchResult,
+} from 'types';
 
 type Store = {
   searchQuery: string;
-  searchResults: SearchResultsMapWithTitle;
+  searchResults: SearchResult[];
   isSearchModuleOpen: boolean;
   isWebViewReady: boolean;
-  currentSearchResult: SearchResultWithTitle;
+  currentSearchResult: SearchResult;
   isSearchOperation: boolean;
   selectionMenu: SelectionMenu;
 
   setSearchQuery: (searchQuery: string) => void;
-  setSearchResults: (result: SearchResultsMapWithTitle) => void;
+  setSearchResults: (result: SearchResult[]) => void;
   toggleIsSearchModuleOpen: () => void;
-  setCurrentSearchResult: (searchResult: SearchResultWithTitle) => void;
+  setCurrentSearchResult: (searchResult: SearchResult) => void;
   resetSearch: () => void;
   setIsWebViewReady: (isWebViewReady: boolean) => void;
   setIsSearchOperation: (isSearchOperation: boolean) => void;
@@ -23,16 +26,17 @@ type Store = {
 
 export const useTempStore = create<Store>()((set) => ({
   searchQuery: '',
-  searchResults: {},
+  searchResults: [],
   isSearchModuleOpen: false,
   isWebViewReady: false,
   isSearchOperation: false,
   currentSearchResult: {
     id: -1,
     occurrenceIndex: -1,
-    blockIndex: -1,
-    chapterTitle: '',
+    blockId: -1,
+    title: '',
     snippet: '',
+    query: '',
   },
   selectionMenu: {
     visible: false,
@@ -51,12 +55,13 @@ export const useTempStore = create<Store>()((set) => ({
       currentSearchResult: {
         id: -1,
         occurrenceIndex: -1,
-        blockIndex: -1,
-        chapterTitle: '',
+        blockId: -1,
+        title: '',
         snippet: '',
+        query: ''
       },
       searchQuery: '',
-      searchResults: {},
+      searchResults: [],
       isSearchOperation: false,
     }),
   setIsWebViewReady: (isWebViewReady) => set({ isWebViewReady: isWebViewReady }),

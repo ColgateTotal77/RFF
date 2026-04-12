@@ -1,12 +1,23 @@
 <style>
   :root {
-    --book-font-family: sans-serif;
     --book-font-size: 16px;
+    --book-font-family: Georgia, serif;
+    --book-bg-color: #ffffff;
+    --book-text-color: #000000;
+    --book-selection-bg: rgba(100, 150, 255, 0.4);
+  }
+
+  [data-theme="dark"] {
+    --book-bg-color: #121212;
+    --book-text-color: #e0e0e0;
+    --book-selection-bg: rgba(100, 150, 255, 0.6);
   }
 
   body {
+    background-color: var(--book-bg-color) !important;
+    color: var(--book-text-color) !important;
     font-size: var(--book-font-size) !important;
-    font-family: var(--book-font-family) !important;
+    font-family: var(--book-font-family), Georgia, serif !important;
     padding: 20px !important;
     margin: 0 !important;
     text-align: justify !important;
@@ -39,7 +50,7 @@
   }
 
   ::selection {
-    background: rgba(100, 150, 255, 0.4);
+    background: var(--book-selection-bg);
   }
 
   .anki-word[data-flag]:not([data-flag="0"]) {

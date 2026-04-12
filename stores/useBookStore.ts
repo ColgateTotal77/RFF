@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, CurrectCTree, DeepPartial, Misc, Setting } from 'types';
+import { Book, CurrectCTree, DeepPartial, Misc, Setting, Theme } from 'types';
 import { extractEpub, parseManifest } from 'lib/useBookExtraction';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
@@ -36,7 +36,7 @@ type Store = {
   jumpToBlock: (currentBlock: number) => void;
   setCurrentBlock: (currentBlock: number) => void;
   closeBook: () => void;
-  removeBook: (basePath: string) => void;
+  removeBook: (basePath: string) => Promise<void>;
   shiftNext: () => { fetchIndex: number; removeIndex: number | null } | null;
   shiftPrev: () => { fetchIndex: number; removeIndex: number | null } | null;
 
@@ -51,6 +51,7 @@ type Store = {
     clearSearch?: () => void;
     updateTag?: (word: string | string[] | null, noteIds: string, colorCode: string) => void;
     updateFont?: (fontSize?: number, fontFamily?: string) => void;
+    updateTheme?: (theme: Theme) => void;
   };
 
   registerWebViewAction: <K extends keyof Store['webViewActions']>(
@@ -63,6 +64,7 @@ type Store = {
   clearSearchAction: () => void;
   updateTagAction: (words: string | string[] | null, noteIds: string, colorCode: string) => void;
   updateFontAction: (fontSize?: number, fontFamily?: string) => void;
+  updateThemeAction: (theme: Theme) => void;
 };
 
 export const useBookStore = create<Store>()(
@@ -77,6 +79,7 @@ export const useBookStore = create<Store>()(
         defaultBookSettings: {
           font: { fontSize: 30, fontFamily: 'Georgia, serif' },
         },
+        theme: 'light',
       },
 
       loadBook: async (uri: string) => {
@@ -141,11 +144,13 @@ export const useBookStore = create<Store>()(
         }
       },
 
-      removeBook: (basePath: string) =>
+      removeBook: async (basePath: string) => {
+        await BookEngine.deleteBookFromSQL(basePath);
         set((state) => ({
           currentBook: state.currentBook?.basePath === basePath ? null : state.currentBook,
           books: state.books.filter((book) => book.basePath !== basePath),
-        })),
+        }));
+      },
 
       setCurrentBlock: (currentBlock: number) =>
         set((state) => {
@@ -326,6 +331,14 @@ export const useBookStore = create<Store>()(
 
       updateTagAction: (words, noteIds, colorCode) => {
         get().webViewActions.updateTag?.(words, noteIds, colorCode);
+      },
+
+      updateThemeAction: (theme: Theme) => {
+        get().webViewActions.updateTheme?.(theme);
+
+        set((state) => ({
+          settings: { ...state.settings, theme },
+        }))
       },
     }),
     {

@@ -3,6 +3,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { Chapter, Book, Block } from 'types';
 import { ensureArray, resolvePath } from 'lib/utils';
 import { XMLParser } from 'fast-xml-parser';
+import { BookEngine } from 'modules/book-engine';
 
 export const extractEpub = async (uri: string | null) => {
   if (uri)
@@ -27,7 +28,7 @@ export const extractEpub = async (uri: string | null) => {
 
 const BLOCK_SIZE = 5000;
 
-function splitHtmlIntoBlocks(html: string, globalBlockId: number): string[] {
+function splitHtmlIntoBlocks(html: string, globalBlockId: number): { blocks: string[], finalBlockId: number } {
   const blocks: string[] = [];
 
   let localGlobalBlockId = globalBlockId;
@@ -56,7 +57,7 @@ function splitHtmlIntoBlocks(html: string, globalBlockId: number): string[] {
     blocks.push(currentBlock);
   }
 
-  return blocks.length > 0 ? blocks : [html];
+  return blocks.length > 0 ? { blocks, finalBlockId: localGlobalBlockId } : { blocks: [html], finalBlockId: globalBlockId };
 }
 
 export const parseManifest = async (unzippedPath: string): Promise<Book> => {
@@ -126,6 +127,11 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
               ? `${absoluteBasePath}/${chapterDir}`
               : absoluteBasePath;
 
+            const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+            if (bodyMatch) {
+              html = bodyMatch[1];
+            }
+
             html = html.replace(
               /<(img|image)[^>]+(?:src|href|xlink:href)=(['"])(.*?)\2/gi,
               (match, tag, quote, src) => {
@@ -138,8 +144,11 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
 
             const blockContents = splitHtmlIntoBlocks(html, globalBlockId);
 
-            for (const blockContent of blockContents) {
-              const blockFileName = `block_${globalBlockId}.html`;
+            for (const blockContent of blockContents.blocks) {
+              const idMatch = blockContent.match(/id="block-(\d+)"/);
+              const blockId = idMatch ? parseInt(idMatch[1]) : globalBlockId;
+
+              const blockFileName = `block_${blockId}.html`;
               const blockPath = `${blocksDirPath}${blockFileName}`;
               const blockFile = new File(blocksDir, blockFileName);
               blockFile.write(encoder.encode(blockContent));
@@ -150,7 +159,7 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
                 .trim();
 
               blocks.push({
-                id: globalBlockId,
+                id: blockId,
                 chapterId: index,
                 fullPath: blockPath,
                 charCount: textOnly.length,
@@ -158,9 +167,10 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
               });
 
               totalCharCount += textOnly.length;
-              chapterBlockIds.push(globalBlockId);
-              globalBlockId++;
+              chapterBlockIds.push(blockId);
             }
+
+            globalBlockId = blockContents.finalBlockId + 1;
           } catch (e) {
             console.error(e);
           }
@@ -237,10 +247,19 @@ export const parseManifest = async (unzippedPath: string): Promise<Book> => {
       }
     }
 
+    const basePath = 'file://' + absoluteBasePath;
+
+    await BookEngine.loadBookInSQL(
+      basePath,
+      blocks.map((block) => block.fullPath),
+      blocks.map((block) => block.id),
+      blocks.map((block) => chapters[block.chapterId]?.title || ''),
+    );
+
     return {
       title: String(title),
       cover: coverPath,
-      basePath: 'file://' + absoluteBasePath,
+      basePath,
       settings: {},
       chapters,
       currentBlocks: [0, 1],

@@ -74,20 +74,21 @@ export interface DefaultBookSettings {
   font: Font;
 }
 
+export type Theme = 'light' | 'dark';
+
 export interface Setting {
   defaultBookSettings: DefaultBookSettings;
+  theme: Theme;
 }
 
 export interface SearchResult {
   id: number;
-  blockIndex: number;
+  blockId: number;
+  title: string;
   snippet: string;
   occurrenceIndex: number;
+  query: string;
 }
-
-export type SearchResultWithTitle = SearchResult & { chapterTitle: string };
-
-export type SearchResultsMapWithTitle = Record<string, SearchResultWithTitle>;
 
 export interface CurrectCTree {
   langCode: string;

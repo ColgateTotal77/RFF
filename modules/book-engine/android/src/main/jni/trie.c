@@ -37,7 +37,7 @@ TrieNode* trie_create_node() {
 void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_count, int color_code) {
     TrieNode* curr = root;
     for (int i = 0; word[i] != '\0'; i++) {
-        unsigned char c = (unsigned char)word[i];
+        unsigned char c = tolower((unsigned char)word[i]);
         TrieChild* child = curr->children;
         TrieNode* next_node = NULL;
         while (child) {
@@ -80,7 +80,7 @@ void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_coun
 TrieNode* trie_search(TrieNode* root, const char* word, size_t len) {
     TrieNode* curr = root;
     for (size_t i = 0; i < len; i++) {
-        unsigned char c = (unsigned char)word[i];
+        unsigned char c = tolower((unsigned char)word[i]);
         TrieChild* child = curr->children;
         TrieNode* next_node = NULL;
 

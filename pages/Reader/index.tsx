@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useBookStore } from 'stores/useBookStore';
 import { useEpubNextBlock, useEpubPrevBlock } from 'lib/useBookNavigation';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { BookEngine } from 'modules/book-engine';
@@ -9,9 +9,10 @@ import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
 import { useWordAction } from 'lib/useWordAction';
 import { calculateBookProgress } from 'lib/utils';
+import { Theme } from 'types';
 
 export const ReaderScreen = () => {
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const settings = useBookStore((state) => state.settings);
   const setScrollPosition = useBookStore((state) => state.setScrollPosition);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
@@ -31,7 +32,7 @@ export const ReaderScreen = () => {
   const setSelectionMenu = useTempStore((state) => state.setSelectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
 
-  const font = currentBook.settings.font || settings.defaultBookSettings.font;
+  const font = currentBook?.settings?.font || settings.defaultBookSettings.font;
   const { addNewCard, updateWordTag, openSystemTranslator } = useWordAction();
 
   const webViewRef = useRef<WebView>(null);
@@ -53,6 +54,8 @@ export const ReaderScreen = () => {
   }, [closeBook]);
 
   useEffect(() => {
+    if (!currentBook) return;
+
     const loadInitialWindow = async () => {
       try {
         setWebViewSource(null);
@@ -62,10 +65,11 @@ export const ReaderScreen = () => {
         const paths = currentBlocks.map((index) => blocks[index].fullPath);
 
         const generatedFileUrl = await BookEngine.loadInitialHtml(paths, currentBlocks, {
-          targetBlockIndex: lastJumpTo,
+          targetblockId: lastJumpTo,
           scrollPosition: currentBook.scrollPosition,
           fontSize: font.fontSize,
           fontFamily: font.fontFamily,
+          theme: settings.theme || 'light',
         });
 
         if (typeof generatedFileUrl === 'string') {
@@ -77,13 +81,13 @@ export const ReaderScreen = () => {
     };
 
     loadInitialWindow();
-  }, [currentBook.basePath, lastJumpTo]);
+  }, [currentBook?.basePath, lastJumpTo]);
 
   useEffect(() => {
     if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady) {
-      highlightAllSearched(searchQuery, currentBook.currentBlocks);
+      highlightAllSearched(searchQuery, currentBook?.currentBlocks || []);
     }
-  }, [currentBook.currentBlocks, isWebViewReady, currentSearchResult]);
+  }, [currentBook?.currentBlocks, isWebViewReady, currentSearchResult]);
 
   const onUpdateFont = useCallback((fontSize?: number, fontFamily?: string) => {
     const parts: string[] = [];
@@ -103,13 +107,13 @@ export const ReaderScreen = () => {
     []
   );
 
-  const onJumpToSearch = useCallback((blockIndex: number, occurrenceIndex: number) => {
-    const script = `window.jumpToSearch(${blockIndex}, ${occurrenceIndex}); true;`;
+  const onJumpToSearch = useCallback((blockId: number, occurrenceIndex: number) => {
+    const script = `window.jumpToSearch(${blockId}, ${occurrenceIndex}); true;`;
     webViewRef.current?.injectJavaScript(script);
   }, []);
 
-  const onScrollToBlock = useCallback((blockIndex: number) => {
-    const script = `window.scrollToBlock(${blockIndex}); true;`;
+  const onScrollToBlock = useCallback((blockId: number) => {
+    const script = `window.scrollToBlock(${blockId}); true;`;
     webViewRef.current?.injectJavaScript(script);
   }, []);
 
@@ -123,13 +127,19 @@ export const ReaderScreen = () => {
     webViewRef.current?.injectJavaScript(script);
   }, []);
 
+  const onUpdateTheme = useCallback((theme: Theme) => {
+    const script = `window.setTheme('${theme}'); true;`;
+    webViewRef.current?.injectJavaScript(script);
+  }, []);
+
   useEffect(() => {
     registerWebViewAction('scrollToBlock', onScrollToBlock);
     registerWebViewAction('jumpToSearch', onJumpToSearch);
     registerWebViewAction('clearSearch', clearSearch);
     registerWebViewAction('updateTag', onUpdateTag);
     registerWebViewAction('updateFont', onUpdateFont);
-  }, [registerWebViewAction, onScrollToBlock, onJumpToSearch, clearSearch, onUpdateTag, onUpdateFont]);
+    registerWebViewAction('updateTheme', onUpdateTheme);
+  }, [registerWebViewAction, onScrollToBlock, onJumpToSearch, clearSearch, onUpdateTag, onUpdateFont, onUpdateTheme]);
 
   if (!webViewSource) return;
 
@@ -205,7 +215,7 @@ export const ReaderScreen = () => {
 
         case 'SEARCH_HIGHLIGHT_COMPLETE':
           if (currentSearchResult.occurrenceIndex > -1 && isSearchOperation) {
-            onJumpToSearch(currentSearchResult.blockIndex, currentSearchResult.occurrenceIndex);
+            onJumpToSearch(currentSearchResult.blockId, currentSearchResult.occurrenceIndex);
             setIsSearchOperation(false);
           }
       }

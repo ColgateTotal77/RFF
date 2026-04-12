@@ -26,6 +26,11 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
     closeMenu();
   };
 
+  const onCopy = () => {
+    copyToClipboard(selectionMenu.text);
+    closeMenu();
+  };
+
   return (
     <Surface
       elevation={1}
@@ -53,9 +58,8 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         compact={true}
         className="px-1"
         style={{ borderRadius: 0 }}
-        onPress={() => {
-          copyToClipboard(selectionMenu.text);
-        }}>
+        onPress={onCopy}
+      >
         Copy
       </Button>
 

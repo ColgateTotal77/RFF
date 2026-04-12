@@ -1,18 +1,18 @@
 <script>
   window.addEventListener('load', function() {
     const config = window.BookConfig || {};
-    const targetBlockIndex = config.targetBlockIndex || 0;
+    const targetblockId = config.targetblockId || 0;
     const scrollPosition = config.scrollPosition || 0;
 
     var targetBlock = null;
-    if(targetBlockIndex >= 0) {
-      targetBlock = document.getElementById('block-' + targetBlockIndex);
+    if(targetblockId >= 0) {
+      targetBlock = document.getElementById('block-' + targetblockId);
     }
 
     if (targetBlock) {
       requestAnimationFrame(() => {
         targetBlock.scrollIntoView({ behavior: 'instant', block: 'start' });
-        window.log('scroll: jumping to block ' + targetBlockIndex);
+        window.log('scroll: jumping to block ' + targetblockId);
       });
     } else {
       requestAnimationFrame(() => {
@@ -36,26 +36,26 @@
     const blocks = document.querySelectorAll('div[id^="block-"]');
     if (blocks.length === 0) return;
 
-    let currentBlockIndex = 0;
+    let currentblockId = 0;
     let currentRect;
 
     for (let i = 0; i < blocks.length; i++) {
       currentRect = blocks[i].getBoundingClientRect();
       if (currentRect.top <= 0 && currentRect.bottom > 0) {
-        currentBlockIndex = i;
+        currentblockId = i;
         break;
       } else if (currentRect.top > 0) {
         break;
       }
     }
 
-    const currentBlockScrollPercent = Math.abs(Math.min(0, currentRect.top)) / blocks[currentBlockIndex].offsetHeight;
-    const currentBlockId = blocks[currentBlockIndex].id;
-    const actualBlockIndex = parseInt(currentBlockId.replace('block-', ''));
+    const currentBlockScrollPercent = Math.abs(Math.min(0, currentRect.top)) / blocks[currentblockId].offsetHeight;
+    const currentBlockId = blocks[currentblockId].id;
+    const actualblockId = parseInt(currentBlockId.replace('block-', ''));
 
     window.ReactNativeWebView.postMessage(JSON.stringify({
       type: 'SCROLL_POSITION_CHANGED',
-      currentBlock: actualBlockIndex,
+      currentBlock: actualblockId,
       scrollPosition: window.scrollY,
       currentBlockScrollPercent: currentBlockScrollPercent,
     }));
@@ -101,8 +101,8 @@
     }
   }, { passive: true });
 
-  window.scrollToBlock = function(blockIndex) {
-    var targetId = 'block-' + blockIndex;
+  window.scrollToBlock = function(blockId) {
+    var targetId = 'block-' + blockId;
     var target = document.getElementById(targetId);
 
     if (target) {

@@ -32,6 +32,7 @@ object AppDependencies {
                 AppDatabase::class.java,
                 "book_engine_database"
             )
+            .fallbackToDestructiveMigration()
             .build()
 
             databaseInstance = instance

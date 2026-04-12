@@ -36,9 +36,8 @@ export const useWordAction = () => {
         '',
         formatExamples(metadata?.examples ?? []),
       ];
-      const tier = await BookEngine.getWordFrequencyTier(metadata?.name);
 
-      const noteIdsArray = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1', tier, 'New']);
+      const noteIdsArray = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1', 'New', 'Generated (temporary tag)']);
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);
@@ -55,7 +54,8 @@ export const useWordAction = () => {
     const newTagId = String(newTagIdNum);
     try {
       const idsArray = JSON.parse(noteIds);
-      Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`]);
+
+      Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`, 'New']);
       updateTagAction(null, noteIds, newTagId);
     } catch (error) {
       console.error('Anki error:', error);

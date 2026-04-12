@@ -21,6 +21,8 @@ import com.reader.bookengine.database.AppDependencies
 import com.reader.bookengine.database.syncWordFormsFromSupabase
 import com.reader.bookengine.database.WordFormEntity
 import com.reader.bookengine.database.FrequencyDatabase
+import com.reader.bookengine.database.BlockEntity
+import com.reader.bookengine.database.FullBlockMatch
 
 class BookEngineModule : Module() {
     companion object {
@@ -56,46 +58,41 @@ class BookEngineModule : Module() {
 
             android.util.Log.d("BookEngine", "Found ${uniqueLemmas.size} unique words in Anki.")
 
-            val expandedForms = mutableListOf<WordFormEntity>()
+            val expandedForms = ArrayList<WordFormEntity>(uniqueLemmas.size)
             val chunkedLemmas = uniqueLemmas.chunked(900)
 
-            for (chunk in chunkedLemmas) {
-                val formsChunk = appDatabase.wordFormDao().getFormsForLemmas(langCode, chunk)
-                expandedForms.addAll(formsChunk)
-
-                val uppercaseForms = formsChunk.map { form ->
-                    form.copy(inputWord = form.inputWord.replaceFirstChar { it.uppercaseChar() })
+            kotlinx.coroutines.coroutineScope {
+                chunkedLemmas.map { chunk ->
+                    async {
+                        appDatabase.wordFormDao().getFormsForLemmas(langCode, chunk)
+                    }
+                }.awaitAll().forEach { formsChunk ->
+                    expandedForms.addAll(formsChunk)
                 }
-                expandedForms.addAll(uppercaseForms)
             }
 
             android.util.Log.d("BookEngine", "Found ${expandedForms.size} expanded forms in Room DB for lang: $langCode")
 
-            val finalWords = mutableListOf<String>()
-            val finalNoteIds = mutableListOf<LongArray>()
-            val finalColors = mutableListOf<Int>()
+            val finalWords = ArrayList<String>(uniqueLemmas.size + expandedForms.size)
+            val finalNoteIds = ArrayList<LongArray>(uniqueLemmas.size + expandedForms.size)
+            val finalColors = ArrayList<Int>(uniqueLemmas.size + expandedForms.size)
 
             for ((lemma, data) in ankiBaseMap) {
                 finalWords.add(lemma)
                 finalNoteIds.add(data.first)
                 finalColors.add(data.second)
-
-                finalWords.add(lemma.replaceFirstChar { it.uppercaseChar() })
-                finalNoteIds.add(data.first)
-                finalColors.add(data.second)
             }
 
             for (form in expandedForms) {
-                if (form.inputWord.lowercase() == form.lemma.lowercase()) continue
+                val inputWordLower = form.inputWord.lowercase()
+                val lemmaLower = form.lemma.lowercase()
 
-                val baseAnkiData = ankiBaseMap[form.lemma.lowercase()]
+                if (inputWordLower == lemmaLower) continue
+
+                val baseAnkiData = ankiBaseMap[lemmaLower]
 
                 if (baseAnkiData != null) {
-                    finalWords.add(form.inputWord)
-                    finalNoteIds.add(baseAnkiData.first)
-                    finalColors.add(baseAnkiData.second)
-
-                    finalWords.add(form.inputWord.replaceFirstChar { it.uppercaseChar() })
+                    finalWords.add(inputWordLower)
                     finalNoteIds.add(baseAnkiData.first)
                     finalColors.add(baseAnkiData.second)
                 }
@@ -224,76 +221,92 @@ class BookEngineModule : Module() {
             }
         }
 
-        AsyncFunction("getWordFrequencyTier") { word: String ->
-            runBlocking {
-                freqDatabase?.getFrequencyTier(word) ?: "Top_20000+"
+        AsyncFunction("loadBookInSQL") { bookBasePath: String, blockPaths: List<String>, blockIds: List<Int>, chapterTitles: List<String> ->
+            runBlocking(Dispatchers.IO) {
+                val t1 = System.currentTimeMillis()
+
+                val context = appContext.reactContext ?: throw Exception("React context is null")
+                val db = AppDependencies.getDatabase(context)
+
+                val blocks = blockPaths.mapIndexed { i, path ->
+                    val file = File(path)
+                    val rawHtml = file.readText()
+                    val plainText = Jsoup.parse(rawHtml).text()
+
+                    BlockEntity(
+                        bookBasePath = bookBasePath,
+                        blockId = blockIds[i],
+                        content = plainText,
+                        title = chapterTitles[i]
+                    )
+                }
+
+                db.blockDao().insertAll(blocks)
+
+                val t2 = System.currentTimeMillis()
+                android.util.Log.d("BookEngine", "Loaded ${blocks.size} blocks in Room in ${t2 - t1} ms")
+                blocks.size
             }
         }
 
-        AsyncFunction("searchInBook") { query: String, blockPaths: Array<String> ->
-            if (query.trim().isEmpty() || blockPaths.isEmpty()) {
-                return@AsyncFunction emptyList<Map<String, Any>>()
+        AsyncFunction("deleteBookFromSQL") { bookBasePath: String ->
+            runBlocking(Dispatchers.IO) {
+                val context = appContext.reactContext ?: throw Exception("React context is null")
+                val db = AppDependencies.getDatabase(context)
+
+                val matchedBlocks = db.blockDao().delete(bookBasePath)
             }
+            android.util.Log.d("BookEngine", "Delete book from SQL: $bookBasePath")
+        }
 
-            val t1 = System.currentTimeMillis()
-            val lowerQuery = query.lowercase()
+        AsyncFunction("searchInBook") { query: String, bookBasePath: String ->
+            runBlocking(Dispatchers.IO) {
+                val t1 = System.currentTimeMillis()
 
-            val nestedResults = runBlocking(Dispatchers.IO) {
+                val context = appContext.reactContext ?: throw Exception("React context is null")
+                val db = AppDependencies.getDatabase(context)
 
-                blockPaths.mapIndexed { blockIndex, path ->
-                    async {
-                        val blockResults = mutableListOf<Map<String, Any>>()
+                val matchedBlocks = db.blockDao().searchAllMatches(query.trim(), bookBasePath)
 
-                        try {
-                            val file = File(path)
-                            if (file.exists()) {
-                                val rawHtml = file.readText()
-                                val plainText = Jsoup.parse(rawHtml).text()
-                                val lowerText = plainText.lowercase()
+                val results = mutableListOf<Map<String, Any>>()
 
-                                var startIndex = 0
-                                var occurrenceIndex = 0
+                var globalIndex = 0
 
-                                while (true) {
-                                    val matchIndex = lowerText.indexOf(lowerQuery, startIndex)
-                                    if (matchIndex == -1) break
+                for (block in matchedBlocks) {
+                    val text = block.content
+                    var charIndex = text.indexOf(query, ignoreCase = true)
+                    var matchIndex = 0
 
-                                    val snippetStart = maxOf(0, matchIndex - 30)
-                                    val snippetEnd = minOf(plainText.length, matchIndex + query.length + 30)
+                    while (charIndex >= 0) {
+                        val startSnippet = maxOf(0, charIndex - 30)
+                        val endSnippet = minOf(text.length, charIndex + query.length + 30)
 
-                                    var snippet = plainText.substring(snippetStart, snippetEnd)
-                                    if (snippetStart > 0) snippet = "...$snippet"
-                                    if (snippetEnd < plainText.length) snippet = "$snippet..."
+                        var rawSnippet = text.substring(startSnippet, endSnippet)
+                        rawSnippet = rawSnippet.replace("\n", " ").replace("\r", " ")
 
-                                    blockResults.add(mapOf(
-                                        "blockIndex" to blockIndex,
-                                        "snippet" to snippet,
-                                        "occurrenceIndex" to occurrenceIndex
-                                    ))
+                        val customSnippet = "...${rawSnippet.trim()}..."
 
-                                    startIndex = matchIndex + query.length
-                                    occurrenceIndex++
-                                }
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("BookEngine", "Failed to search block: $path", e)
-                        }
+                        val matchData = mapOf(
+                            "id" to globalIndex,
+                            "blockId" to block.blockId,
+                            "title" to block.title,
+                            "occurrenceIndex" to matchIndex,
+                            "snippet" to customSnippet,
+                            "query" to query
+                        )
 
-                        blockResults
+                        results.add(matchData)
+
+                        globalIndex++
+                        matchIndex++
+                        charIndex = text.indexOf(query, charIndex + query.length, ignoreCase = true)
                     }
-                }.awaitAll()
-            }
-
-            val finalResults = nestedResults.flatten().mapIndexed { index, map ->
-                map.toMutableMap().apply {
-                    put("id", index)
                 }
+
+                val t2 = System.currentTimeMillis()
+                android.util.Log.d("BookEngine", "Search for '$query' in SearchInBook found ${results.size} matches in ${t2 - t1} ms")
+                results
             }
-
-            val t2 = System.currentTimeMillis()
-            android.util.Log.d("BookEngine", "Parallel Kotlin search took: ${t2 - t1} ms")
-
-            return@AsyncFunction finalResults
         }
 
         AsyncFunction("loadAnkiDictionary") { langCode: String, deckId: String ->
@@ -390,7 +403,7 @@ class BookEngineModule : Module() {
                     }
 
                     tempFiles.forEach { (i, tempFile) ->
-                        val blockIndex = indices[i]
+                        val blockId = indices[i]
                         tempFile?.inputStream()?.use { it.copyTo(fos) }
                         tempFile?.delete()
                     }

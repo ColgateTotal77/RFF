@@ -11,10 +11,13 @@
 
     const currentFont = config.fontFamily || "sans-serif";
     const currentFontSize = config.fontSize || 16;
+    const currentTheme = config.theme || 'light';
 
     document.documentElement.style.setProperty('--book-font-family', currentFont);
     document.documentElement.style.setProperty('--book-font-size', `${currentFontSize}px`);
-    window.log('DOMContentLoaded: font=' + currentFont + ', size=' + currentFontSize + 'px');
+    window.setTheme(currentTheme);
+
+    window.log('DOMContentLoaded: font=' + currentFont + ', size=' + currentFontSize + 'px' + ', theme=' + currentTheme);
   });
 
   document.addEventListener('contextmenu', (event) => {
@@ -154,4 +157,13 @@
         tapCount = 0;
       }
   });
+
+  let currentTheme = 'light';
+
+  window.setTheme = (theme) => {
+    window.log('setTheme: ' + theme);
+    if(theme === currentTheme) return;
+    document.documentElement.setAttribute('data-theme', theme);
+    currentTheme = theme;
+  };
 </script>

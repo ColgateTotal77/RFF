@@ -105,20 +105,22 @@ export const useJumpToNextSearchResult = () => {
   const currentBook = useCurrentBook();
 
   return () => {
-    const newSearchResult = searchResults[currentSearchResult.id + 1];
+    const newSearchResult = searchResults.find(
+      (result) => result.id === currentSearchResult.id + 1
+    );
 
     if (!newSearchResult) return;
 
-    if (!currentBook.currentBlocks.includes(newSearchResult.blockIndex)) {
+    if (!currentBook.currentBlocks.includes(newSearchResult.blockId)) {
       setIsWebViewReady(false);
       setIsSearchOperation(true);
-      jumpToBlock(newSearchResult.blockIndex);
+      jumpToBlock(newSearchResult.blockId);
     } else {
-      jumpToSearchAction(newSearchResult.blockIndex, newSearchResult.occurrenceIndex);
+      jumpToSearchAction(newSearchResult.blockId, newSearchResult.occurrenceIndex);
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, newSearchResult.blockIndex, 0),
+      percent: calculateBookProgress(currentBook, newSearchResult.blockId, 0),
     });
 
     setCurrentSearchResult(newSearchResult);
@@ -137,20 +139,20 @@ export const useJumpToPrevSearchResult = () => {
   const currentBook = useCurrentBook();
 
   return () => {
-    const newSearchResult = searchResults[currentSearchResult.id - 1];
+    const newSearchResult = searchResults.find((result) => result.id === currentSearchResult.id - 1);
 
     if (!newSearchResult) return;
 
-    if (!currentBook.currentBlocks.includes(newSearchResult.blockIndex)) {
+    if (!currentBook.currentBlocks.includes(newSearchResult.blockId)) {
       setIsWebViewReady(false);
       setIsSearchOperation(true);
-      jumpToBlock(newSearchResult.blockIndex);
+      jumpToBlock(newSearchResult.blockId);
     } else {
-      jumpToSearchAction(newSearchResult.blockIndex, newSearchResult.occurrenceIndex);
+      jumpToSearchAction(newSearchResult.blockId, newSearchResult.occurrenceIndex);
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, newSearchResult.blockIndex, 0),
+      percent: calculateBookProgress(currentBook, newSearchResult.blockId, 0),
     });
     setCurrentSearchResult(newSearchResult);
   }

@@ -4,8 +4,8 @@
 
 <script>
   window.highlightAll = function(searchQuery, currentBlocks) {
-    window.log('highlightAll: searching for "' + searchQuery + '" in blocks [' + currentBlocks.join(',') + ']');
     if (!searchQuery || window._lastSearchQuery === searchQuery && window._lastSearchBlocks === currentBlocks.join(',')) return;
+    window.log('highlightAll: searching for "' + searchQuery + '" in blocks [' + currentBlocks.join(',') + ']');
 
     var escapedWord = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     var regex = new RegExp("(" + escapedWord + ")", 'gi');
@@ -30,8 +30,8 @@
       var localOccurrenceIndex = 0;
 
       textNodes.forEach(function(textNode) {
-        if (textNode.parentNode.nodeName === 'MARK' && textNode.parentNode.classList.contains('search-highlight')) {
-          // Skip already highlighted elements without incrementing counter
+        if (textNode.parentNode.classList.contains('search-highlight')) {
+          window.log("skip node! existing mark: " + textNode.parentNode.id);
           return;
         }
 
@@ -47,6 +47,8 @@
             var mark = document.createElement('mark');
             mark.className = 'search-highlight';
             mark.id = 'search-match-' + blockIdx + '-' + localOccurrenceIndex;
+
+            window.log('mark created: ' + mark.id);
 
             mark.textContent = match[0];
             fragment.appendChild(mark);
@@ -68,20 +70,20 @@
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SEARCH_HIGHLIGHT_COMPLETE' }));
   };
 
-  window.jumpToSearch = function(blockIndex, occurrenceIndex) {
-    window.log('jumpToSearch: jumping to block ' + blockIndex + ', occurrence ' + occurrenceIndex);
+  window.jumpToSearch = function(blockId, occurrenceIndex) {
+    window.log('jumpToSearch: jumping to block ' + blockId + ', occurrence ' + occurrenceIndex);
     document.querySelectorAll('mark.active-match').forEach(function(el) {
       el.classList.remove('active-match');
     });
 
-    var targetId = 'search-match-' + blockIndex + '-' + occurrenceIndex;
+    var targetId = 'search-match-' + blockId + '-' + occurrenceIndex;
     var target = document.getElementById(targetId);
 
     if (target) {
       target.classList.add('active-match');
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-      window.log('jumpToSearch: target not found (search-match-' + blockIndex + '-' + occurrenceIndex + ')', 'error');
+      window.log('jumpToSearch: target not found (search-match-' + blockId + '-' + occurrenceIndex + ')', 'error');
     }
   };
 
