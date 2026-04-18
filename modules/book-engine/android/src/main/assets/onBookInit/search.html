@@ -8,7 +8,8 @@
     window.log('highlightAll: searching for "' + searchQuery + '" in blocks [' + currentBlocks.join(',') + ']');
 
     var escapedWord = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    var regex = new RegExp("(" + escapedWord + ")", 'gi');
+    var flexiblePattern = escapedWord.replace(/\s+/g, '\\s*');
+    var regex = new RegExp("(" + flexiblePattern + ")", 'gi');
 
     currentBlocks.forEach(function(blockIdx) {
       var blockContainer = document.getElementById('block-' + blockIdx);
@@ -22,44 +23,76 @@
       var textNodes = [];
 
       while (node = walker.nextNode()) {
-        if (!['SCRIPT', 'STYLE'].includes(node.parentNode.nodeName) && node.nodeValue.trim() !== '') {
+        if (!['SCRIPT', 'STYLE'].includes(node.parentNode.nodeName)) {
           textNodes.push(node);
         }
       }
 
       var localOccurrenceIndex = 0;
 
+      var textParts = [];
+      var nodeStartIndex = 0;
       textNodes.forEach(function(textNode) {
-        if (textNode.parentNode.classList.contains('search-highlight')) {
-          window.log("skip node! existing mark: " + textNode.parentNode.id);
-          return;
-        }
-
-        if (regex.test(textNode.nodeValue)) {
-          var fragment = document.createDocumentFragment();
-          var lastIndex = 0;
-          regex.lastIndex = 0;
-          var match;
-
-          while ((match = regex.exec(textNode.nodeValue)) !== null) {
-            fragment.appendChild(document.createTextNode(textNode.nodeValue.substring(lastIndex, match.index)));
-
-            var mark = document.createElement('mark');
-            mark.className = 'search-highlight';
-            mark.id = 'search-match-' + blockIdx + '-' + localOccurrenceIndex;
-
-            window.log('mark created: ' + mark.id);
-
-            mark.textContent = match[0];
-            fragment.appendChild(mark);
-
-            lastIndex = regex.lastIndex;
-            localOccurrenceIndex++;
-          }
-          fragment.appendChild(document.createTextNode(textNode.nodeValue.substring(lastIndex)));
-          textNode.parentNode.replaceChild(fragment, textNode);
-        }
+        textParts.push({
+          node: textNode,
+          start: nodeStartIndex,
+          end: nodeStartIndex + textNode.nodeValue.length,
+          text: textNode.nodeValue
+        });
+        nodeStartIndex += textNode.nodeValue.length;
       });
+
+      var fullText = textParts.map(function(p) { return p.text; }).join('');
+
+      regex.lastIndex = 0;
+      var match;
+      var processedNodes = new Set();
+
+      while ((match = regex.exec(fullText)) !== null) {
+        var matchStart = match.index;
+        var matchEnd = match.index + match[0].length;
+
+        var affectedNodes = [];
+        for (var i = 0; i < textParts.length; i++) {
+          var part = textParts[i];
+          if (part.end > matchStart && part.start < matchEnd) {
+            affectedNodes.push(part);
+          }
+        }
+
+        if (affectedNodes.length === 0) continue;
+
+        affectedNodes.forEach(function(part) {
+          if (processedNodes.has(part.node)) return;
+          processedNodes.add(part.node);
+
+          if (part.node.parentNode.classList.contains('search-highlight')) {
+            return;
+          }
+
+          var nodeMatchStart = Math.max(matchStart - part.start, 0);
+          var nodeMatchEnd = Math.min(matchEnd - part.start, part.text.length);
+
+          var fragment = document.createDocumentFragment();
+          if (nodeMatchStart > 0) {
+            fragment.appendChild(document.createTextNode(part.text.substring(0, nodeMatchStart)));
+          }
+
+          var mark = document.createElement('mark');
+          mark.className = 'search-highlight';
+          mark.id = 'search-match-' + blockIdx + '-' + localOccurrenceIndex;
+          mark.textContent = part.text.substring(nodeMatchStart, nodeMatchEnd);
+          fragment.appendChild(mark);
+
+          if (nodeMatchEnd < part.text.length) {
+            fragment.appendChild(document.createTextNode(part.text.substring(nodeMatchEnd)));
+          }
+
+          part.node.parentNode.replaceChild(fragment, part.node);
+        });
+
+        localOccurrenceIndex++;
+      }
       if (localOccurrenceIndex > 0) {
         window.log('highlightAll: block-' + blockIdx + ' has ' + localOccurrenceIndex + ' matches');
       }

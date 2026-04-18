@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, CurrectCTree, DeepPartial, Misc, Setting, Theme } from 'types';
+import { Book, CurrentCTree, DeepPartial, DefaultBookSettings, Misc, Theme } from 'types';
 import { extractEpub, parseManifest } from 'lib/useBookExtraction';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
@@ -26,13 +26,13 @@ const zustandStorage: StateStorage = {
 type Store = {
   books: Book[];
   currentBook: Book | null;
-  settings: Setting;
+  settings: DefaultBookSettings;
   lastJumpTo: number;
-  currentCTree: CurrectCTree | null;
+  currentCTree: CurrentCTree | null;
 
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
-  setCurrentCTree: (treeData: CurrectCTree) => void;
+  setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
   setCurrentBlock: (currentBlock: number) => void;
   closeBook: () => void;
@@ -40,7 +40,7 @@ type Store = {
   shiftNext: () => { fetchIndex: number; removeIndex: number | null } | null;
   shiftPrev: () => { fetchIndex: number; removeIndex: number | null } | null;
 
-  updateSettings: (toUpdate: DeepPartial<Setting>) => void;
+  updateSettings: (toUpdate: DeepPartial<DefaultBookSettings>) => void;
   setScrollPosition: (scrollY: number) => void;
   updateMisc: (misc: Partial<Misc>) => void;
 
@@ -76,9 +76,14 @@ export const useBookStore = create<Store>()(
       lastJumpTo: -1,
       webViewActions: {},
       settings: {
-        defaultBookSettings: {
-          font: { fontSize: 30, fontFamily: 'Georgia, serif' },
-        },
+        ankiDeckId: '',
+        ankiModelId: '',
+        fieldMapping: { word: 0, translation: 1, fieldCount: 2, modalId: '' },
+        mirroredAnkiModelId: '',
+        mirroredFieldMapping: { word: 1, translation: 0, fieldCount: 2, modalId: '' },
+        isTwoSided: false,
+        autoCardOnDoubleTap: false,
+        font: { fontSize: 30, fontFamily: 'Georgia, serif' },
         theme: 'light',
       },
 
@@ -108,12 +113,18 @@ export const useBookStore = create<Store>()(
         if (!bookToOpen) return;
 
         try {
-          const deckId =
-            bookToOpen?.settings?.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
+          const deckId = bookToOpen?.settings?.ankiDeckId || settings.ankiDeckId;
+
           console.log('currentCTree?.deckId !== deckId', currentCTree?.deckId !== deckId);
           console.log('currentCTree?.deckId', currentCTree?.deckId, typeof currentCTree?.deckId);
           console.log('deckId', deckId, typeof deckId);
-          if (currentCTree?.deckId !== deckId) await BookEngine.loadAnkiDictionary('en', deckId);
+          if (currentCTree?.deckId !== deckId) {
+            const mapping = bookToOpen.settings.fieldMapping || settings.fieldMapping || {};
+            const mirroredMapping =
+              bookToOpen.settings.mirroredFieldMapping || settings.mirroredFieldMapping || {};
+
+            await BookEngine.loadAnkiDictionary('en', deckId, mapping, mirroredMapping);
+          }
 
           set((state) => ({
             currentBook: bookToOpen,
@@ -125,7 +136,7 @@ export const useBookStore = create<Store>()(
         }
       },
 
-      setCurrentCTree: (treeData: CurrectCTree) =>
+      setCurrentCTree: (treeData: CurrentCTree) =>
         set((state) => ({
           ...state,
           currentCTree: treeData,
@@ -216,7 +227,7 @@ export const useBookStore = create<Store>()(
         return { fetchIndex, removeIndex };
       },
 
-      updateSettings: (toUpdate: DeepPartial<Setting>) =>
+      updateSettings: (toUpdate) =>
         set((state) => ({
           settings: deepMerge(state.settings, toUpdate),
         })),
@@ -338,7 +349,7 @@ export const useBookStore = create<Store>()(
 
         set((state) => ({
           settings: { ...state.settings, theme },
-        }))
+        }));
       },
     }),
     {

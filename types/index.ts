@@ -62,24 +62,43 @@ export interface Font {
   fontFamily: string;
 }
 
+export const FIELD_MAPPING_KEYS = ['word', 'translation', 'examples', 'zipf'] as const;
+
+export interface FieldMapping {
+  word?: number;
+  translation?: number;
+  examples?: number;
+  zipf?: number;
+  fieldCount: number;
+  modalId: string;
+}
+
 export interface BookSettings {
   ankiDeckId?: string;
   ankiModelId?: string;
+  fieldMapping?: FieldMapping;
+  mirroredAnkiModelId?: string;
+  mirroredFieldMapping?: FieldMapping;
+  isTwoSided?: boolean;
+  autoCardOnDoubleTap?: boolean;
+  langCodeFrom: string;
+  langCodeTo: string;
   font?: Font;
 }
 
 export interface DefaultBookSettings {
-  ankiDeckId?: string;
-  ankiModelId?: string;
+  ankiDeckId: string;
+  ankiModelId: string;
+  fieldMapping: FieldMapping;
+  mirroredAnkiModelId: string;
+  mirroredFieldMapping: FieldMapping;
+  isTwoSided: boolean;
+  autoCardOnDoubleTap: boolean;
   font: Font;
+  theme: Theme;
 }
 
 export type Theme = 'light' | 'dark';
-
-export interface Setting {
-  defaultBookSettings: DefaultBookSettings;
-  theme: Theme;
-}
 
 export interface SearchResult {
   id: number;
@@ -90,7 +109,7 @@ export interface SearchResult {
   query: string;
 }
 
-export interface CurrectCTree {
+export interface CurrentCTree {
   langCode: string;
   deckId: string;
 }

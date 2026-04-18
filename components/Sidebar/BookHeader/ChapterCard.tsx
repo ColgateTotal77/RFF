@@ -15,7 +15,7 @@ export const ChapterCard = ({ chapter, onPress, isCurrentChapter }: Props) => {
     <Card style={isCurrentChapter ? { backgroundColor: '#1e40af' } : undefined} onPress={onPress}>
       <View className="flex justify-between p-4">
         <Text>{chapter.title}</Text>
-        <Text className="text-gray-500 text-[10px]">{JSON.stringify(chapter.blockIds)}</Text> {/*TEMP*/}
+        <Text className="text-gray-500 text-[10px]">{JSON.stringify(chapter.blockIds)}</Text>
       </View>
     </Card>
   );

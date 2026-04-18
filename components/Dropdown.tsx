@@ -67,7 +67,6 @@ export const Dropdown = (props: Props) => {
             <Menu.Item
               key={option.id}
               title={option.name}
-              mode="outlined"
               onPress={() => {
                 onSelect(option.id);
                 setIsOpen(false);

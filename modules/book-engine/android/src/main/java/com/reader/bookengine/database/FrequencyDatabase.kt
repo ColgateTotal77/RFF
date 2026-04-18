@@ -54,16 +54,18 @@ class FrequencyDatabase(private val context: Context, private val supabase: Supa
         database = null
     }
 
-    suspend fun getFrequencyTier(word: String): String {
+    suspend fun getFrequencyTier(word: String): Pair<String, Double> {
         android.util.Log.d("BookEngine", "DB is null: ${database == null}, word: $word")
-        val zipf = database?.wordFreqDao()?.getZipf(word.lowercase()) ?: return "Top_20000+"
+        val zipf = database?.wordFreqDao()?.getZipf(word.lowercase()) ?: return Pair("Top_20000+", 0.0)
 
-        return when {
+        val tier = when {
             zipf >= 4.5 -> "Top_1000"
             zipf >= 3.5 -> "Top_5000"
             zipf >= 3.0 -> "Top_10000"
             zipf >= 2.5 -> "Top_15000"
             else -> "Top_20000+"
         }
+
+        return Pair(tier, zipf)
     }
 }

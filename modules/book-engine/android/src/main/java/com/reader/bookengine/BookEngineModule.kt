@@ -36,14 +36,16 @@ class BookEngineModule : Module() {
     suspend fun loadAnkiDictionary(
         langCode: String,
         deckId: String,
-        appDatabase: AppDatabase
+        appDatabase: AppDatabase,
+        mapping: Map<String, Any?>,
+        mirroredMapping: Map<String, Any?>
     ): Boolean {
         try {
             val t1 = System.currentTimeMillis()
 
             val context = appContext.reactContext ?: throw Exception("React context is null")
 
-            val ankiData = ankiModule.getAllAnkiWords(deckId, context)
+            val ankiData = ankiModule.getAllAnkiWords(deckId, context, mapping, mirroredMapping)
             if (ankiData.words.isEmpty()) {
                 android.util.Log.w("BookEngine", "Anki returned 0 words. Check deck ID.")
                 return false
@@ -166,7 +168,7 @@ class BookEngineModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("BookEngine")
 
-        AsyncFunction("onAppInit") { langCode: String, deckId: String ->
+        AsyncFunction("onAppInit") { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
             android.util.Log.d("BookEngine", "onAppInit called with langCode: $langCode, deckId: $deckId")
             runBlocking<Unit> {
                 try {
@@ -178,10 +180,8 @@ class BookEngineModule : Module() {
                     syncWordFormsFromSupabase(mySupabaseClient, myAppDatabase, context)
                     android.util.Log.d("BookEngine", "syncWordFormsFromSupabase completed")
 
-                    val success = this@BookEngineModule.loadAnkiDictionary(langCode, deckId, myAppDatabase)
-                    if (!success) {
-                        throw Exception("Failed to load Anki dictionary")
-                    }
+                    loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
+
                     android.util.Log.d("BookEngine", "onAppInit completed successfully")
                 } catch (e: Exception) {
                     android.util.Log.e("BookEngine", "Exception in onAppInit: ${e.message}", e)
@@ -309,15 +309,12 @@ class BookEngineModule : Module() {
             }
         }
 
-        AsyncFunction("loadAnkiDictionary") { langCode: String, deckId: String ->
+        AsyncFunction("loadAnkiDictionary") { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
             runBlocking {
                 val context = appContext.reactContext ?: throw Exception("React context is null")
                 val myAppDatabase = AppDependencies.getDatabase(context)
-                val success = this@BookEngineModule.loadAnkiDictionary(langCode, deckId, myAppDatabase)
-                if (!success) {
-                    throw Exception("Failed to load Anki dictionary")
-                }
-                success
+                val success = loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
+                if (!success) throw Exception("Failed to load Anki dictionary")
             }
         }
 

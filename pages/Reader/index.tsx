@@ -32,7 +32,7 @@ export const ReaderScreen = () => {
   const setSelectionMenu = useTempStore((state) => state.setSelectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
 
-  const font = currentBook?.settings?.font || settings.defaultBookSettings.font;
+  const font = currentBook?.settings?.font || settings.font;
   const { addNewCard, updateWordTag, openSystemTranslator } = useWordAction();
 
   const webViewRef = useRef<WebView>(null);

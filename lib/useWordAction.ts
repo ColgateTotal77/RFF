@@ -14,30 +14,29 @@ export const useWordAction = () => {
   const updateTagAction = useBookStore((state) => state.updateTagAction)!;
 
   const addNewCard = async (text: string) => {
-    const deckId = currentBook.settings.ankiDeckId || settings.defaultBookSettings.ankiDeckId;
-    const modelId = currentBook.settings.ankiModelId || settings.defaultBookSettings.ankiModelId;
-
+    const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
     const cleanedText = text.replace(/[^\w\s]|_/g, '');
 
     try {
-      if (!modelId || !deckId) {
+      if (!deckId) {
         console.error('Missing Anki configuration');
         return;
       }
 
       const metadata = await fetchWordMetadata(cleanedText, 'en', 'ru');
 
-      const ankiFields = [
-        '',
-        metadata?.name || '',
-        '',
-        '',
-        metadata?.translation || '',
-        '',
-        formatExamples(metadata?.examples ?? []),
-      ];
+      const isTwoSided = currentBook.settings.isTwoSided || settings.isTwoSided;
+      const mapping = currentBook.settings.fieldMapping || settings.fieldMapping || {};
+      const mirroredMapping =
+        currentBook.settings.mirroredFieldMapping || settings.mirroredFieldMapping || {};
 
-      const noteIdsArray = await Anki.addNote(modelId, deckId, ankiFields, ['Lookups_1', 'New', 'Generated (temporary tag)']);
+      const fields = {
+        word: metadata?.name || '',
+        translation: metadata?.translation || '',
+        examples: formatExamples(metadata?.examples ?? []),
+      }
+
+      const noteIdsArray = await Anki.addNote(deckId, fields, mapping, mirroredMapping, isTwoSided);
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);
@@ -49,13 +48,17 @@ export const useWordAction = () => {
   };
 
   const updateWordTag = async ({ colorCode, noteIds }: UpdateWordTag) => {
+    const mapping = currentBook.settings.fieldMapping || settings.fieldMapping || {};
+    const mirroredMapping =
+      currentBook.settings.mirroredFieldMapping || settings.mirroredFieldMapping || {};
+
     const newTagIdNum = Number(colorCode) + 1;
     if (newTagIdNum > 8) return;
     const newTagId = String(newTagIdNum);
     try {
       const idsArray = JSON.parse(noteIds);
 
-      Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`, 'New']);
+      Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`, 'New'], mapping, mirroredMapping);
       updateTagAction(null, noteIds, newTagId);
     } catch (error) {
       console.error('Anki error:', error);

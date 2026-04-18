@@ -27,7 +27,7 @@ suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDat
         var currentOffset = 0L
         var highestTimestamp = lastSyncedAt
 
-        val sdfQuery = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US).apply {
+        val sdfQuery = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
         val lastSyncedString = sdfQuery.format(Date(lastSyncedAt))
@@ -51,7 +51,7 @@ suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDat
                 database.wordFormDao().insertAll(entities)
 
                 val latestRecordTimeStr = remoteData.last().created_at
-                val cleanTimeStr = latestRecordTimeStr.substringBefore("Z").substringBefore("+").take(23)
+                val cleanTimeStr = latestRecordTimeStr.substringBefore("Z").substringBefore("+")
                 val latestRecordTimeMs = sdfQuery.parse(cleanTimeStr)?.time ?: highestTimestamp
                 highestTimestamp = latestRecordTimeMs + 1
 

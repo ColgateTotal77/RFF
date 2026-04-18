@@ -1,110 +1,32 @@
-import { PermissionsAndroid, View, Alert } from 'react-native';
-import { Anki } from 'modules/book-engine';
-import { useEffect, useState } from 'react';
-import { Dropdown } from 'components/Dropdown';
-import { ANKI_PERMISSION } from 'lib/constants';
-import { Card, Text, Button } from 'react-native-paper';
-import { useBookStore } from 'stores/useBookStore';
+import { useState } from 'react';
+import { View, ScrollView } from 'react-native';
+import { SegmentedButtons } from 'react-native-paper';
+import { MiscTab } from 'pages/Settings/tabs/MiscTab';
+import { AnkiTab } from 'pages/Settings/tabs/AnkiTab';
+
+type TabKey = 'anki' | 'misc';
 
 export const SettingsScreen = () => {
-  const {
-    settings: {
-      defaultBookSettings: { ankiDeckId, ankiModelId },
-    },
-    updateSettings,
-  } = useBookStore();
-  const [hasPermission, setHasPermission] = useState(false);
-  const [decks, setDecks] = useState<{ id: string; name: string }[]>([]);
-  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const checkPermission = async () => {
-      const isGranted = await PermissionsAndroid.check(ANKI_PERMISSION);
-      if (isGranted) {
-        setHasPermission(true);
-        loadAnkiData();
-      }
-    };
-    checkPermission();
-  }, []);
-
-  const loadAnkiData = async () => {
-    setIsLoading(true);
-    try {
-      const tempDecks = await Anki.getDecks();
-      setDecks(tempDecks);
-      const tempModels = await Anki.getModels();
-      setModels(tempModels);
-    } catch (error) {
-      console.error('Failed to load Anki decks:', error);
-      setDecks([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const f = async () => {
-      const temp = await Anki.getFields(ankiModelId?.toString());
-      console.log('Fields: ', temp.toString());
-    };
-
-    f();
-  }, [ankiModelId]);
-
-  const handleConnectAnki = async () => {
-    try {
-      const granted = await PermissionsAndroid.request(ANKI_PERMISSION, {
-        title: 'Anki Integration',
-        message: 'Allow this app to send flashcards directly to your Anki database.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Cancel',
-      });
-
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        setHasPermission(true);
-        loadAnkiData();
-      } else {
-        Alert.alert('Permission Denied', 'Cannot connect to Anki without permission.');
-      }
-    } catch (err) {
-      console.warn(err);
-    }
-  };
+  const [activeTab, setActiveTab] = useState<TabKey>('anki');
 
   return (
-    <Card className="p-4">
-      <Card.Content className="gap-4">
-        <Text variant="titleMedium" className="font-bold">
-          Anki Integration
-        </Text>
+    <View className="flex-1 bg-white dark:bg-[#1e1e1e]">
+      <SegmentedButtons
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as TabKey)}
+        buttons={[
+          { value: 'anki', label: 'Anki' },
+          { value: 'misc', label: 'Misc' },
+        ]}
+        style={{ margin: 16 }}
+      />
 
-        {!hasPermission ? (
-          <Button mode="contained" onPress={handleConnectAnki} icon="database-plus">
-            Connect to AnkiDroid
-          </Button>
-        ) : (
-          <View>
-            <Text className="text-green-700">✓ Connected to AnkiDroid</Text>
-
-            <Dropdown
-              label="Decks"
-              value={ankiDeckId}
-              options={decks}
-              onSelect={(value) => updateSettings({ defaultBookSettings: { ankiDeckId: value } })}
-              isLoading={isLoading}
-            />
-            <Dropdown
-              label="models"
-              value={ankiModelId}
-              options={models}
-              onSelect={(value) => updateSettings({ defaultBookSettings: { ankiModelId: value } })}
-              isLoading={isLoading}
-            />
-          </View>
-        )}
-      </Card.Content>
-    </Card>
+      <ScrollView className="flex-1">
+        <View className="gap-4 p-4">
+          {activeTab === 'anki' && <AnkiTab />}
+          {activeTab === 'misc' && <MiscTab />}
+        </View>
+      </ScrollView>
+    </View>
   );
 };
