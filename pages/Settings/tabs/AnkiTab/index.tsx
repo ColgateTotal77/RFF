@@ -50,10 +50,10 @@ export const AnkiTab = () => {
 
     const getFields = async () => {
       try {
-        const result = await Anki.getFields(ankiModelId.toString());
+        const result = await Anki.getFields(ankiModelId);
         const fieldsArr = typeof result === 'string' ? JSON.parse(result) : result;
         const fields = fieldsArr.map((field: string, index: number) => ({ id: index, name: field }));
-        updateSettings({fieldMapping: {fieldCount: fields.length}});
+        updateSettings({fieldMapping: {fieldCount: fields.length, modalId: ankiModelId}});
         setFields(fields);
       } catch (err) {
         console.error('Failed to get fields:', err);
@@ -68,10 +68,10 @@ export const AnkiTab = () => {
 
     const getMirroredFields = async () => {
       try {
-        const result = await Anki.getFields(mirroredAnkiModelId.toString());
+        const result = await Anki.getFields(mirroredAnkiModelId);
         const fieldsArr = typeof result === 'string' ? JSON.parse(result) : result;
         const fields = fieldsArr.map((field: string, index: number) => ({ id: index, name: field }));
-        updateSettings({mirroredFieldMapping: {fieldCount: fields.length}});
+        updateSettings({mirroredFieldMapping: {fieldCount: fields.length, modalId: mirroredAnkiModelId}});
         setMirroredFields(fields);
       } catch (err) {
         console.error('Failed to get mirrored fields:', err);
