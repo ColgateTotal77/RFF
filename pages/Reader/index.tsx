@@ -1,47 +1,36 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
 import { useBookStore } from 'stores/useBookStore';
-import { useEpubNextBlock, useEpubPrevBlock } from 'lib/useBookNavigation';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
-import { useWordAction } from 'lib/useWordAction';
-import { calculateBookProgress } from 'lib/utils';
 import { Theme } from 'types';
+import { useMessageHandler } from './useMessageHandler';
 
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
   const settings = useBookStore((state) => state.settings);
-  const setScrollPosition = useBookStore((state) => state.setScrollPosition);
-  const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const closeBook = useBookStore((state) => state.closeBook);
   const lastJumpTo = useBookStore((state) => state.lastJumpTo);
   const registerWebViewAction = useBookStore((state) => state.registerWebViewAction);
-  const updateMisc = useBookStore((state) => state.updateMisc);
+  const lastFragmentId = useBookStore((state) => state.lastFragmentId);
+  const setLastFragmentId = useBookStore((state) => state.setLastFragmentId);
 
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const resetSearch = useTempStore((state) => state.resetSearch);
   const isWebViewReady = useTempStore((state) => state.isWebViewReady);
   const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
   const searchQuery = useTempStore((state) => state.searchQuery);
-  const isSearchOperation = useTempStore((state) => state.isSearchOperation);
-  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
-  const setSelectionMenu = useTempStore((state) => state.setSelectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
 
   const font = currentBook?.settings?.font || settings.font;
-  const { addNewCard, updateWordTag, openSystemTranslator } = useWordAction();
 
   const webViewRef = useRef<WebView>(null);
   const containerRef = useRef<View>(null);
-
   const [webViewSource, setWebViewSource] = useState<{ uri: string } | null>(null);
-
-  const loadNextBlock = useEpubNextBlock(webViewRef, containerRef);
-  const loadPrevBlock = useEpubPrevBlock(webViewRef, containerRef);
 
   useEffect(() => {
     return () => {
@@ -82,6 +71,13 @@ export const ReaderScreen = () => {
 
     loadInitialWindow();
   }, [currentBook?.basePath, lastJumpTo]);
+
+  useEffect(() => {
+    if (lastFragmentId && isWebViewReady) {
+      onScrollToFragment(lastFragmentId);
+      setLastFragmentId('');
+    }
+  }, [isWebViewReady]);
 
   useEffect(() => {
     if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady) {
@@ -132,6 +128,11 @@ export const ReaderScreen = () => {
     webViewRef.current?.injectJavaScript(script);
   }, []);
 
+  const onScrollToFragment = useCallback((fragmentId: string) => {
+    const script = `window.onScrollToFragment(${fragmentId}); true;`;
+    webViewRef.current?.injectJavaScript(script);
+  }, []);
+
   useEffect(() => {
     registerWebViewAction('scrollToBlock', onScrollToBlock);
     registerWebViewAction('jumpToSearch', onJumpToSearch);
@@ -139,90 +140,12 @@ export const ReaderScreen = () => {
     registerWebViewAction('updateTag', onUpdateTag);
     registerWebViewAction('updateFont', onUpdateFont);
     registerWebViewAction('updateTheme', onUpdateTheme);
-  }, [registerWebViewAction, onScrollToBlock, onJumpToSearch, clearSearch, onUpdateTag, onUpdateFont, onUpdateTheme]);
+    registerWebViewAction('scrollToFragment', onScrollToFragment);
+  }, [registerWebViewAction, onScrollToBlock, onJumpToSearch, clearSearch, onUpdateTag, onUpdateFont, onUpdateTheme, onScrollToFragment]);
+
+  const handleMessage = useMessageHandler(webViewRef, containerRef);
 
   if (!webViewSource) return;
-
-  const onMessage = async (event: WebViewMessageEvent) => {
-    const data = event.nativeEvent.data;
-
-    try {
-      const parsedData = JSON.parse(data);
-
-      switch (parsedData.type) {
-        case 'LOG':
-          if (parsedData.logType === 'error') console.error(parsedData.message);
-          else console.log(parsedData.message);
-          break;
-
-        case 'TEXT_SELECTED':
-          setSelectionMenu({
-            visible: true,
-            text: parsedData.text,
-            top: parsedData.top,
-            left: parsedData.left,
-            noteIds: parsedData.noteIds,
-            colorCode: parsedData.colorCode,
-          });
-          break;
-
-        case 'SELECTION_CLEARED':
-          closeMenu();
-          break;
-
-        case 'SCROLL_POSITION_CHANGED':
-          if (!currentBook) return;
-
-          const percent = calculateBookProgress(
-            currentBook,
-            parsedData.currentBlock,
-            parsedData.currentBlockScrollPercent
-          );
-
-          updateMisc({ percent, currentBlockScrollPercent: parsedData.currentBlockScrollPercent });
-          setScrollPosition(parsedData.scrollPosition);
-
-          if (parsedData.currentBlock !== currentBook.currentBlock)
-            setCurrentBlock(parsedData.currentBlock);
-
-          break;
-
-        case 'INITIAL_LOAD_COMPLETE':
-          setIsWebViewReady(true);
-          break;
-
-        case 'END_REACHED':
-          loadNextBlock();
-          break;
-
-        case 'TOP_REACHED':
-          loadPrevBlock();
-          break;
-
-        case 'DOUBLE_TAP':
-          await openSystemTranslator(parsedData.text.replace(/[^\w\s]|_/g, ''));
-          closeMenu();
-          break;
-
-        case 'TRIPLE_TAP':
-          if (parsedData.noteIds) {
-            updateWordTag({ noteIds: parsedData.noteIds, colorCode: parsedData.colorCode || 0 });
-          } else {
-            addNewCard(parsedData.text);
-          }
-          closeMenu();
-          break;
-
-        case 'SEARCH_HIGHLIGHT_COMPLETE':
-          if (currentSearchResult.occurrenceIndex > -1 && isSearchOperation) {
-            onJumpToSearch(currentSearchResult.blockId, currentSearchResult.occurrenceIndex);
-            setIsSearchOperation(false);
-          }
-      }
-    } catch (error) {
-      console.log("onMessage error: ", error)
-    }
-  };
 
     return (
       <View ref={containerRef} collapsable={false} className="flex-1">
@@ -231,7 +154,7 @@ export const ReaderScreen = () => {
           originWhitelist={['*']}
           source={webViewSource}
           className="flex-1"
-          onMessage={onMessage}
+          onMessage={handleMessage}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowFileAccess={true}

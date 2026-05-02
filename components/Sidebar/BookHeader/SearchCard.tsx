@@ -36,7 +36,7 @@ export const SearchCard = (props: Props) => {
     <Card style={isCurrentSearch ? { backgroundColor: '#1e40af' } : undefined} onPress={onPress}>
       <View className="flex justify-between p-4">
         <Text>{highlightSearch(searchItem.snippet, searchItem.query)}</Text>
-        <Text>{searchItem.title}</Text>
+        <Text>{searchItem.title + " " + "[" + searchItem.blockId + "]"}</Text>
       </View>
     </Card>
   );

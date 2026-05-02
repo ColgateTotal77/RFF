@@ -393,42 +393,67 @@ class AnkiModule : Module() {
             val deckId = deckIdString.toLong()
 
             try {
+                val originalWord = fields["originalWord"] ?: throw Exception("originalWord field is missing")
+                val definition = fields["definition"] ?: ""
+                val baseExamples = fields["examples"] ?: ""
                 val word = fields["word"] ?: throw Exception("Word field is missing")
+
                 val modelId = mapping["modalId"] as String ?: throw Exception("modalId is missing")
-
-                val note = getNoteInfoByModelId(modelId.toLong(), word)
-                if (note != null) throw Exception("Card already exists!")
-
                 val ankiApi = AddContentApi(context)
 
-                val (tier, zipf) = runBlocking {
+                val (wordTier, wordZipf) = runBlocking {
                     freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
                 }
-                val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
 
-                val mutableFields = fields.toMutableMap()
-                mutableFields["zipf"] = zipf.toString()
-
-                val mainFieldsArray = convertFieldsToArray(mutableFields, mapping)
-                val mainNoteId = ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)
-                    ?: throw Exception("Failed to create main note")
-
-                var mirroredNoteId = -1L
-
-                if(isTwoSided) {
-                    val mirroredModelId = mirroredMapping["modalId"] as String ?: throw Exception("mirrored modalId is missing")
-                    val mirroredFieldsArray = convertFieldsToArray(mutableFields, mirroredMapping)
-                    mirroredNoteId = ankiApi.addNote(mirroredModelId.toLong(), deckId, mirroredFieldsArray, tags)
-                                    ?: throw Exception("Failed to create mirrored note")
+                val needsDescription = wordZipf < 4.0
+                val finalExamples = if (needsDescription && definition.isNotEmpty()) {
+                    "$definition<br><br>$baseExamples"
+                } else {
+                    baseExamples
                 }
 
-                val combinedIds = mutableListOf<Long>()
-                combinedIds.add(mainNoteId)
-                if (isTwoSided) combinedIds.add(mirroredNoteId)
+                val mutableFields = fields.toMutableMap()
+                mutableFields["examples"] = finalExamples
 
-                upsertWordToAnkiDictionary(word, combinedIds.toLongArray(), 1)
+                val createdNoteIds = mutableListOf<Long>()
 
-                return@AsyncFunction combinedIds
+                fun createCardPair(targetWord: String, zipf: Double, tier: String) {
+                    val note = getNoteInfoByModelId(modelId.toLong(), targetWord)
+                    if (note != null) return
+
+                    mutableFields["word"] = targetWord
+                    mutableFields["zipf"] = zipf.toString()
+
+                    val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
+
+                    val mainFieldsArray = convertFieldsToArray(mutableFields, mapping)
+                    val mainNoteId = ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)
+                        ?: throw Exception("Failed to create main note for $targetWord")
+
+                    val combinedIds = mutableListOf<Long>()
+                    combinedIds.add(mainNoteId)
+                    createdNoteIds.add(mainNoteId)
+
+                    if (isTwoSided) {
+                        val mirroredModelId = mirroredMapping["modalId"] as String ?: throw Exception("mirrored modalId is missing")
+                        val mirroredFieldsArray = convertFieldsToArray(mutableFields, mirroredMapping)
+                        val mirroredNoteId = ankiApi.addNote(mirroredModelId.toLong(), deckId, mirroredFieldsArray, tags)
+                            ?: throw Exception("Failed to create mirrored note for $targetWord")
+
+                        combinedIds.add(mirroredNoteId)
+                        createdNoteIds.add(mirroredNoteId)
+                    }
+
+                    upsertWordToAnkiDictionary(targetWord, combinedIds.toLongArray(), 1)
+                }
+
+                createCardPair(word, wordZipf, wordTier)
+
+                if (createdNoteIds.isEmpty()) {
+                    throw Exception("Cards already exist for this word.")
+                }
+
+                return@AsyncFunction createdNoteIds
             } catch (e: Exception) {
                 throw Exception("Failed to add Anki note: ${e.message}")
             }

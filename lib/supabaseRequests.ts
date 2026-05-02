@@ -9,12 +9,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 type GetWordMetadataResponse = Database['public']['Tables']['words']['Row'] & {
   wordForms: string[];
   examples: string[];
+  definition?: string;
+  synonyms: string[];
 };
 
 export const fetchWordMetadata = async (
   word: string,
-  sourceLang: string = 'en',
-  targetLang: string = 'ru'
+  sourceLang: string,
+  targetLang: string
 ) => {
   try {
     const { data, error } = await supabase.functions.invoke('get-word-metadata', {

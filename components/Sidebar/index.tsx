@@ -8,6 +8,7 @@ import { ReaderScreen } from 'pages/Reader';
 import { DrawerTab, RootStackParamList } from 'types';
 import { BookHeader } from 'components/Sidebar/BookHeader';
 import { useBookStore } from 'stores/useBookStore';
+import { HaveReadScreen } from 'pages/HaveRead';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
@@ -28,6 +29,7 @@ export const Sidebar = () => {
       <Drawer.Screen name="Reading Now" component={ReadingNowScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen name="Reader" component={ReaderScreen} />
+      <Drawer.Screen name="Have Read" component={HaveReadScreen} />
     </Drawer.Navigator>
   );
 };

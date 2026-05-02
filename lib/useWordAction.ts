@@ -2,6 +2,7 @@ import { fetchWordMetadata } from 'lib/supabaseRequests';
 import { Anki, BookEngine } from 'modules/book-engine';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { deepMerge } from 'lib/utils';
 
 interface UpdateWordTag {
   noteIds: string;
@@ -15,6 +16,7 @@ export const useWordAction = () => {
 
   const addNewCard = async (text: string) => {
     const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
+    const targetLang = currentBook.settings.targetLang || settings.targetLang;
     const cleanedText = text.replace(/[^\w\s]|_/g, '');
 
     try {
@@ -23,18 +25,38 @@ export const useWordAction = () => {
         return;
       }
 
-      const metadata = await fetchWordMetadata(cleanedText, 'en', 'ru');
+      const metadata = await fetchWordMetadata(
+        cleanedText,
+        currentBook.settings.bookLang,
+        targetLang
+      );
+
+      console.log(JSON.stringify(metadata, null, 2))
 
       const isTwoSided = currentBook.settings.isTwoSided || settings.isTwoSided;
-      const mapping = currentBook.settings.fieldMapping || settings.fieldMapping || {};
-      const mirroredMapping =
-        currentBook.settings.mirroredFieldMapping || settings.mirroredFieldMapping || {};
+      const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
+      const mirroredModelId =
+        currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
+      const key = `${deckId}:${modelId}`;
+      const mirroredKey = `${deckId}:${mirroredModelId}`;
+
+      const mapping = deepMerge(
+        settings.fieldMappings?.[key] || {},
+        currentBook.settings.fieldMapping || {}
+      );
+      const mirroredMapping = deepMerge(
+        settings.mirroredFieldMappings?.[mirroredKey] || {},
+        currentBook.settings.mirroredFieldMapping || {}
+      );
 
       const fields = {
-        word: metadata?.name || '',
+        originalWord: cleanedText.toLowerCase(),
+        word: metadata?.word || '',
         translation: metadata?.translation || '',
+        definition: metadata?.definition || '',
+        synonyms: metadata?.synonyms.join(' ,').toLowerCase() || '',
         examples: formatExamples(metadata?.examples ?? []),
-      }
+      };
 
       const noteIdsArray = await Anki.addNote(deckId, fields, mapping, mirroredMapping, isTwoSided);
 
@@ -48,9 +70,17 @@ export const useWordAction = () => {
   };
 
   const updateWordTag = async ({ colorCode, noteIds }: UpdateWordTag) => {
-    const mapping = currentBook.settings.fieldMapping || settings.fieldMapping || {};
-    const mirroredMapping =
-      currentBook.settings.mirroredFieldMapping || settings.mirroredFieldMapping || {};
+    const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
+    const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
+    const mirroredModelId = currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
+    const key = `${deckId}:${modelId}`;
+    const mirroredKey = `${deckId}:${mirroredModelId}`;
+
+    const mapping = deepMerge(settings.fieldMappings?.[key] || {}, currentBook.settings.fieldMapping || {});
+    const mirroredMapping = deepMerge(
+      settings.mirroredFieldMappings?.[mirroredKey] || {},
+      currentBook.settings.mirroredFieldMapping || {}
+    );
 
     const newTagIdNum = Number(colorCode) + 1;
     if (newTagIdNum > 8) return;
@@ -66,7 +96,7 @@ export const useWordAction = () => {
   };
 
   const copyToClipboard = (text: string) => {
-      Clipboard.setString(text);
+    Clipboard.setString(text);
   };
 
   const openSystemTranslator = async (text: string) => {
