@@ -7,10 +7,11 @@ import { Text, Button, Switch, List } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
+import { updateNestedMapping } from 'lib/utils';
 
 export const AnkiTab = () => {
   const {
-    settings: { ankiDeckId, ankiModelId, mirroredAnkiModelId, isTwoSided, fieldMapping, mirroredFieldMapping },
+    settings: { ankiDeckId, ankiModelId, mirroredAnkiModelId, isTwoSided, fieldMappings, mirroredFieldMappings },
     updateSettings,
   } = useBookStore();
   const [hasPermission, setHasPermission] = useState(false);
@@ -19,6 +20,9 @@ export const AnkiTab = () => {
   const [fields, setFields] = useState<{ id: number; name: string }[]>([]);
   const [mirroredFields, setMirroredFields] = useState<{ id: number; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const key = `${ankiDeckId}:${ankiModelId}`;
+  const mirroredKey = `${ankiDeckId}:${mirroredAnkiModelId}`;
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -53,7 +57,12 @@ export const AnkiTab = () => {
         const result = await Anki.getFields(ankiModelId);
         const fieldsArr = typeof result === 'string' ? JSON.parse(result) : result;
         const fields = fieldsArr.map((field: string, index: number) => ({ id: index, name: field }));
-        updateSettings({fieldMapping: {fieldCount: fields.length, modalId: ankiModelId}});
+        updateSettings({
+          fieldMappings: updateNestedMapping(fieldMappings, key, {
+            fieldCount: fields.length,
+            modalId: ankiModelId,
+          }),
+        });
         setFields(fields);
       } catch (err) {
         console.error('Failed to get fields:', err);
@@ -61,7 +70,7 @@ export const AnkiTab = () => {
     };
 
     getFields();
-  }, [ankiModelId, updateSettings]);
+  }, [ankiModelId]);
 
   useEffect(() => {
     if (!mirroredAnkiModelId) return;
@@ -71,7 +80,12 @@ export const AnkiTab = () => {
         const result = await Anki.getFields(mirroredAnkiModelId);
         const fieldsArr = typeof result === 'string' ? JSON.parse(result) : result;
         const fields = fieldsArr.map((field: string, index: number) => ({ id: index, name: field }));
-        updateSettings({mirroredFieldMapping: {fieldCount: fields.length, modalId: mirroredAnkiModelId}});
+        updateSettings({
+          mirroredFieldMappings: updateNestedMapping(mirroredFieldMappings, mirroredKey, {
+            fieldCount: fields.length,
+            modalId: mirroredAnkiModelId,
+          }),
+        });
         setMirroredFields(fields);
       } catch (err) {
         console.error('Failed to get mirrored fields:', err);
@@ -79,7 +93,7 @@ export const AnkiTab = () => {
     };
 
     getMirroredFields();
-  }, [mirroredAnkiModelId, updateSettings]);
+  }, [mirroredAnkiModelId]);
 
   const handleConnectAnki = async () => {
     try {
@@ -103,13 +117,13 @@ export const AnkiTab = () => {
 
   const updateFieldMapping = (partialMapping: Partial<FieldMapping>) => {
     updateSettings({
-      fieldMapping: partialMapping,
+      fieldMappings: updateNestedMapping(fieldMappings, key, partialMapping),
     });
   };
 
   const updateMirroredFieldMapping = (partialMapping: Partial<FieldMapping>) => {
     updateSettings({
-      mirroredFieldMapping: partialMapping,
+      mirroredFieldMappings: updateNestedMapping(mirroredFieldMappings, mirroredKey, partialMapping),
     });
   };
 
@@ -152,7 +166,7 @@ export const AnkiTab = () => {
         <>
           <FieldMappingSection
             title="Field Mapping"
-            fieldMapping={fieldMapping}
+            fieldMapping={fieldMappings[key]}
             fields={fields}
             onUpdate={updateFieldMapping}
           />
@@ -175,11 +189,10 @@ export const AnkiTab = () => {
                 value={mirroredAnkiModelId}
                 options={models}
                 onSelect={(value) => updateSettings({ mirroredAnkiModelId: value })}
-                isLoading={isLoading}
               />
               <FieldMappingSection
                 title="Mirrored Field Mapping"
-                fieldMapping={mirroredFieldMapping}
+                fieldMapping={mirroredFieldMappings[mirroredKey]}
                 fields={mirroredFields}
                 onUpdate={updateMirroredFieldMapping}
               />

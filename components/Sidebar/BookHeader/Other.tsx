@@ -5,10 +5,11 @@ interface Props {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
+  onBookSettingsOpen: () => void;
 }
 
 export const Other = (props: Props) => {
-  const { isOpen, onOpen, onClose } = props;
+  const { isOpen, onOpen, onClose, onBookSettingsOpen } = props;
   const updateThemeAction = useBookStore((state) => state.updateThemeAction);
   const settings = useBookStore((state) => state.settings);
 
@@ -20,9 +21,12 @@ export const Other = (props: Props) => {
       anchorPosition={'bottom'}
       elevation={1}>
       <Menu.Item title="Title" />
-      <Menu.Item onPress={() => updateThemeAction(settings.theme === 'dark' ? 'light' : 'dark')} title="Switch Theme" />
+      <Menu.Item
+        onPress={() => updateThemeAction(settings.theme === 'dark' ? 'light' : 'dark')}
+        title="Switch Theme"
+      />
       <Divider />
-      <Menu.Item onPress={() => {}} title="Settings" />
+      <Menu.Item onPress={() => onBookSettingsOpen()} title="Settings" />
     </Menu>
   );
 };

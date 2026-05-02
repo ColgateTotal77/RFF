@@ -10,10 +10,9 @@ export const Footer = () => {
   const clearSearchAction = useBookStore((state) => state.clearSearchAction);
   const currentBook = useBookStore((state) => state.currentBook);
   const settings = useBookStore((state) => state.settings);
-  const theme = settings.theme;
   const jumpToNext = useJumpToNextSearchResult();
   const jumpToPrev = useJumpToPrevSearchResult();
-  const isDarkMode = theme === 'dark';
+  const isDarkMode = settings.theme === 'dark';
 
   if(!currentBook) return;
 

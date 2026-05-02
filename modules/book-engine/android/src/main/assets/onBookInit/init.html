@@ -158,8 +158,27 @@
       }
   });
 
-  let currentTheme = 'light';
+  document.addEventListener('click', (event) => {
+    const anchor = event.target.closest('a');
 
+    if (anchor) {
+      const href = anchor.getAttribute('href');
+
+      if (!href) return;
+
+      if (href.startsWith('chapter://')) {
+        event.preventDefault();
+
+        window.log('BOOK_LINK_PRESSED: ' + href);
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'BOOK_LINK_PRESSED',
+          href: href
+        }));
+      }
+    }
+  });
+
+  let currentTheme = 'light';
   window.setTheme = (theme) => {
     window.log('setTheme: ' + theme);
     if(theme === currentTheme) return;

@@ -1,9 +1,5 @@
 import { Book } from 'types';
-
-export const ensureArray = (item: any) => {
-  if (!item) return [];
-  return Array.isArray(item) ? item : [item];
-};
+import { ISO_639_3_TO_2 } from './constants';
 
 export const deepMerge = (target: any, source: any): any => {
   const result = { ...target };
@@ -46,4 +42,33 @@ export const resolvePath = (base: string, relative: string) => {
     else stack.push(part);
   }
   return stack.join('/');
+};
+
+export const normalizeLanguageCode = (lang: string): string => {
+  if (!lang) return 'en';
+
+  const normalized = lang.toLowerCase().trim();
+
+  if (/^[a-z]{2}$/.test(normalized)) return normalized;
+
+  if (/^[a-z]{3}$/.test(normalized)) return ISO_639_3_TO_2[normalized] || normalized;
+
+  const twoLetterCode = normalized.split(/[-_]/)[0];
+  if (/^[a-z]{2}$/.test(twoLetterCode)) return twoLetterCode;
+
+  return normalized;
+};
+
+export const updateNestedMapping = <T extends Record<string, any>>(
+  mappings: Record<string, T> | undefined,
+  key: string,
+  partialData: Partial<T>
+): Record<string, T> => {
+  return {
+    ...(mappings || {}),
+    [key]: {
+      ...(mappings?.[key] || {}),
+      ...partialData,
+    } as T,
+  } as Record<string, T>;
 };

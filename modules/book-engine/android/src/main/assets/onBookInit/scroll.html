@@ -106,10 +106,20 @@
     var target = document.getElementById(targetId);
 
     if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       window.log('scrollToBlock: scrolling to ' + targetId);
-      target.scrollIntoView({ behavior: 'instant', block: 'start' });
     } else {
-      window.log('scrollToBlock: block not found ' + targetId, 'error');
+      window.error('scrollToBlock: block not found ' + targetId);
+    }
+  };
+
+  window.scrollToFragment = function(fragmentId) {
+    const element = document.getElementById(fragmentId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.log('scrollToFragment: scrolling to ' + fragmentId);
+    } else {
+      window.error('scrollToFragment: fragment not found ' + fragmentId);
     }
   };
 </script>

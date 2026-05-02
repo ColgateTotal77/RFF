@@ -14,7 +14,7 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
         <Text className="mt-2 text-xl font-bold">RFF</Text>
       </View>
 
-      <Drawer.Section className="px-2">
+      <Drawer.Section className="flex gap-2 px-2">
         <Drawer.Item
           label="Reading Now"
           icon="home"
@@ -22,6 +22,16 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
           onPress={() => {
             setActive('Reading Now');
             props.navigation.navigate('Reading Now');
+          }}
+          className="rounded-lg"
+        />
+        <Drawer.Item
+          label="Have Read"
+          icon="book"
+          active={active === 'Have Read'}
+          onPress={() => {
+            setActive('Have Read');
+            props.navigation.navigate('Have Read');
           }}
           className="rounded-lg"
         />

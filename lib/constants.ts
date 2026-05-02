@@ -1,1 +1,42 @@
 export const ANKI_PERMISSION = 'com.ichi2.anki.permission.READ_WRITE_DATABASE';
+
+export const LANGUAGE_OPTIONS = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'ru', name: 'Russian' },
+  { code: 'it', name: 'Italian' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'nl', name: 'Dutch' },
+  { code: 'pl', name: 'Polish' },
+  { code: 'tr', name: 'Turkish' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ar', name: 'Arabic' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'uk', name: 'Ukrainian' },
+  { code: 'sv', name: 'Swedish' },
+  { code: 'da', name: 'Danish' },
+  { code: 'no', name: 'Norwegian' },
+  { code: 'fi', name: 'Finnish' },
+];
+
+export const ISO_639_3_TO_2: Record<string, string> = {
+  eng: 'en',
+  spa: 'es',
+  fra: 'fr',
+  deu: 'de',
+  rus: 'ru',
+  ita: 'it',
+  por: 'pt',
+  nld: 'nl',
+  pol: 'pl',
+  tur: 'tr',
+  jpn: 'ja',
+  kor: 'ko',
+  zho: 'zh',
+  ara: 'ar',
+  hin: 'hi',
+};

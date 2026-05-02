@@ -11,6 +11,7 @@ interface Props {
 
 export const BookCard = ({ book, onPress }: Props) => {
   const { removeBook } = useBookStore();
+  const { toggleHaveRead } = useBookStore();
   const [menuVisible, setMenuVisible] = useState(false);
 
   return (
@@ -31,7 +32,7 @@ export const BookCard = ({ book, onPress }: Props) => {
               />
             }>
             <Menu.Item onPress={() => {}} title="Item 1" />
-            <Menu.Item onPress={() => {}} title="Item 2" />
+            <Menu.Item onPress={() => toggleHaveRead(book.basePath)} title="Have read" />
             <Menu.Item onPress={() => removeBook(book.basePath)} title="Delete" />
           </Menu>
         </View>
@@ -40,9 +41,10 @@ export const BookCard = ({ book, onPress }: Props) => {
           <Image className="h-48 w-32" source={{ uri: book.cover }} resizeMode="cover" />
         </View>
         <View className="flex-1">
-          <Text className="text-lg font-bold text-red-900" numberOfLines={3}>
+          <Text className="text-lg font-bold" numberOfLines={3}>
             {book.title}
           </Text>
+          <Text className="text-md">{book.author}</Text>
         </View>
       </View>
     </Card>

@@ -22,7 +22,7 @@ export const FieldMappingSection = ({
   ];
 
   return (
-    <View className="gap-2">
+    <View className="gap-4">
       <Text variant="titleSmall" className="font-bold">{title}</Text>
       {FIELD_MAPPING_KEYS.map((key) => (
         <Dropdown

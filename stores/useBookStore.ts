@@ -1,10 +1,18 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, CurrentCTree, DeepPartial, DefaultBookSettings, Misc, Theme } from 'types';
-import { extractEpub, parseManifest } from 'lib/useBookExtraction';
+import {
+  Book,
+  BookSettings,
+  CurrentCTree,
+  DeepPartial,
+  Settings,
+  Misc,
+  Theme,
+} from 'types';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
+import { parseBook } from 'lib/ParseBook';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -26,21 +34,24 @@ const zustandStorage: StateStorage = {
 type Store = {
   books: Book[];
   currentBook: Book | null;
-  settings: DefaultBookSettings;
+  settings: Settings;
   lastJumpTo: number;
+  lastFragmentId: string;
   currentCTree: CurrentCTree | null;
 
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
+  setLastFragmentId: (fragmentId: string) => void;
   setCurrentBlock: (currentBlock: number) => void;
   closeBook: () => void;
   removeBook: (basePath: string) => Promise<void>;
-  shiftNext: () => { fetchIndex: number; removeIndex: number | null } | null;
-  shiftPrev: () => { fetchIndex: number; removeIndex: number | null } | null;
+  toggleHaveRead: (basePath: string) => void;
+  updateCurrentBlocks: (newBlocks: number[]) => void;
 
-  updateSettings: (toUpdate: DeepPartial<DefaultBookSettings>) => void;
+  updateSettings: (toUpdate: DeepPartial<Settings>) => void;
+  updateBookSettings: (toUpdate: DeepPartial<BookSettings>) => void;
   setScrollPosition: (scrollY: number) => void;
   updateMisc: (misc: Partial<Misc>) => void;
 
@@ -52,6 +63,7 @@ type Store = {
     updateTag?: (word: string | string[] | null, noteIds: string, colorCode: string) => void;
     updateFont?: (fontSize?: number, fontFamily?: string) => void;
     updateTheme?: (theme: Theme) => void;
+    scrollToFragment?: (fragmentId: string) => void;
   };
 
   registerWebViewAction: <K extends keyof Store['webViewActions']>(
@@ -65,6 +77,7 @@ type Store = {
   updateTagAction: (words: string | string[] | null, noteIds: string, colorCode: string) => void;
   updateFontAction: (fontSize?: number, fontFamily?: string) => void;
   updateThemeAction: (theme: Theme) => void;
+  scrollToFragmentAction: (fragmentId: string) => void;
 };
 
 export const useBookStore = create<Store>()(
@@ -74,15 +87,17 @@ export const useBookStore = create<Store>()(
       books: [],
       currentCTree: null,
       lastJumpTo: -1,
+      lastFragmentId: '',
       webViewActions: {},
       settings: {
         ankiDeckId: '',
         ankiModelId: '',
-        fieldMapping: { word: 0, translation: 1, fieldCount: 2, modalId: '' },
+        fieldMappings: {},
         mirroredAnkiModelId: '',
-        mirroredFieldMapping: { word: 1, translation: 0, fieldCount: 2, modalId: '' },
+        mirroredFieldMappings: {},
         isTwoSided: false,
         autoCardOnDoubleTap: false,
+        targetLang: 'en',
         font: { fontSize: 30, fontFamily: 'Georgia, serif' },
         theme: 'light',
       },
@@ -91,14 +106,15 @@ export const useBookStore = create<Store>()(
         set({ currentBook: null });
 
         try {
-          const unzippedPath = await extractEpub(uri);
-          if (!unzippedPath) return;
+          const { settings } = get();
+          const book = await parseBook(uri);
 
-          const book = await parseManifest(unzippedPath);
+          book.settings.targetLang = settings.targetLang;
 
           set((state) => ({
             currentBook: book,
             lastJumpTo: -1,
+            lastFragmentId: '',
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
         } catch (e) {
@@ -114,21 +130,38 @@ export const useBookStore = create<Store>()(
 
         try {
           const deckId = bookToOpen?.settings?.ankiDeckId || settings.ankiDeckId;
+          const modelId = bookToOpen?.settings?.ankiModelId || settings.ankiModelId;
+          const mirroredModelId =
+            bookToOpen?.settings?.mirroredAnkiModelId || settings.mirroredAnkiModelId;
 
           console.log('currentCTree?.deckId !== deckId', currentCTree?.deckId !== deckId);
           console.log('currentCTree?.deckId', currentCTree?.deckId, typeof currentCTree?.deckId);
           console.log('deckId', deckId, typeof deckId);
           if (currentCTree?.deckId !== deckId) {
-            const mapping = bookToOpen.settings.fieldMapping || settings.fieldMapping || {};
-            const mirroredMapping =
-              bookToOpen.settings.mirroredFieldMapping || settings.mirroredFieldMapping || {};
+            const key = `${deckId}:${modelId}`;
+            const mirroredKey = `${deckId}:${mirroredModelId}`;
 
-            await BookEngine.loadAnkiDictionary('en', deckId, mapping, mirroredMapping);
+            const mapping = deepMerge(
+              settings.fieldMappings?.[key] || {},
+              bookToOpen.settings.fieldMapping || {}
+            );
+            const mirroredMapping = deepMerge(
+              settings.mirroredFieldMappings?.[mirroredKey] || {},
+              bookToOpen.settings.mirroredFieldMapping || {}
+            );
+
+            await BookEngine.loadAnkiDictionary(
+              bookToOpen.settings.bookLang,
+              deckId,
+              mapping,
+              mirroredMapping
+            );
           }
 
           set((state) => ({
             currentBook: bookToOpen,
             lastJumpTo: -1,
+            lastFragmentId: '',
             books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
           }));
         } catch (e) {
@@ -163,6 +196,22 @@ export const useBookStore = create<Store>()(
         }));
       },
 
+      toggleHaveRead: (basePath: string) =>
+        set((state) => {
+          const book = state.books.find((book) => book.basePath === basePath);
+          if (!book) return state;
+
+          const updatedBook = {
+            ...book,
+            misc: { ...book.misc, haveRead: !book.misc.haveRead },
+          };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
+
       setCurrentBlock: (currentBlock: number) =>
         set((state) => {
           if (!state.currentBook) return state;
@@ -175,62 +224,43 @@ export const useBookStore = create<Store>()(
           };
         }),
 
-      shiftNext: () => {
-        const { currentBook, books } = get();
-        if (!currentBook) return null;
+      setLastFragmentId: (fragmentId) =>
+        set((state) => ({
+          ...state,
+          lastFragmentId: fragmentId,
+        })),
 
-        const lastRendered = currentBook.currentBlocks[currentBook.currentBlocks.length - 1];
-        const fetchIndex = lastRendered + 1;
+      updateCurrentBlocks: (newBlocks) =>
+        set((state) => {
+          if (!state.currentBook) return state;
 
-        if (fetchIndex >= currentBook.blocks.length) return null;
+          const updatedBook = { ...state.currentBook, currentBlocks: newBlocks };
 
-        let newWindow = [...currentBook.currentBlocks, fetchIndex];
-        let removeIndex: number | null = null;
-
-        if (newWindow.length > 3) {
-          removeIndex = newWindow.shift() || null;
-        }
-
-        const updatedBook = { ...currentBook, currentBlocks: newWindow };
-
-        set({
-          currentBook: updatedBook,
-          books: books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
-        });
-
-        return { fetchIndex, removeIndex };
-      },
-
-      shiftPrev: () => {
-        const { currentBook, books } = get();
-        if (!currentBook) return null;
-
-        const firstRendered = currentBook.currentBlocks[0];
-        const fetchIndex = firstRendered - 1;
-
-        if (fetchIndex < 0) return null;
-
-        let newWindow = [fetchIndex, ...currentBook.currentBlocks];
-        let removeIndex: number | null = null;
-
-        if (newWindow.length > 3) {
-          removeIndex = newWindow.pop() || null;
-        }
-
-        const updatedBook = { ...currentBook, currentBlocks: newWindow };
-
-        set({
-          currentBook: updatedBook,
-          books: books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
-        });
-
-        return { fetchIndex, removeIndex };
-      },
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
 
       updateSettings: (toUpdate) =>
         set((state) => ({
           settings: deepMerge(state.settings, toUpdate),
         })),
+
+      updateBookSettings: (toUpdate) =>
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const updatedBook = {
+            ...state.currentBook,
+            settings: deepMerge(state.currentBook.settings, toUpdate),
+          };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
 
       setScrollPosition: (scrollY) =>
         set((state) => {
@@ -350,6 +380,10 @@ export const useBookStore = create<Store>()(
         set((state) => ({
           settings: { ...state.settings, theme },
         }));
+      },
+
+      scrollToFragmentAction: (fragmentId: string) => {
+        get().webViewActions.scrollToFragment?.(fragmentId);
       },
     }),
     {

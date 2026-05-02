@@ -24,7 +24,7 @@ export const ReadingNowScreen = () => {
 
   return (
     <FlatList
-      data={books}
+      data={books.filter((b) => !b.misc.haveRead)}
       keyExtractor={(book) => book.basePath}
       renderItem={renderBook}
       contentContainerClassName="p-4 gap-4"

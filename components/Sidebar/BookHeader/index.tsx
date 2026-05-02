@@ -8,6 +8,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
 import { SearchResult } from 'types';
 import { MenuSearch } from 'components/Sidebar/BookHeader/MenuSearch';
+import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
 
 export const BookHeader = () => {
   const searchQuery = useTempStore((state) => state.searchQuery);
@@ -18,6 +19,7 @@ export const BookHeader = () => {
   const currentBook = useCurrentBook();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChaptersMenuOpen, setIsChaptersMenuOpen] = useState(false);
+  const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
 
   const onSearchSubmit = async () => {
     const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, currentBook.basePath);
@@ -33,10 +35,12 @@ export const BookHeader = () => {
           isOpen={isMenuOpen}
           onOpen={() => setIsMenuOpen(true)}
           onClose={() => setIsMenuOpen(false)}
+          onBookSettingsOpen={() => setIsBookSettingsOpen(true)}
         />
 
         <Appbar.Action icon="format-list-bulleted" onPress={() => setIsChaptersMenuOpen(true)} />
       </Appbar.Header>
+
       <Modal
         visible={isChaptersMenuOpen}
         animationType="slide"
@@ -71,6 +75,19 @@ export const BookHeader = () => {
             />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isBookSettingsOpen}
+        animationType="slide"
+        onRequestClose={() => setIsBookSettingsOpen(false)}>
+        <View className="flex-1 bg-white">
+          <Appbar.Header className="bg-white">
+            <Appbar.Action icon="close" onPress={() => setIsBookSettingsOpen(false)} />
+            <Appbar.Content title="Book Settings" />
+          </Appbar.Header>
+          <BookSettings/>
         </View>
       </Modal>
     </>
