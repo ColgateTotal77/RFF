@@ -3,21 +3,20 @@ package com.reader.bookengine
 import android.content.ContentValues
 import android.net.Uri
 import com.ichi2.anki.api.AddContentApi
-import com.reader.bookengine.database.AppDependencies
 import com.reader.bookengine.database.FrequencyDatabase
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.runBlocking
+import com.reader.bookengine.anki.AnkiAudioHelper
+import com.reader.bookengine.anki.AnkiUtils
+import com.reader.bookengine.anki.FieldArrayMapper
+import com.reader.bookengine.anki.NoteFinder
+import com.reader.bookengine.anki.NoteTagger
 
 data class AnkiWordsData(
     val words: Array<String>,
     val noteIds: Array<LongArray>,
     val colorCodes: IntArray
-)
-
-data class NoteInfo(
-    val id: Long,
-    val tags: String
 )
 
 class AnkiModule : Module() {
@@ -31,304 +30,6 @@ class AnkiModule : Module() {
     }
 
     private external fun upsertWordToAnkiDictionary(word: String, noteIds: LongArray, colorCode: Int)
-
-    private fun convertFieldsToArray(fields: Map<String, String>, mapping: Map<String, Any?>): Array<String> {
-        val fieldCount = (mapping["fieldCount"] as? Number)?.toInt() ?: 0
-        val result = Array(fieldCount) { "" }
-        for ((key, value) in mapping) {
-            if (value !is Number || key == "fieldCount" || key == "modalId") continue
-            val index = value.toInt()
-            result[index] = fields[key] ?: ""
-        }
-        return result
-    }
-
-    private fun getNoteInfoByModelId(modelId: Long, fieldText: String): NoteInfo? {
-        val context = appContext.reactContext ?: throw Exception("React context is null")
-
-        try {
-            val ankiApi = AddContentApi(context)
-            val duplicates = ankiApi.findDuplicateNotes(modelId, fieldText)
-
-            if (duplicates == null || duplicates.isEmpty()) {
-                return null
-            }
-
-            val noteId = duplicates.first().id
-
-            val resolver = context.contentResolver
-            val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-            val cursor = resolver.query(
-                noteUri,
-                arrayOf("tags"),
-                null,
-                null,
-                null
-            )
-
-            var tags = ""
-            if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    tags = cursor.getString(0) ?: ""
-                }
-                cursor.close()
-            }
-
-            return NoteInfo(noteId, tags)
-        } catch (e: Exception) {
-            android.util.Log.e("BookEngine", "Failed to get duplicate note info", e)
-            throw Exception("Failed to get duplicate note info for \"${fieldText}\": ${e.message}")
-        }
-    }
-    private fun getNoteInfoByNoteId(noteId: Long): NoteInfo? {
-        val context = appContext.reactContext ?: throw Exception("React context is null")
-
-        try {
-            val resolver = context.contentResolver
-            val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-            val cursor = resolver.query(
-                noteUri,
-                arrayOf("tags"),
-                null,
-                null,
-                null
-            )
-
-            var tags = ""
-            if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    tags = cursor.getString(0) ?: ""
-                }
-                cursor.close()
-            }
-
-            return NoteInfo(noteId, tags)
-        } catch (e: Exception) {
-            android.util.Log.e("BookEngine", "Failed to get duplicate note info", e)
-            throw Exception("Failed to get note info for note ID $noteId: ${e.message}")
-        }
-    }
-
-    private fun getBestFrequencyTier(
-        noteIds: LongArray,
-        mapping: Map<String, Any?>,
-        mirroredMapping: Map<String, Any?>
-    ): String {
-        val context = appContext.reactContext ?: return "Top_20000+"
-        val resolver = context.contentResolver
-
-        var bestZipf = -1.0
-        var bestTier = "Top_20000+"
-
-        for (noteId in noteIds) {
-            val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-            val cursor = resolver.query(noteUri, arrayOf("flds", "mid"), null, null, null)
-
-            if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    val flds = cursor.getString(0) ?: ""
-                    val mid = cursor.getLong(1).toString()
-
-                    val activeMapping = if (mid == mirroredMapping["modalId"] && mid != mapping["modalId"]) {
-                        mirroredMapping
-                    } else {
-                        mapping
-                    }
-
-                    val wordIndex = (activeMapping["word"] as? Number)?.toInt() ?: 1
-                    val fieldsArray = flds.split("\u001F")
-
-                    if (fieldsArray.size > wordIndex) {
-                        val word = fieldsArray[wordIndex].trim()
-
-                        val (tier, zipf) = runBlocking {
-                            freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
-                        }
-
-                        if (zipf > bestZipf) {
-                            bestZipf = zipf
-                            bestTier = tier
-                        }
-                    }
-                }
-                cursor.close()
-            }
-        }
-        return bestTier
-    }
-
-    private fun updateNoteTags(
-        noteId: Long,
-        newTags: Array<String>,
-        mapping: Map<String, Any?>,
-        mirroredMapping: Map<String, Any?>,
-        bestTier: String
-    ): Pair<String, Int> {
-        val context = appContext.reactContext ?: throw Exception("React context is null")
-        val resolver = context.contentResolver
-
-        val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-        val cursor = resolver.query(noteUri, arrayOf("tags", "flds", "mid"), null, null, null)
-
-        var currentTagsStr = ""
-        var word = ""
-        var colorCode = 0
-
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                currentTagsStr = cursor.getString(0) ?: ""
-                val flds = cursor.getString(1) ?: ""
-                val mid = cursor.getLong(2).toString()
-
-                val activeMapping = if (mid == mirroredMapping["modalId"] && mid != mapping["modalId"]) {
-                    mirroredMapping
-                } else {
-                    mapping
-                }
-
-                val fieldsArray = flds.split("\u001F")
-                val wordIndex = (activeMapping["word"] as? Number)?.toInt() ?: 1
-
-                if (fieldsArray.size > wordIndex) {
-                    word = fieldsArray[wordIndex].trim()
-                }
-            }
-            cursor.close()
-        }
-
-        val existingTags = currentTagsStr.trim()
-            .split("\\s+".toRegex())
-            .filter { it.isNotEmpty() }
-            .toMutableSet()
-
-        for (newTag in newTags) {
-            if (newTag.startsWith("Lookups_")) {
-                existingTags.removeAll { it.startsWith("Lookups_") }
-                existingTags.add(newTag)
-            } else {
-                existingTags.add(newTag)
-            }
-        }
-
-        existingTags.removeAll { it.startsWith("Top_") }
-        existingTags.add(bestTier)
-
-        val tagsWithTierStr = if (existingTags.isEmpty()) ""
-        else " ${existingTags.joinToString(" ")} "
-
-        val values = ContentValues()
-        values.put("tags", tagsWithTierStr)
-
-        val rowsUpdated = resolver.update(noteUri, values, null, null)
-
-        if (rowsUpdated == 0) throw Exception("Failed to update tags for Note ID $noteId in database.")
-
-        val match = Regex("Lookups_([1-8])").find(tagsWithTierStr)
-        colorCode = match?.groupValues?.get(1)?.toInt() ?: 0
-
-        return Pair(word, colorCode)
-    }
-
-    fun getAllAnkiWords(deckIdString: String, context: android.content.Context, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?>): AnkiWordsData {
-        val resolver = context.contentResolver
-
-        val tempWords = mutableListOf<String>()
-        val tempNoteIds = mutableListOf<LongArray>()
-        val tempColorCodes = mutableListOf<Int>()
-
-        val t1 = System.currentTimeMillis()
-        try {
-            val notesUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
-
-            val ankiSearchQuery = "did:$deckIdString"
-
-            val noteCursor = resolver.query(
-                notesUri,
-                arrayOf("_id", "flds", "tags"),
-                ankiSearchQuery,
-                null,
-                null
-            )
-
-            data class ParsedNote(val id: Long, val front: String, val back: String, val colorCode: Int)
-            val parsedNotes = mutableListOf<ParsedNote>()
-            val frontLookup = mutableMapOf<String, Long>()
-            val backLookup = mutableMapOf<String, Long>()
-
-            val lookupsRegex = Regex("Lookups_([1-8])")
-            val fieldSeparator = "\u001F"
-
-            noteCursor?.use { cursor ->
-                val idIndex = cursor.getColumnIndex("_id")
-                val fldsIndex = cursor.getColumnIndex("flds")
-                val tagsIndex = cursor.getColumnIndex("tags")
-
-                val configuredFrontIndex = (mapping["word"] as? Number)?.toInt() ?: 0
-                val configuredBackIndex = (mapping["translation"] as? Number)?.toInt() ?: 0
-                val fallbackBackIndex = (mirroredMapping["translation"] as? Number)?.toInt() ?: 0
-
-                while (cursor.moveToNext()) {
-                    val flds = cursor.getString(fldsIndex)
-                    val fieldsArray = flds.split(fieldSeparator)
-
-                    val maxRequiredIndex = maxOf(configuredFrontIndex, configuredBackIndex, fallbackBackIndex)
-                    if (fieldsArray.size <= maxRequiredIndex) continue
-
-                    val front = fieldsArray[configuredFrontIndex].trim()
-                    var back = fieldsArray[configuredBackIndex].trim()
-
-                    if (back.isEmpty()) {
-                        back = fieldsArray[fallbackBackIndex].trim()
-                    }
-
-                    if (front.isEmpty()) continue
-
-                    val noteId = cursor.getLong(idIndex)
-                    val tagsStr = cursor.getString(tagsIndex) ?: ""
-
-                    val match = lookupsRegex.find(tagsStr)
-                    var colorCode = match?.groupValues?.get(1)?.toInt() ?: 0
-
-                    parsedNotes.add(ParsedNote(noteId, front, back, colorCode))
-
-                    frontLookup[front.lowercase()] = noteId
-                    backLookup[back.lowercase()] = noteId
-                }
-            }
-
-            for (note in parsedNotes) {
-                var mirroredId = frontLookup[note.back.lowercase()] ?: -1L
-                if(mirroredId == -1L) {
-                    mirroredId = backLookup[note.front.lowercase()] ?: -1L
-                }
-
-                val noteIds = if (mirroredId != -1L) {
-                    if (note.id != mirroredId) {
-                        longArrayOf(note.id, mirroredId)
-                    } else {
-                        longArrayOf(note.id)
-                    }
-                } else {
-                    longArrayOf(note.id)
-                }
-
-                tempWords.add(note.front.lowercase())
-                tempNoteIds.add(noteIds)
-                tempColorCodes.add(note.colorCode)
-            }
-            val t2 = System.currentTimeMillis()
-            android.util.Log.d("BookEngine", "Note cursor processing took: ${t2 - t1} ms")
-
-            return AnkiWordsData(
-                tempWords.toTypedArray(),
-                tempNoteIds.toTypedArray(),
-                tempColorCodes.toIntArray()
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("BookEngine", "Failed to fetch Anki words", e)
-            throw Exception("Failed to fetch Anki words: ${e.message}")
-        }
-    }
 
     override fun definition() = ModuleDefinition {
         Name("Anki")
@@ -415,57 +116,86 @@ class AnkiModule : Module() {
                 val mutableFields = fields.toMutableMap()
                 mutableFields["examples"] = finalExamples
 
-                val createdNoteIds = mutableListOf<Long>()
+                val updatedNoteIds = mutableListOf<Long>()
+                val noteTagger = NoteTagger(context, freqDatabase)
 
-                fun createCardPair(targetWord: String, zipf: Double, tier: String) {
-                    val note = getNoteInfoByModelId(modelId.toLong(), targetWord)
-                    if (note != null) return
+                fun updateOrCreateCardPair(targetWord: String, zipf: Double, tier: String) {
 
-                    mutableFields["word"] = targetWord
-                    mutableFields["zipf"] = zipf.toString()
+                    val noteFinder = NoteFinder(context)
+                    val note = noteFinder.findByModelId(modelId.toLong(), targetWord)
 
-                    val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
+                    if (note != null) {
+                        val newTags = arrayOf("Lookups_1", tier)
+                        val (updatedWord, colorCode) = noteTagger.updateNoteTags(note.id, newTags, mapping, mirroredMapping, tier)
 
-                    val mainFieldsArray = convertFieldsToArray(mutableFields, mapping)
-                    val mainNoteId = ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)
-                        ?: throw Exception("Failed to create main note for $targetWord")
+                        updatedNoteIds.add(note.id)
 
-                    val combinedIds = mutableListOf<Long>()
-                    combinedIds.add(mainNoteId)
-                    createdNoteIds.add(mainNoteId)
+                        if (updatedWord.isNotEmpty()) {
+                            upsertWordToAnkiDictionary(updatedWord, longArrayOf(note.id), colorCode)
+                        }
 
-                    if (isTwoSided) {
-                        val mirroredModelId = mirroredMapping["modalId"] as String ?: throw Exception("mirrored modalId is missing")
-                        val mirroredFieldsArray = convertFieldsToArray(mutableFields, mirroredMapping)
-                        val mirroredNoteId = ankiApi.addNote(mirroredModelId.toLong(), deckId, mirroredFieldsArray, tags)
-                            ?: throw Exception("Failed to create mirrored note for $targetWord")
+                        if (isTwoSided) {
 
-                        combinedIds.add(mirroredNoteId)
-                        createdNoteIds.add(mirroredNoteId)
+                            val mirroredNoteId = noteFinder.findMirrored(targetWord, deckId, mapping, mirroredMapping)
+
+                            if (mirroredNoteId != null && mirroredNoteId != note.id) {
+                                val (mirroredWord, mirroredColorCode) = noteTagger.updateNoteTags(mirroredNoteId, newTags, mapping, mirroredMapping, tier)
+                                updatedNoteIds.add(mirroredNoteId)
+
+                                if (mirroredWord.isNotEmpty()) {
+                                    upsertWordToAnkiDictionary(mirroredWord, longArrayOf(mirroredNoteId), mirroredColorCode)
+                                }
+                            }
+                        }
+                    } else {
+                        mutableFields["word"] = targetWord
+                        mutableFields["zipf"] = zipf.toString()
+
+                        val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
+
+                        val mapper = FieldArrayMapper(context, AnkiAudioHelper(context))
+
+                        val mainFieldsArray = runBlocking { mapper.convertFieldsToArray(mutableFields, mapping) }
+                        val mainNoteId = ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)
+                            ?: throw Exception("Failed to create main note for $targetWord")
+
+                        val combinedIds = mutableListOf<Long>()
+                        combinedIds.add(mainNoteId)
+                        updatedNoteIds.add(mainNoteId)
+
+                        if (isTwoSided) {
+                            val mirroredModelId = mirroredMapping["modalId"] as String ?: throw Exception("mirrored modalId is missing")
+                            val mirroredFieldsArray = runBlocking { mapper.convertFieldsToArray(mutableFields, mirroredMapping) }
+                            val mirroredNoteId = ankiApi.addNote(mirroredModelId.toLong(), deckId, mirroredFieldsArray, tags)
+                                ?: throw Exception("Failed to create mirrored note for $targetWord")
+
+                            combinedIds.add(mirroredNoteId)
+                            updatedNoteIds.add(mirroredNoteId)
+                        }
+
+                        upsertWordToAnkiDictionary(targetWord, combinedIds.toLongArray(), 1)
                     }
-
-                    upsertWordToAnkiDictionary(targetWord, combinedIds.toLongArray(), 1)
                 }
 
-                createCardPair(word, wordZipf, wordTier)
+                updateOrCreateCardPair(word, wordZipf, wordTier)
 
-                if (createdNoteIds.isEmpty()) {
-                    throw Exception("Cards already exist for this word.")
-                }
-
-                return@AsyncFunction createdNoteIds
+                return@AsyncFunction updatedNoteIds
             } catch (e: Exception) {
-                throw Exception("Failed to add Anki note: ${e.message}")
+                throw Exception("Failed to add/update Anki note: ${e.message}")
             }
         }
 
         AsyncFunction("updateNoteTags") { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
             if (noteIds.isEmpty()) return@AsyncFunction
 
-            val bestTier = getBestFrequencyTier(noteIds, mapping, mirroredMapping)
+            val context = appContext.reactContext ?: throw Exception("React context is null")
+
+            val noteTagger = NoteTagger(context, freqDatabase)
+
+            val bestTier = noteTagger.getBestFrequencyTier(noteIds, mapping, mirroredMapping)
 
             for (noteId in noteIds) {
-                val (word, colorCode) = updateNoteTags(noteId, newTags, mapping, mirroredMapping, bestTier)
+                val (word, colorCode) = noteTagger.updateNoteTags(noteId, newTags, mapping, mirroredMapping, bestTier)
 
                 if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
             }

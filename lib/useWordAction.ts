@@ -25,13 +25,13 @@ export const useWordAction = () => {
         return;
       }
 
+      updateTagAction(cleanedText, '', '-1');
+
       const metadata = await fetchWordMetadata(
         cleanedText,
         currentBook.settings.bookLang,
         targetLang
       );
-
-      console.log(JSON.stringify(metadata, null, 2))
 
       const isTwoSided = currentBook.settings.isTwoSided || settings.isTwoSided;
       const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
@@ -66,6 +66,7 @@ export const useWordAction = () => {
       }
     } catch (error) {
       console.error('Anki error:', error);
+      updateTagAction(cleanedText, '', 'remove');
     }
   };
 

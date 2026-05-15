@@ -51,6 +51,7 @@ export const getGeminiData = async (
       .join(',')
       .toLowerCase(),
     examples: aiResponse.meanings.map((m) => m.example),
+    generatedFrom: 'gemini',
   };
 };
 

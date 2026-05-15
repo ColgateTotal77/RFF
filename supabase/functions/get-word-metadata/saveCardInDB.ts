@@ -36,6 +36,7 @@ export const saveCardInDB = async (
         examples: apiResponse.examples,
         definition: definition,
         synonyms: apiResponse.synonyms,
+        generated_from: apiResponse.generatedFrom,
       },
       { onConflict: 'word, word_lang_code, translate_lang_code' }
     )

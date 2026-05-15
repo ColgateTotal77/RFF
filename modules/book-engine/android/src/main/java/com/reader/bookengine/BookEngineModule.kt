@@ -23,6 +23,7 @@ import com.reader.bookengine.database.WordFormEntity
 import com.reader.bookengine.database.FrequencyDatabase
 import com.reader.bookengine.database.BlockEntity
 import com.reader.bookengine.database.FullBlockMatch
+import com.reader.bookengine.anki.AllAnkiWordsFetcher
 
 class BookEngineModule : Module() {
     companion object {
@@ -45,7 +46,8 @@ class BookEngineModule : Module() {
 
             val context = appContext.reactContext ?: throw Exception("React context is null")
 
-            val ankiData = ankiModule.getAllAnkiWords(deckId, context, mapping, mirroredMapping)
+            val ankiWordsFetcher = AllAnkiWordsFetcher(context)
+            val ankiData = ankiWordsFetcher.getAllAnkiWords(deckId, mapping, mirroredMapping)
             if (ankiData.words.isEmpty()) {
                 android.util.Log.w("BookEngine", "Anki returned 0 words. Check deck ID.")
                 return false

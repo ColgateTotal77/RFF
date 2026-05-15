@@ -86,37 +86,40 @@ export type Database = {
       words: {
         Row: {
           created_at: string
-          definition: string | null
-          examples: string | null
+          definition: string
+          examples: Json | null
+          generated_from: string | null
           id: number
           synonyms: Json | null
           translate_lang_code: string
           translation: string
-          updated_at: string | null
+          updated_at: string
           word: string
           word_lang_code: string
         }
         Insert: {
           created_at?: string
-          definition?: string | null
-          examples?: string | null
+          definition?: string
+          examples?: Json | null
+          generated_from?: string | null
           id?: number
           synonyms?: Json | null
           translate_lang_code: string
           translation?: string
-          updated_at?: string | null
+          updated_at?: string
           word?: string
           word_lang_code: string
         }
         Update: {
           created_at?: string
-          definition?: string | null
-          examples?: string | null
+          definition?: string
+          examples?: Json | null
+          generated_from?: string | null
           id?: number
           synonyms?: Json | null
           translate_lang_code?: string
           translation?: string
-          updated_at?: string | null
+          updated_at?: string
           word?: string
           word_lang_code?: string
         }

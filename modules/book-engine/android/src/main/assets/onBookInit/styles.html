@@ -57,7 +57,7 @@
     position: relative;
   }
 
-  .anki-word[data-flag]:not([data-flag="0"])::after {
+  .anki-word[data-flag]::after {
     content: '';
     position: absolute;
     top: -3px;
@@ -67,6 +67,7 @@
     border-radius: 50%;
   }
 
+  .anki-word[data-flag="-1"]::after { background-color: #9e9e9e; }
   .anki-word[data-flag="1"]::after { background-color: #ff5252; }
   .anki-word[data-flag="2"]::after { background-color: #ff9800; }
   .anki-word[data-flag="3"]::after { background-color: #4caf50; }

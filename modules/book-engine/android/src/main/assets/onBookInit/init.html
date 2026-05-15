@@ -51,8 +51,8 @@
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return;
-        const menuX = rect.left + rect.width;
-        const menuY = rect.top - 60;
+        const menuX = rect.left + (rect.width / 2);
+        const menuY = rect.top;
         const commonAncestor = range.commonAncestorContainer;
 
         let noteIds = null;

@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     apiResponse,
     definition,
     word_lang_code,
-    translation_lang_code
+    translation_lang_code,
   );
 
   const wordForms = await getWordForms(supabase, newWord.word, word_lang_code);

@@ -60,6 +60,7 @@ export const getReversoData = async (
         .join(', ')
         .toLowerCase(),
       examples: reversoContext.examples.slice(0, 5).map((e) => e.source),
+      generatedFrom: 'reverso',
     };
   } else {
     throw new Error('Reverso empty results');
