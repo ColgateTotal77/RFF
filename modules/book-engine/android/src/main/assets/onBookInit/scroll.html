@@ -1,11 +1,11 @@
 <script>
-  window.addEventListener('load', function() {
+  window.addEventListener('load', function () {
     const config = window.BookConfig || {};
     const targetblockId = config.targetblockId || 0;
     const scrollPosition = config.scrollPosition || 0;
 
     var targetBlock = null;
-    if(targetblockId >= 0) {
+    if (targetblockId >= 0) {
       targetBlock = document.getElementById('block-' + targetblockId);
     }
 
@@ -21,10 +21,12 @@
       });
     }
 
-    setTimeout(function() {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'INITIAL_LOAD_COMPLETE',
-      }));
+    setTimeout(function () {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: 'INITIAL_LOAD_COMPLETE',
+        })
+      );
       window.log('scroll: initial load complete');
     }, 0);
   });
@@ -49,60 +51,65 @@
       }
     }
 
-    const currentBlockScrollPercent = Math.abs(Math.min(0, currentRect.top)) / blocks[currentblockId].offsetHeight;
+    const currentBlockScrollPercent =
+      Math.abs(Math.min(0, currentRect.top)) / blocks[currentblockId].offsetHeight;
     const currentBlockId = blocks[currentblockId].id;
     const actualblockId = parseInt(currentBlockId.replace('block-', ''));
 
-    window.ReactNativeWebView.postMessage(JSON.stringify({
-      type: 'SCROLL_POSITION_CHANGED',
-      currentBlock: actualblockId,
-      scrollPosition: window.scrollY,
-      currentBlockScrollPercent: currentBlockScrollPercent,
-    }));
+    window.ReactNativeWebView.postMessage(
+      JSON.stringify({
+        type: 'SCROLL_POSITION_CHANGED',
+        currentBlock: actualblockId,
+        scrollPosition: window.scrollY,
+        currentBlockScrollPercent: currentBlockScrollPercent,
+      })
+    );
   }
 
-  window.addEventListener('scroll', () => {
-    if (window.isFetching) return;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (window.isFetching) return;
 
-    if (!ticking) {
-      ticking = true;
+      if (!ticking) {
+        ticking = true;
 
-      window.requestAnimationFrame(() => {
-        const scrollY = window.scrollY;
-        const bottomY = scrollY + window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight;
-        const blocks = document.querySelectorAll('div[id^="block-"]');
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const bottomY = scrollY + window.innerHeight;
+          const documentHeight = document.documentElement.scrollHeight;
+          const blocks = document.querySelectorAll('div[id^="block-"]');
 
-        if (blocks.length > 0 && documentHeight > window.innerHeight) {
-          const firstBlockHeight = blocks[0].offsetHeight;
-          const lastBlockHeight = blocks[blocks.length - 1].offsetHeight;
+          if (blocks.length > 0 && documentHeight > window.innerHeight) {
+            const firstBlockHeight = blocks[0].offsetHeight;
+            const lastBlockHeight = blocks[blocks.length - 1].offsetHeight;
 
-          if (scrollY < (firstBlockHeight * 0.45)) {
-            window.isFetching = true;
-            window.log('scroll: TOP_REACHED triggered');
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TOP_REACHED' }));
+            if (scrollY < firstBlockHeight * 0.45) {
+              window.isFetching = true;
+              window.log('scroll: TOP_REACHED triggered');
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TOP_REACHED' }));
+            }
+            if (bottomY > documentHeight - lastBlockHeight * 0.45) {
+              window.isFetching = true;
+              window.log('scroll: END_REACHED triggered');
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_REACHED' }));
+            }
           }
-          if (bottomY > (documentHeight - (lastBlockHeight * 0.45))) {
-            window.isFetching = true;
-            window.log('scroll: END_REACHED triggered');
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_REACHED' }));
-          }
-        }
 
-        ticking = false;
-      });
-    }
+          ticking = false;
+        });
+      }
 
-    const now = Date.now();
-    if (now - lastSentTime > 300) {
-      lastSentTime = now;
-      // TODO(39): declare lastScrollY (and lastSentTime) with let/var — avoid implicit globals
-      lastScrollY = window.scrollY;
-      updateScrollPosition();
-    }
-  }, { passive: true });
+      const now = Date.now();
+      if (now - lastSentTime > 300) {
+        lastSentTime = now;
+        updateScrollPosition();
+      }
+    },
+    { passive: true }
+  );
 
-  window.scrollToBlock = function(blockId) {
+  window.scrollToBlock = function (blockId) {
     var targetId = 'block-' + blockId;
     var target = document.getElementById(targetId);
 
@@ -114,7 +121,7 @@
     }
   };
 
-  window.scrollToFragment = function(fragmentId) {
+  window.scrollToFragment = function (fragmentId) {
     const element = document.getElementById(fragmentId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -6,12 +6,26 @@ import { useState } from 'react';
 import { View, Modal } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
-import { SearchResult } from 'types';
 import { MenuSearch } from 'components/Sidebar/BookHeader/MenuSearch';
 import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
 
+const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
+  const [localQuery, setLocalQuery] = useState('');
+  return (
+    <TextInput
+      placeholder="search..."
+      value={localQuery}
+      onChangeText={setLocalQuery}
+      mode="flat"
+      style={{ flex: 1 }}
+      returnKeyType="search"
+      autoCapitalize="none"
+      onSubmitEditing={() => onSubmit(localQuery)}
+    />
+  );
+};
+
 export const BookHeader = () => {
-  const searchQuery = useTempStore((state) => state.searchQuery);
   const setSearchQuery = useTempStore((state) => state.setSearchQuery);
   const toggleIsSearchModuleOpen = useTempStore((state) => state.toggleIsSearchModuleOpen);
   const setSearchResults = useTempStore((state) => state.setSearchResults);
@@ -21,8 +35,9 @@ export const BookHeader = () => {
   const [isChaptersMenuOpen, setIsChaptersMenuOpen] = useState(false);
   const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
 
-  const onSearchSubmit = async () => {
-    const results: SearchResult[] = await BookEngine.searchInBook(searchQuery, currentBook.basePath);
+  const onSearchSubmit = async (localQuery: string) => {
+    setSearchQuery(localQuery);
+    const results = await BookEngine.searchInBook(localQuery, currentBook.basePath);
     setSearchResults(results);
   };
 
@@ -63,16 +78,7 @@ export const BookHeader = () => {
         <View className="flex-1 bg-white">
           <Appbar.Header className="bg-white">
             <Appbar.Action icon="close" onPress={toggleIsSearchModuleOpen} />
-            <TextInput
-              placeholder="search..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              mode="flat"
-              style={{ flex: 1 }}
-              returnKeyType="search"
-              autoCapitalize="none"
-              onSubmitEditing={onSearchSubmit}
-            />
+            <SearchInput onSubmit={onSearchSubmit} />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
         </View>
@@ -87,7 +93,7 @@ export const BookHeader = () => {
             <Appbar.Action icon="close" onPress={() => setIsBookSettingsOpen(false)} />
             <Appbar.Content title="Book Settings" />
           </Appbar.Header>
-          <BookSettings/>
+          <BookSettings />
         </View>
       </Modal>
     </>

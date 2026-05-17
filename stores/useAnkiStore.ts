@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Alert, PermissionsAndroid } from 'react-native';
 import { Anki } from 'modules/book-engine';
-import { useBookStore } from './useBookStore';
 
 const ANKI_PERMISSION = 'com.ichi2.anki.permission.READ_WRITE_DATABASE';
 
@@ -54,6 +53,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
   },
 
   loadAnkiData: async () => {
+    const { useBookStore } = await import('./useBookStore');
     const {
       settings: { ankiModelId, mirroredAnkiModelId },
     } = useBookStore.getState();

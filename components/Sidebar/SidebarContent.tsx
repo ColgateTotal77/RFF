@@ -1,13 +1,10 @@
-import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer, Text } from 'react-native-paper';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { DrawerTab } from 'types';
 
 export const SidebarContent = (props: DrawerContentComponentProps) => {
-  // TODO(36): derive active from navigation props.state, not local useState
-  const [active, setActive] = useState<DrawerTab>('Reading Now');
+  const activeRouteName = props.state.routes[props.state.index].name;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -19,9 +16,8 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
         <Drawer.Item
           label="Reading Now"
           icon="home"
-          active={active === 'Reading Now'}
+          active={activeRouteName === 'Reading Now'}
           onPress={() => {
-            setActive('Reading Now');
             props.navigation.navigate('Reading Now');
           }}
           className="rounded-lg"
@@ -29,9 +25,8 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
         <Drawer.Item
           label="Have Read"
           icon="book"
-          active={active === 'Have Read'}
+          active={activeRouteName === 'Have Read'}
           onPress={() => {
-            setActive('Have Read');
             props.navigation.navigate('Have Read');
           }}
           className="rounded-lg"
@@ -42,9 +37,8 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
         <Drawer.Item
           label="Settings"
           icon="cog"
-          active={active === 'Settings'}
+          active={activeRouteName === 'Settings'}
           onPress={() => {
-            setActive('Settings');
             props.navigation.navigate('Settings');
           }}
           className="rounded-lg"

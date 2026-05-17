@@ -25,6 +25,7 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
       spineItems,
       tocId,
       manifestMap,
+      cssPaths,
     } = await extractBookMeta(unzippedPath);
 
     const { chapterData, mapHrefChapterId } = await extractChapterData(
@@ -111,6 +112,7 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
       author,
       cover: coverPath,
       basePath,
+      cssPaths,
       settings: {
         bookLang: detectedLanguage ? detectedLanguage : bookLanguage,
         targetLang: '',

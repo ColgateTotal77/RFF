@@ -14,7 +14,7 @@ export type DeepPartial<T> = {
 };
 
 export interface Block {
-  id: number;           // Global index
+  id: number; // Global index
   chapterId: number;
   fullPath: string;
   charCount: number;
@@ -50,6 +50,7 @@ export interface Book {
   currentBlocks: number[];
   currentBlock: number;
   basePath: string;
+  cssPaths: string[];
   settings: BookSettings;
   misc: Misc;
   scrollPosition: number;
@@ -75,7 +76,14 @@ export interface Font {
   fontFamily: string;
 }
 
-export const FIELD_MAPPING_KEYS = ['word', 'translation', 'examples', 'zipf', 'synonyms', 'audio'] as const;
+export const FIELD_MAPPING_KEYS = [
+  'word',
+  'translation',
+  'examples',
+  'zipf',
+  'synonyms',
+  'audio',
+] as const;
 
 export interface FieldMapping {
   word?: number;

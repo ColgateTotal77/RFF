@@ -341,8 +341,25 @@ class BookEngineModule : Module() {
 
                 val headEndIdx = header.indexOf("</head>", ignoreCase = true)
                 if (headEndIdx != -1) {
+                    @Suppress("UNCHECKED_CAST")
+                    val cssPaths = (options["cssPaths"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                    val cssLinks = cssPaths.joinToString("\n") { path ->
+                        """<link rel="stylesheet" href="$path">"""
+                    }
+
+                    // cssPaths.forEach { path ->
+                    //     try {
+                    //         val cleanPath = path.removePrefix("file://")
+                    //         val cssContent = java.io.File(cleanPath).readText()
+                    //         android.util.Log.d("BookEngine", "Content of CSS file:\n$cssContent")
+                    //     } catch (e: Exception) {
+                    //         android.util.Log.e("BookEngine", "Error reading CSS file at $path", e)
+                    //     }
+                    // }
+
                     header = header.substring(0, headEndIdx) +
                         """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">""" +
+                        (if (cssLinks.isNotEmpty()) "\n$cssLinks" else "") +
                         header.substring(headEndIdx)
                 }
 

@@ -9,11 +9,14 @@ interface Props {
   isCurrentSearch: boolean;
 }
 
+const escapeRegExp = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 const highlightSearch = (text: string, searchQuery: string) => {
   if (!searchQuery) return <Text>{text}</Text>;
 
-  // TODO(17): escape searchQuery before RegExp — special chars crash or wrong matches
-  const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
+  const parts = text.split(new RegExp(`(${escapeRegExp(searchQuery)})`, 'gi'));
 
   return (
     <>
@@ -37,7 +40,7 @@ export const SearchCard = (props: Props) => {
     <Card style={isCurrentSearch ? { backgroundColor: '#1e40af' } : undefined} onPress={onPress}>
       <View className="flex justify-between p-4">
         <Text>{highlightSearch(searchItem.snippet, searchItem.query)}</Text>
-        <Text>{searchItem.title + " " + "[" + searchItem.blockId + "]"}</Text>
+        <Text>{searchItem.title + ' ' + '[' + searchItem.blockId + ']'}</Text>
       </View>
     </Card>
   );

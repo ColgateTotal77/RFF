@@ -13,6 +13,7 @@ interface Response {
   spineItems: any[];
   tocId: string;
   manifestMap: Record<string, string>;
+  cssPaths: string[];
 }
 
 const parser = new XMLParser({
@@ -78,6 +79,10 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
       : metadata['dc:language']
   );
 
+  const cssPaths = manifestItems
+    .filter((item: any) => item['@_media-type'] === 'text/css')
+    .map((item: any) => `file://${absoluteBasePath}/${item['@_href']}`);
+
   return {
     title,
     author,
@@ -89,5 +94,6 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
     spineItems,
     tocId,
     manifestMap,
+    cssPaths,
   };
 };

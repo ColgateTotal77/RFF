@@ -4,8 +4,9 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import android.content.Context
 import kotlinx.serialization.Serializable
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 @Serializable
 data class RemoteWordForm(
@@ -24,22 +25,18 @@ suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDat
 
     try {
         var hasMore = true
-        var currentOffset = 0L
-        var highestTimestamp = lastSyncedAt
 
-        val sdfQuery = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-        val lastSyncedString = sdfQuery.format(Date(lastSyncedAt))
+        var currentCursorString = Instant.ofEpochMilli(lastSyncedAt)
+            .atOffset(ZoneOffset.UTC)
+            .format(DateTimeFormatter.ISO_INSTANT)
 
-        // TODO(31): pagination should cursor on created_at, not offset + highestTimestamp + 1
         while (hasMore) {
             val response = supabase.from("word_forms").select {
-                if (lastSyncedAt > 0) {
-                    filter { gt("created_at", lastSyncedString) }
+                if (lastSyncedAt > 0 || currentCursorString != "1970-01-01T00:00:00Z") {
+                    filter { gt("created_at", currentCursorString) }
                 }
                 order(column = "created_at", order = io.github.jan.supabase.postgrest.query.Order.ASCENDING)
-                range(from = currentOffset, to = currentOffset + batchSize - 1)
+                limit(count = batchSize)
             }
 
             val remoteData = response.decodeList<RemoteWordForm>()
@@ -51,13 +48,19 @@ suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDat
 
                 database.wordFormDao().insertAll(entities)
 
-                val latestRecordTimeStr = remoteData.last().created_at
-                val cleanTimeStr = latestRecordTimeStr.substringBefore("Z").substringBefore("+")
-                val latestRecordTimeMs = sdfQuery.parse(cleanTimeStr)?.time ?: highestTimestamp
-                highestTimestamp = latestRecordTimeMs + 1
+                currentCursorString = remoteData.last().created_at
 
-                currentOffset += batchSize
-                android.util.Log.d("BookEngine", "Synced batch of ${entities.size}. Next offset: $currentOffset")
+                val cleanTimeStr = if (!currentCursorString.endsWith("Z") && !currentCursorString.contains("+")) {
+                    currentCursorString + "Z"
+                } else {
+                    currentCursorString
+                }
+
+                val highestTimestamp = Instant.parse(cleanTimeStr).toEpochMilli()
+
+                prefs.edit().putLong("last_synced_at", highestTimestamp).apply()
+
+                android.util.Log.d("BookEngine", "Synced batch of ${entities.size}. Saved timestamp: $highestTimestamp")
 
                 hasMore = remoteData.size.toLong() == batchSize
             } else {
@@ -65,8 +68,7 @@ suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDat
             }
         }
 
-        prefs.edit().putLong("last_synced_at", highestTimestamp).apply()
-        android.util.Log.d("BookEngine", "Full sync finished. New last_synced_at: $highestTimestamp")
+        android.util.Log.d("BookEngine", "Full sync finished.")
 
     } catch (e: Exception) {
         android.util.Log.e("BookEngine", "Sync error", e)

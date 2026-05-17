@@ -36,10 +36,6 @@ export const Other = (props: Props) => {
       anchorPosition={'bottom'}
       elevation={1}>
       <Menu.Item onPress={pickDocument} title="Load Book" />
-      <Divider />
-      {/* TODO(37): remove or implement placeholder menu items */}
-      <Menu.Item onPress={() => {}} title="Item 2" />
-      <Menu.Item onPress={() => {}} title="Item 3" />
     </Menu>
   );
 };

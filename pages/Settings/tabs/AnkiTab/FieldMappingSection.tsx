@@ -40,8 +40,7 @@ export const FieldMappingSection = (props: FieldMappingSectionProps) => {
           value={getEffectiveValue(key)?.toString() ?? ''}
           options={optionsWithNone}
           onSelect={(idx) => {
-            // TODO(21): book clear should use null (revert to global), not undefined (inherit)
-            if (idx === '') onUpdate({ [key]: undefined });
+            if (idx === '') onUpdate({ [key]: null });
             else onUpdate({ [key]: parseInt(idx) });
           }}
           isGrayed={Object.keys(defaults).length === 0 ? false : isInherited(fieldMapping?.[key])}

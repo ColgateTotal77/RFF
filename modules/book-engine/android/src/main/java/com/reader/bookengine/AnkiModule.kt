@@ -197,7 +197,6 @@ class AnkiModule : Module() {
             for (noteId in noteIds) {
                 val (word, colorCode) = noteTagger.updateNoteTags(noteId, newTags, mapping, mirroredMapping, bestTier)
 
-                // TODO(15): upsert passes full noteIds each loop; use longArrayOf(noteId) or upsert once per word after loop
                 if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
             }
         }

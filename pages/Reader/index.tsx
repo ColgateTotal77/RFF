@@ -59,6 +59,7 @@ export const ReaderScreen = () => {
           fontSize: font.fontSize,
           fontFamily: font.fontFamily,
           theme: settings.theme || 'light',
+          cssPaths: currentBook.cssPaths,
         });
 
         if (typeof generatedFileUrl === 'string') {

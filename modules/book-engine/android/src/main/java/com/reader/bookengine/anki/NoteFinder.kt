@@ -70,15 +70,10 @@ class NoteFinder(private val context: Context) {
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
-                    // TODO(34): share parseNoteFields(flds, mapping) with AllAnkiWordsFetcher
-                    val fieldsArray = flds.split(AnkiUtils.FIELD_SEPARATOR)
 
-                    val maxRequiredIndex = maxOf(configuredFrontIndex, configuredBackIndex)
-                    if (fieldsArray.size <= maxRequiredIndex) continue
-
-                    val front = fieldsArray[configuredFrontIndex].trim()
-                    val back = fieldsArray[configuredBackIndex].trim()
-
+                    val parsed = AnkiUtils.parseNoteFields(flds, mapping, mirroredMapping) ?: continue
+                    val front = parsed.front
+                    val back = parsed.back
                     if (front.isEmpty() || back.isEmpty()) continue
 
                     val noteId = cursor.getLong(idIndex)
