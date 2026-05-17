@@ -58,6 +58,7 @@ interface BlockDao {
     @Query("""
         SELECT blockId, title, content
         FROM blocks
+        -- TODO(26): LIKE full scan is slow — use FTS5 or async search off main thread
         WHERE bookBasePath = :bookBasePath AND content LIKE '%' || :query || '%'
     """)
     suspend fun searchAllMatches(query: String, bookBasePath: String): List<FullBlockMatch>

@@ -9,6 +9,7 @@ import { getReversoData } from './getReversoData.ts';
 import { ApiResponse } from './sharedTypes.ts';
 import { getGeminiData } from './getGeminiData.ts';
 import { getGroqData } from './getGroqData.ts';
+import { getGPTData } from './getGPTData.ts';
 import { saveCardInDB } from './saveCardInDB.ts';
 
 type WordForm = Database['public']['Tables']['word_forms']['Row'];
@@ -22,6 +23,7 @@ Deno.serve(async (req) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const groqApiKey = Deno.env.get('GROQ_API_KEY');
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+  const gptApiKey = Deno.env.get('OPENAI_API_KEY');
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   const { word, word_lang_code, translation_lang_code } = await req.json();
@@ -37,24 +39,29 @@ Deno.serve(async (req) => {
   let apiResponse: ApiResponse | null = null;
 
   try {
-    apiResponse = await getReversoData(lemma, word_lang_code, translation_lang_code);
-  } catch (reversoError) {
-    console.error('[Error] Reverso failed, calling LLM:', reversoError);
+    apiResponse = await getGPTData(lemma, word_lang_code, translation_lang_code, gptApiKey);
+  } catch (gptError) {
+    console.error('[Error] GPT failed, falling back to Reverso:', gptError);
     try {
-      apiResponse = await getGeminiData(lemma, word_lang_code, translation_lang_code, geminiApiKey);
-    } catch (geminiError) {
-      console.error('[Error] Gemini failed, falling back to Groq:', geminiError);
+      apiResponse = await getReversoData(lemma, word_lang_code, translation_lang_code);
+    } catch (reversoError) {
+      console.error('[Error] Reverso failed, calling Gemini:', reversoError);
       try {
-        apiResponse = await getGroqData(lemma, word_lang_code, translation_lang_code, groqApiKey);
-      } catch (groqError) {
-        console.error('[Error] Both Gemini and Groq failed:', groqError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to process word via all AI providers' }),
-          {
-            status: 500,
-            headers: corsHeaders,
-          }
-        );
+        apiResponse = await getGeminiData(lemma, word_lang_code, translation_lang_code, geminiApiKey);
+      } catch (geminiError) {
+        console.error('[Error] Gemini failed, falling back to Groq:', geminiError);
+        try {
+          apiResponse = await getGroqData(lemma, word_lang_code, translation_lang_code, groqApiKey);
+        } catch (groqError) {
+          console.error('[Error] All providers failed:', groqError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to process word via all AI providers' }),
+            {
+              status: 500,
+              headers: corsHeaders,
+            }
+          );
+        }
       }
     }
   }

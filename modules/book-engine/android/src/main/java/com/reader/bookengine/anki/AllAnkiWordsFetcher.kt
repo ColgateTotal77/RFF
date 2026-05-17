@@ -28,6 +28,7 @@ class AllAnkiWordsFetcher(private val context: Context) {
 
             data class ParsedNote(val id: Long, val front: String, val back: String, val colorCode: Int)
             val parsedNotes = mutableListOf<ParsedNote>()
+            // TODO(18): duplicate normalized keys overwrite — use Map<String, MutableList<Long>>
             val frontLookup = mutableMapOf<String, Long>()
             val backLookup = mutableMapOf<String, Long>()
 
@@ -42,6 +43,7 @@ class AllAnkiWordsFetcher(private val context: Context) {
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
+                    // TODO(34): share parseNoteFields(flds, mapping) with NoteFinder.findMirrored
                     val fieldsArray = flds.split(AnkiUtils.FIELD_SEPARATOR)
 
                     val maxRequiredIndex = maxOf(configuredFrontIndex, configuredBackIndex, fallbackBackIndex)

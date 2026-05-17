@@ -1,10 +1,11 @@
 import { FlatList } from 'react-native';
 import { useBookStore } from 'stores/useBookStore';
 import { useNavigation } from '@react-navigation/native';
-import { BookCard } from 'pages/HaveRead/BookCard';
 import { Book, RootDrawerNavigationProp } from 'types';
 import { useTempStore } from 'stores/useTempStore';
+import { BookCard } from 'pages/ReadingNow/BookCard';
 
+// TODO(23): merge with ReadingNow into BookListScreen (filter + toggleLabel props)
 export const HaveReadScreen = () => {
   const books = useBookStore((state) => state.books);
   const openBook = useBookStore((state) => state.openBook);
@@ -19,7 +20,7 @@ export const HaveReadScreen = () => {
   };
 
   const renderBook = ({ item }: { item: Book }) => (
-    <BookCard book={item} onPress={() => onPress(item.basePath)} />
+    <BookCard book={item} onPress={() => onPress(item.basePath)} toggleLabel="Have read" />
   );
 
   return (

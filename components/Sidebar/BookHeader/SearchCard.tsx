@@ -12,6 +12,7 @@ interface Props {
 const highlightSearch = (text: string, searchQuery: string) => {
   if (!searchQuery) return <Text>{text}</Text>;
 
+  // TODO(17): escape searchQuery before RegExp — special chars crash or wrong matches
   const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
 
   return (

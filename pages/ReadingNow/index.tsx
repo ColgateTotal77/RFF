@@ -5,9 +5,10 @@ import { BookCard } from 'pages/ReadingNow/BookCard';
 import { Book, RootDrawerNavigationProp } from 'types';
 import { useTempStore } from 'stores/useTempStore';
 
+// TODO(23): merge with HaveRead into BookListScreen (filter + toggleLabel props)
 export const ReadingNowScreen = () => {
-  const books = useBookStore(state => state.books);
-  const openBook = useBookStore(state => state.openBook);
+  const books = useBookStore((state) => state.books);
+  const openBook = useBookStore((state) => state.openBook);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
 
   const navigation = useNavigation<RootDrawerNavigationProp>();
@@ -19,7 +20,7 @@ export const ReadingNowScreen = () => {
   };
 
   const renderBook = ({ item }: { item: Book }) => (
-    <BookCard book={item} onPress={() => onPress(item.basePath)} />
+    <BookCard book={item} onPress={() => onPress(item.basePath)} toggleLabel="Reading now" />
   );
 
   return (

@@ -8,6 +8,7 @@ import { useBookStore } from 'stores/useBookStore';
 
 import './global.css';
 import { deepMerge } from 'lib/utils';
+import { useAnkiStore } from 'stores/useAnkiStore';
 
 function AppContent() {
   return <Sidebar />;
@@ -17,6 +18,7 @@ export default function App() {
   const books = useBookStore((state) => state.books);
   const settings = useBookStore((state) => state.settings);
   const setCurrentCTree = useBookStore((state) => state.setCurrentCTree);
+  const checkAnkiPermission = useAnkiStore((state) => state.checkPermission);
 
   const deckId = books[0]?.settings?.ankiDeckId || settings.ankiDeckId;
   const modelId = books[0]?.settings?.ankiModelId || settings.ankiModelId;
@@ -25,8 +27,8 @@ export default function App() {
   useEffect(() => {
     const runSync = async () => {
       try {
-        console.log("Starting background dictionary sync...");
-        if(!deckId) return;
+        console.log('Starting background dictionary sync...');
+        if (!deckId) return;
 
         const key = `${deckId}:${modelId}`;
         const mirroredKey = `${deckId}:${mirroredModelId}`;
@@ -40,18 +42,17 @@ export default function App() {
           books[0].settings.mirroredFieldMapping || {}
         );
 
-        console.log(JSON.stringify(mapping, null, 2))
-        console.log(JSON.stringify(mirroredMapping, null, 2));
         const bookLang = books[0]?.settings?.bookLang || 'en';
-        setCurrentCTree({langCode: bookLang, deckId});
+        setCurrentCTree({ langCode: bookLang, deckId });
 
         BookEngine.onAppInit(bookLang, deckId, mapping, mirroredMapping);
       } catch (error) {
-        console.error("Failed to sync dictionary:", error);
+        console.error('Failed to sync dictionary:', error);
       }
     };
 
     runSync();
+    checkAnkiPermission();
   }, []);
 
   return (

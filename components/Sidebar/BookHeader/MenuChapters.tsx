@@ -12,6 +12,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const updateMisc = useBookStore((state) => state.updateMisc);
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
 
+  // TODO(28): useMemo for currentChapterId, parent-id Set, and visibleToc
   const currentChapterId = currentBook.blocks.find(
     (block) => block.id === currentBook.currentBlock
   )?.chapterId;

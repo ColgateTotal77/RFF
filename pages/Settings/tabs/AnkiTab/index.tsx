@@ -1,119 +1,34 @@
-import { PermissionsAndroid, View, Alert } from 'react-native';
-import { Anki } from 'modules/book-engine';
-import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { Dropdown } from 'components/Dropdown';
-import { ANKI_PERMISSION } from 'lib/constants';
 import { Text, Button, Switch, List } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { updateNestedMapping } from 'lib/utils';
+import { useAnkiStore } from 'stores/useAnkiStore';
 
 export const AnkiTab = () => {
   const {
-    settings: { ankiDeckId, ankiModelId, mirroredAnkiModelId, isTwoSided, fieldMappings, mirroredFieldMappings },
+    settings: {
+      ankiDeckId,
+      ankiModelId,
+      mirroredAnkiModelId,
+      isTwoSided,
+      fieldMappings,
+      mirroredFieldMappings,
+    },
     updateSettings,
   } = useBookStore();
-  const [hasPermission, setHasPermission] = useState(false);
-  const [decks, setDecks] = useState<{ id: string; name: string }[]>([]);
-  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
-  const [fields, setFields] = useState<{ id: number; name: string }[]>([]);
-  const [mirroredFields, setMirroredFields] = useState<{ id: number; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const hasPermission = useAnkiStore((state) => state.hasPermission);
+  const requestPermission = useAnkiStore((state) => state.requestPermission);
+  const decks = useAnkiStore((state) => state.decks);
+  const models = useAnkiStore((state) => state.models);
+  const fields = useAnkiStore((state) => state.fields);
+  const mirroredFields = useAnkiStore((state) => state.mirroredFields);
+  const loadFieldsInto = useAnkiStore((state) => state.loadFieldsInto);
 
   const key = `${ankiDeckId}:${ankiModelId}`;
   const mirroredKey = `${ankiDeckId}:${mirroredAnkiModelId}`;
-
-  useEffect(() => {
-    const checkPermission = async () => {
-      const isGranted = await PermissionsAndroid.check(ANKI_PERMISSION as any);
-      if (isGranted) {
-        setHasPermission(true);
-        loadAnkiData();
-      }
-    };
-    checkPermission();
-  }, []);
-
-  const loadAnkiData = async () => {
-    setIsLoading(true);
-    try {
-      const [decks, models] = await Promise.all([Anki.getDecks(), Anki.getModels()]);
-      setDecks(decks);
-      setModels(models);
-    } catch (error) {
-      console.error('Failed to load Anki decks:', error);
-      setDecks([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!ankiModelId) return;
-
-    const getFields = async () => {
-      try {
-        const result = await Anki.getFields(ankiModelId);
-        const fieldsArr = typeof result === 'string' ? JSON.parse(result) : result;
-        const fields = fieldsArr.map((field: string, index: number) => ({ id: index, name: field }));
-        updateSettings({
-          fieldMappings: updateNestedMapping(fieldMappings, key, {
-            fieldCount: fields.length,
-            modalId: ankiModelId,
-          }),
-        });
-        setFields(fields);
-      } catch (err) {
-        console.error('Failed to get fields:', err);
-      }
-    };
-
-    getFields();
-  }, [ankiModelId]);
-
-  useEffect(() => {
-    if (!mirroredAnkiModelId) return;
-
-    const getMirroredFields = async () => {
-      try {
-        const result = await Anki.getFields(mirroredAnkiModelId);
-        const fieldsArr = typeof result === 'string' ? JSON.parse(result) : result;
-        const fields = fieldsArr.map((field: string, index: number) => ({ id: index, name: field }));
-        updateSettings({
-          mirroredFieldMappings: updateNestedMapping(mirroredFieldMappings, mirroredKey, {
-            fieldCount: fields.length,
-            modalId: mirroredAnkiModelId,
-          }),
-        });
-        setMirroredFields(fields);
-      } catch (err) {
-        console.error('Failed to get mirrored fields:', err);
-      }
-    };
-
-    getMirroredFields();
-  }, [mirroredAnkiModelId]);
-
-  const handleConnectAnki = async () => {
-    try {
-      const granted = await PermissionsAndroid.request(ANKI_PERMISSION as any, {
-        title: 'Anki Integration',
-        message: 'Allow this app to send flashcards directly to your Anki database.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Cancel',
-      });
-
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        setHasPermission(true);
-        loadAnkiData();
-      } else {
-        Alert.alert('Permission Denied', 'Cannot connect to Anki without permission.');
-      }
-    } catch (err) {
-      console.warn(err);
-    }
-  };
 
   const updateFieldMapping = (partialMapping: Partial<FieldMapping>) => {
     updateSettings({
@@ -123,7 +38,11 @@ export const AnkiTab = () => {
 
   const updateMirroredFieldMapping = (partialMapping: Partial<FieldMapping>) => {
     updateSettings({
-      mirroredFieldMappings: updateNestedMapping(mirroredFieldMappings, mirroredKey, partialMapping),
+      mirroredFieldMappings: updateNestedMapping(
+        mirroredFieldMappings,
+        mirroredKey,
+        partialMapping
+      ),
     });
   };
 
@@ -134,7 +53,7 @@ export const AnkiTab = () => {
       </Text>
 
       {!hasPermission ? (
-        <Button mode="contained" onPress={handleConnectAnki} icon="database-plus">
+        <Button mode="contained" onPress={requestPermission} icon="database-plus">
           Connect to AnkiDroid
         </Button>
       ) : (
@@ -145,20 +64,21 @@ export const AnkiTab = () => {
             label="Decks"
             value={ankiDeckId}
             options={decks}
-            onSelect={(value) => updateSettings({ ankiDeckId: value })}
-            isLoading={isLoading}
+            onSelect={(value) => {
+              updateSettings({ ankiDeckId: value });
+            }}
           />
           <Dropdown
             label="Model"
             value={ankiModelId}
             options={models}
-            onSelect={(value) =>
+            onSelect={(value) => {
               updateSettings({
                 ankiModelId: value,
                 mirroredAnkiModelId: mirroredAnkiModelId ? mirroredAnkiModelId : ankiModelId,
-              })
-            }
-            isLoading={isLoading}
+              });
+              loadFieldsInto(ankiModelId, 'fields');
+            }}
           />
         </View>
       )}
@@ -188,7 +108,10 @@ export const AnkiTab = () => {
                 label="Mirrored Model"
                 value={mirroredAnkiModelId}
                 options={models}
-                onSelect={(value) => updateSettings({ mirroredAnkiModelId: value })}
+                onSelect={(value) => {
+                  updateSettings({ mirroredAnkiModelId: value });
+                  loadFieldsInto(mirroredAnkiModelId, 'mirroredFields');
+                }}
               />
               <FieldMappingSection
                 title="Mirrored Field Mapping"

@@ -23,14 +23,8 @@ Java_com_reader_bookengine_AnkiModule_upsertWordToAnkiDictionary(
     jsize note_count = (*env)->GetArrayLength(env, noteIds);
     jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
-    char* lower_word = strdup(word_str);
-    for (char* p = lower_word; *p; p++) {
-        *p = tolower((unsigned char)*p);
-    }
+    trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
 
-    trie_insert(global_dictionary, lower_word, notes, note_count, colorCode);
-
-    free(lower_word);
     (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, jword, word_str);
 }
@@ -84,6 +78,7 @@ Java_com_reader_bookengine_BookEngineModule_freeAnkiDictionary(JNIEnv* env, jobj
     }
 }
 
+// TODO(19): NUL at bytes_read not size; handle short fread; prefer fseeko/ftello for large files
 JNIEXPORT jboolean JNICALL
 Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
     JNIEnv* env, jobject thiz, jstring filePath, jstring outputPath) {
@@ -140,14 +135,14 @@ Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
             continue;
         }
 
-        if (!is_word_char((unsigned char)*p)) {
+        if (!is_word_char_at(p)) {
             sb_append_char(out, *p);
             p++;
             continue;
         }
 
         const char* word_start = p;
-        while (*p != '\0' && is_word_char((unsigned char)*p)) {
+        while (*p != '\0' && is_word_char_at(p)) {
             p++;
         }
         size_t word_len = p - word_start;

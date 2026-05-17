@@ -6,6 +6,7 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { DrawerTab } from 'types';
 
 export const SidebarContent = (props: DrawerContentComponentProps) => {
+  // TODO(36): derive active from navigation props.state, not local useState
   const [active, setActive] = useState<DrawerTab>('Reading Now');
 
   return (

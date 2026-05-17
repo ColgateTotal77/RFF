@@ -71,6 +71,7 @@ class NoteTagger(
         return Pair(word, colorCode)
     }
 
+    // TODO(27): batch Anki note reads + single Room IN query instead of N IPC + runBlocking per note
     fun getBestFrequencyTier(
         noteIds: LongArray,
         mapping: Map<String, Any?>,

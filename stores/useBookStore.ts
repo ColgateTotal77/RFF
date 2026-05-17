@@ -1,18 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import {
-  Book,
-  BookSettings,
-  CurrentCTree,
-  DeepPartial,
-  Settings,
-  Misc,
-  Theme,
-} from 'types';
+import { Book, BookSettings, CurrentCTree, DeepPartial, Settings, Misc, Theme } from 'types';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
+import { useAnkiStore } from './useAnkiStore';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -31,6 +24,7 @@ const zustandStorage: StateStorage = {
   },
 };
 
+// TODO(25): split into focused stores (books/currentBook, settings, reader bridge) to cut re-renders
 type Store = {
   books: Book[];
   currentBook: Book | null;
@@ -128,15 +122,16 @@ export const useBookStore = create<Store>()(
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
 
-        try {
-          const deckId = bookToOpen?.settings?.ankiDeckId || settings.ankiDeckId;
-          const modelId = bookToOpen?.settings?.ankiModelId || settings.ankiModelId;
-          const mirroredModelId =
-            bookToOpen?.settings?.mirroredAnkiModelId || settings.mirroredAnkiModelId;
+        const deckId = bookToOpen?.settings?.ankiDeckId || settings.ankiDeckId;
+        const modelId = bookToOpen?.settings?.ankiModelId || settings.ankiModelId;
+        const mirroredModelId =
+          bookToOpen?.settings?.mirroredAnkiModelId || settings.mirroredAnkiModelId;
 
-          console.log('currentCTree?.deckId !== deckId', currentCTree?.deckId !== deckId);
-          console.log('currentCTree?.deckId', currentCTree?.deckId, typeof currentCTree?.deckId);
-          console.log('deckId', deckId, typeof deckId);
+        const { loadFieldsInto } = useAnkiStore.getState();
+        loadFieldsInto(modelId, 'bookFields');
+        loadFieldsInto(mirroredModelId, 'bookMirroredFields');
+
+        try {
           if (currentCTree?.deckId !== deckId) {
             const key = `${deckId}:${modelId}`;
             const mirroredKey = `${deckId}:${mirroredModelId}`;

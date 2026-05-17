@@ -20,7 +20,6 @@ export const Other = (props: Props) => {
       anchor={<Appbar.Action icon="dots-vertical" onPress={onOpen} />}
       anchorPosition={'bottom'}
       elevation={1}>
-      <Menu.Item title="Title" />
       <Menu.Item
         onPress={() => updateThemeAction(settings.theme === 'dark' ? 'light' : 'dark')}
         title="Switch Theme"

@@ -7,7 +7,10 @@ import { calculateBookProgress } from 'lib/utils';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { View } from 'react-native';
 
-export const useMessageHandler = (webViewRef: RefObject<WebView | null>, containerRef: RefObject<View | null>) => {
+export const useMessageHandler = (
+  webViewRef: RefObject<WebView | null>,
+  containerRef: RefObject<View | null>
+) => {
   const loadNextBlock = useEpubNextBlock(webViewRef, containerRef);
   const loadPrevBlock = useEpubPrevBlock(webViewRef, containerRef);
   const processBookLinks = useProcessBookLinks();
@@ -110,6 +113,7 @@ export const useMessageHandler = (webViewRef: RefObject<WebView | null>, contain
             const chapterId = parseInt(url.hostname);
             const fragmentId = url.hash.replace('#', '');
             processBookLinks(chapterId, fragmentId);
+            break;
         }
       } catch (error) {
         console.log('useMessageHandler error: ', error);

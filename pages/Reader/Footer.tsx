@@ -14,7 +14,7 @@ export const Footer = () => {
   const jumpToPrev = useJumpToPrevSearchResult();
   const isDarkMode = settings.theme === 'dark';
 
-  if(!currentBook) return;
+  if (!currentBook) return null;
 
   const { percent = 0, currentBlockScrollPercent = 0, totalCharCount = 1 } = currentBook.misc;
   const bookProgress = Math.min(100, Math.max(0, Math.round(percent * 100)));
@@ -26,11 +26,15 @@ export const Footer = () => {
     currentBlock.charOffset -
     chapterStartOffset +
     currentBlock.charCount * currentBlockScrollPercent;
-  const chapterProgress = Math.min(100, Math.max(0, Math.round((currentChapterOffset / currentChapter.charCount) * 100)));
+  const chapterProgress = Math.min(
+    100,
+    Math.max(0, Math.round((currentChapterOffset / currentChapter.charCount) * 100))
+  );
 
-  const chapterMarkers = currentBook.chapters.map((chapter) => {
-    return (chapter.charOffset / totalCharCount) * 100;
-  }) ?? [];
+  const chapterMarkers =
+    currentBook.chapters.map((chapter) => {
+      return (chapter.charOffset / totalCharCount) * 100;
+    }) ?? [];
 
   return (
     <View className="absolute bottom-[30px] left-0 right-0 flex flex-col items-center">
@@ -61,7 +65,9 @@ export const Footer = () => {
         <View className={`mb-4 p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
           <View className="flex w-[280px] flex-col items-center">
             <View className="relative h-6 w-full justify-center">
-              <View className={`absolute h-0.5 w-full ${isDarkMode ? 'bg-gray-600' : 'bg-gray-400'}`} />
+              <View
+                className={`absolute h-0.5 w-full ${isDarkMode ? 'bg-gray-600' : 'bg-gray-400'}`}
+              />
 
               {chapterMarkers.map((position, index) => (
                 <View
@@ -77,8 +83,12 @@ export const Footer = () => {
               />
             </View>
             <View className="mt-1 flex w-full flex-row justify-between">
-              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Book {bookProgress}%</Text>
-              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Chapter {chapterProgress}%</Text>
+              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Book {bookProgress}%
+              </Text>
+              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Chapter {chapterProgress}%
+              </Text>
             </View>
           </View>
         </View>

@@ -29,6 +29,6 @@ TrieNode* trie_create_node(void);
 void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_count, int color_code);
 TrieNode* trie_search(TrieNode* root, const char* word, size_t len);
 void trie_free(TrieNode* root);
-bool is_word_char(unsigned char c);
+bool is_word_char_at(const char* p);
 
 #endif

@@ -1,5 +1,3 @@
-export const ANKI_PERMISSION = 'com.ichi2.anki.permission.READ_WRITE_DATABASE';
-
 export const LANGUAGE_OPTIONS = [
   { code: 'en', name: 'English' },
   { code: 'es', name: 'Spanish' },

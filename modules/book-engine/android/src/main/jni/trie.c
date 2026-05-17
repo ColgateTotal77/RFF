@@ -34,10 +34,12 @@ TrieNode* trie_create_node() {
     return node;
 }
 
+// TODO(20): OOM mid-word leaves partial path — return bool and propagate, or allocate full path first
 void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_count, int color_code) {
     TrieNode* curr = root;
     for (int i = 0; word[i] != '\0'; i++) {
         unsigned char c = tolower((unsigned char)word[i]);
+        // TODO(29): sibling linked-list is O(n) per byte — use [256] table or hash map
         TrieChild* child = curr->children;
         TrieNode* next_node = NULL;
         while (child) {
@@ -116,6 +118,24 @@ void trie_free(TrieNode* root) {
     free(root);
 }
 
-bool is_word_char(unsigned char c) {
-    return isalnum(c) || c >= 0x80 || c == '\'';
+static bool is_unicode_dash(const char* p) {
+    if ((unsigned char)p[0] != 0xE2 || (unsigned char)p[1] != 0x80) {
+        return false;
+    }
+    unsigned char b2 = (unsigned char)p[2];
+    return b2 >= 0x93 && b2 <= 0x95;
+}
+
+bool is_word_char_at(const char* p) {
+    if (p == NULL || *p == '\0') {
+        return false;
+    }
+    unsigned char c = (unsigned char)*p;
+    if (c < 0x80) {
+        return isalnum(c) || c == '\'';
+    }
+    if (is_unicode_dash(p)) {
+        return false;
+    }
+    return true;
 }

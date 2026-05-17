@@ -96,6 +96,7 @@
     const now = Date.now();
     if (now - lastSentTime > 300) {
       lastSentTime = now;
+      // TODO(39): declare lastScrollY (and lastSentTime) with let/var — avoid implicit globals
       lastScrollY = window.scrollY;
       updateScrollPosition();
     }

@@ -25,6 +25,7 @@ class FrequencyDatabase(private val context: Context, private val supabase: Supa
                 val bucket = supabase.storage.from("word_frequency_packs")
 
                 val url = bucket.publicUrl("freq_$langCode.db")
+                // TODO(32): stream download with copyTo instead of readBytes()
                 val bytes = java.net.URL(url).readBytes()
 
                 dbFile.writeBytes(bytes)
@@ -43,6 +44,7 @@ class FrequencyDatabase(private val context: Context, private val supabase: Supa
         database?.close()
         database = Room.databaseBuilder(context, FreqDatabase::class.java, "freq_$langCode")
             .createFromFile(dbFile)
+            // TODO(33): document or narrow destructive migration for frequency DB
             .fallbackToDestructiveMigration()
             .build()
 

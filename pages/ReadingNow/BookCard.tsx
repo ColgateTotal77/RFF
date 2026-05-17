@@ -7,9 +7,10 @@ import { useBookStore } from 'stores/useBookStore';
 interface Props {
   book: Book;
   onPress: () => void;
+  toggleLabel: string;
 }
 
-export const BookCard = ({ book, onPress }: Props) => {
+export const BookCard = ({ book, onPress, toggleLabel }: Props) => {
   const { removeBook } = useBookStore();
   const { toggleHaveRead } = useBookStore();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -32,7 +33,7 @@ export const BookCard = ({ book, onPress }: Props) => {
               />
             }>
             <Menu.Item onPress={() => {}} title="Item 1" />
-            <Menu.Item onPress={() => toggleHaveRead(book.basePath)} title="Have read" />
+            <Menu.Item onPress={() => toggleHaveRead(book.basePath)} title={toggleLabel} />
             <Menu.Item onPress={() => removeBook(book.basePath)} title="Delete" />
           </Menu>
         </View>

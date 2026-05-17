@@ -32,6 +32,7 @@ suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDat
         }
         val lastSyncedString = sdfQuery.format(Date(lastSyncedAt))
 
+        // TODO(31): pagination should cursor on created_at, not offset + highestTimestamp + 1
         while (hasMore) {
             val response = supabase.from("word_forms").select {
                 if (lastSyncedAt > 0) {

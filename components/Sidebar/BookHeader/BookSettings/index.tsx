@@ -4,7 +4,6 @@ import { SegmentedButtons } from 'react-native-paper';
 import { AnkiTab } from 'components/Sidebar/BookHeader/BookSettings/tabs/AnkiTab';
 import { MiscTab } from 'components/Sidebar/BookHeader/BookSettings/tabs/MiscTab';
 
-
 type TabKey = 'anki' | 'misc';
 
 export const BookSettings = () => {
