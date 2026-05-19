@@ -1,38 +1,32 @@
 <script>
-  window.updateTag = function(words, noteIdsString, colorCode) {
+  window.updateTag = function (words, noteIdsString, colorCode) {
     const wordArray = Array.isArray(words) ? words : [words];
 
-    window.log('updateTag: started for "' + (wordArray.join(', ') || noteIdsString) + '"');
+    const cleanedWordArray = wordArray
+      .map((w) => (w ? w.toLowerCase().trim() : ''))
+      .filter((w) => w);
 
-    const targetWords = new Set(wordArray.filter(w => w != null).map(w => w.toLowerCase().trim()).filter(w => w));
-
-    if (colorCode === 'remove') {
-      const existingSpans = document.querySelectorAll('span.anki-word');
-      existingSpans.forEach(function(span) {
-        const spanText = span.textContent.trim().toLowerCase();
-        if (targetWords.has(spanText)) span.outerHTML = span.textContent;
-      });
-      return;
-    }
+    const targetWords = new Set(cleanedWordArray);
 
     if (!words || (Array.isArray(words) && words.length === 0)) {
-      const existingSpans = document.querySelectorAll(`span.anki-word[data-note-ids='${noteIdsString}']`);
-      existingSpans.forEach(function(span) {
+      const existingSpans = document.querySelectorAll(
+        `span.anki-word[data-note-ids='${noteIdsString}']`
+      );
+      existingSpans.forEach(function (span) {
         span.setAttribute('data-flag', colorCode);
       });
       return;
     }
     const existingSpans = document.querySelectorAll('span.anki-word');
-    existingSpans.forEach(function(span) {
+    existingSpans.forEach(function (span) {
       const spanText = span.textContent.trim().toLowerCase();
       if (targetWords.has(spanText)) {
         span.setAttribute('data-flag', colorCode);
+        if (noteIdsString) span.setAttribute('data-note-ids', noteIdsString);
       }
     });
 
-    const escapedWords = wordArray
-      .filter(w => w && w.trim())
-      .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const escapedWords = cleanedWordArray.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
     if (escapedWords.length === 0) return;
 
@@ -54,16 +48,19 @@
     }
 
     const nodesToProcess = textNodes.length;
-    if (nodesToProcess > 0) window.log('updateTag: processing ' + nodesToProcess + ' nodes for ' + escapedWords.length + ' words');
+    if (nodesToProcess > 0)
+      window.log(
+        'updateTag: processing ' + nodesToProcess + ' nodes for ' + escapedWords.length + ' words'
+      );
     else window.log('updateTag: no nodes to process', 'error');
 
-    textNodes.forEach(function(textNode) {
+    textNodes.forEach(function (textNode) {
       const safeText = textNode.nodeValue
         .replace(/&/g, '&​amp;')
         .replace(/</g, '&​lt;')
         .replace(/>/g, '&​gt;');
 
-      const newHtml = safeText.replace(combinedRegex, function(match) {
+      const newHtml = safeText.replace(combinedRegex, function (match) {
         return `<span class="anki-word" data-note-ids='${noteIdsString}' data-flag="${colorCode}">${match}</span>`;
       });
 

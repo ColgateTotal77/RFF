@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import io.github.jan.supabase.postgrest.query.Order
 
 @Serializable
 data class RemoteWordForm(
@@ -18,57 +19,64 @@ data class RemoteWordForm(
 
 suspend fun syncWordFormsFromSupabase(supabase: SupabaseClient, database: AppDatabase, context: Context) {
     val prefs = context.getSharedPreferences("DictionaryPrefs", Context.MODE_PRIVATE)
-    val lastSyncedAt = prefs.getLong("last_synced_at", 0L)
     val batchSize = 1000L
 
-    android.util.Log.d("BookEngine", "Starting sync from timestamp: $lastSyncedAt")
+    var cursorCreatedAt: String? = prefs.getString("sync_cursor_created_at", null)
+    var cursorInputWord: String? = prefs.getString("sync_cursor_input_word", null)
+
+    var hasMore = true
+    var totalSynced = 0
+
+    android.util.Log.d("BookEngine", "Starting full word_forms sync")
 
     try {
-        var hasMore = true
-
-        var currentCursorString = Instant.ofEpochMilli(lastSyncedAt)
-            .atOffset(ZoneOffset.UTC)
-            .format(DateTimeFormatter.ISO_INSTANT)
-
         while (hasMore) {
             val response = supabase.from("word_forms").select {
-                if (lastSyncedAt > 0 || currentCursorString != "1970-01-01T00:00:00Z") {
-                    filter { gt("created_at", currentCursorString) }
-                }
-                order(column = "created_at", order = io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+                order(column = "created_at", order = Order.ASCENDING)
+                order(column = "input_word", order = Order.ASCENDING)
+                order(column = "word_lang_code", order = Order.ASCENDING)
                 limit(count = batchSize)
+                if (cursorCreatedAt != null && cursorInputWord != null) {
+                    filter {
+                        or {
+                            gt("created_at", cursorCreatedAt!!)
+                            and {
+                                eq("created_at", cursorCreatedAt!!)
+                                gt("input_word", cursorInputWord!!)
+                            }
+                        }
+                    }
+                }
             }
 
             val remoteData = response.decodeList<RemoteWordForm>()
-
-            if (remoteData.isNotEmpty()) {
-                val entities = remoteData.map {
-                    WordFormEntity(it.input_word, it.word_lang_code, it.lemma)
-                }
-
-                database.wordFormDao().insertAll(entities)
-
-                currentCursorString = remoteData.last().created_at
-
-                val cleanTimeStr = if (!currentCursorString.endsWith("Z") && !currentCursorString.contains("+")) {
-                    currentCursorString + "Z"
-                } else {
-                    currentCursorString
-                }
-
-                val highestTimestamp = Instant.parse(cleanTimeStr).toEpochMilli()
-
-                prefs.edit().putLong("last_synced_at", highestTimestamp).apply()
-
-                android.util.Log.d("BookEngine", "Synced batch of ${entities.size}. Saved timestamp: $highestTimestamp")
-
-                hasMore = remoteData.size.toLong() == batchSize
-            } else {
+            if (remoteData.isEmpty()) {
                 hasMore = false
+                continue
             }
+
+            database.wordFormDao().insertAll(
+                remoteData.map { WordFormEntity(it.input_word, it.word_lang_code, it.lemma) }
+            )
+
+            val last = remoteData.last()
+            cursorCreatedAt = last.created_at
+            cursorInputWord = last.input_word
+            totalSynced += remoteData.size
+
+            android.util.Log.d("BookEngine", "Synced batch of ${remoteData.size}, total=$totalSynced, cursor=$cursorCreatedAt|$cursorInputWord")
+
+            hasMore = remoteData.size.toLong() == batchSize
         }
 
-        android.util.Log.d("BookEngine", "Full sync finished.")
+        if (cursorCreatedAt != null && cursorInputWord != null) {
+            prefs.edit()
+                .putString("sync_cursor_created_at", cursorCreatedAt)
+                .putString("sync_cursor_input_word", cursorInputWord)
+                .apply()
+        }
+
+        android.util.Log.d("BookEngine", "Full sync finished. total=$totalSynced")
 
     } catch (e: Exception) {
         android.util.Log.e("BookEngine", "Sync error", e)

@@ -1,18 +1,18 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { View } from 'react-native';
+import { Button, Text, useTheme } from 'react-native-paper';
 import React from 'react';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 
 export const Footer = () => {
+  const { colors } = useTheme();
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const resetSearch = useTempStore((state) => state.resetSearch);
   const clearSearchAction = useBookStore((state) => state.clearSearchAction);
   const currentBook = useBookStore((state) => state.currentBook);
-  const settings = useBookStore((state) => state.settings);
   const jumpToNext = useJumpToNextSearchResult();
   const jumpToPrev = useJumpToPrevSearchResult();
-  const isDarkMode = settings.theme === 'dark';
 
   if (!currentBook) return null;
 
@@ -31,65 +31,77 @@ export const Footer = () => {
     Math.max(0, Math.round((currentChapterOffset / currentChapter.charCount) * 100))
   );
 
-  const chapterMarkers =
-    currentBook.chapters.map((chapter) => {
-      return (chapter.charOffset / totalCharCount) * 100;
-    }) ?? [];
+  const chapterMarkers = currentBook.chapters.map(
+    (chapter) => (chapter.charOffset / totalCharCount) * 100
+  );
 
   return (
-    <View className="absolute bottom-[30px] left-0 right-0 flex flex-col items-center">
+    <View className="absolute bottom-8 left-0 right-0 items-center">
       {currentSearchResult.blockId > -1 ? (
-        <View className="flex flex-row justify-center gap-16">
-          <TouchableOpacity
+        <View className="flex-row items-center gap-4">
+          <Button
+            mode="contained-tonal"
+            icon="chevron-left"
             onPress={jumpToPrev}
-            className={`elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full shadow-md ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-            <Text className="text-xl font-bold text-white">{'<'}</Text>
-          </TouchableOpacity>
+            contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
+            className="rounded-full">
+            Prev
+          </Button>
 
-          <TouchableOpacity
+          <Button
+            mode="contained"
+            icon="close"
             onPress={() => {
               clearSearchAction();
               resetSearch();
             }}
-            className="elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full bg-red-500 shadow-md">
-            <Text className="text-xl font-bold text-white">✕</Text>
-          </TouchableOpacity>
+            buttonColor={colors.errorContainer}
+            textColor={colors.onErrorContainer}
+            contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
+            className="rounded-full">
+            Clear
+          </Button>
 
-          <TouchableOpacity
+          <Button
+            mode="contained-tonal"
+            icon="chevron-right"
             onPress={jumpToNext}
-            className={`elevation-5 h-[50px] w-[50px] items-center justify-center rounded-full shadow-md ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-            <Text className="text-xl font-bold text-white">{'>'}</Text>
-          </TouchableOpacity>
+            contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
+            className="rounded-full">
+            Next
+          </Button>
         </View>
       ) : (
-        <View className={`mb-4 p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
-          <View className="flex w-[280px] flex-col items-center">
-            <View className="relative h-6 w-full justify-center">
-              <View
-                className={`absolute h-0.5 w-full ${isDarkMode ? 'bg-gray-600' : 'bg-gray-400'}`}
-              />
+        <View
+          className="w-[280px] gap-1.5 rounded-2xl px-4 py-3"
+          style={{ backgroundColor: colors.surfaceVariant }}>
+          <View className="relative h-6 w-full justify-center">
+            <View
+              className="absolute h-px w-full rounded-full"
+              style={{ backgroundColor: colors.outline }}
+            />
 
-              {chapterMarkers.map((position, index) => (
-                <View
-                  key={index}
-                  className={`absolute top-1/2 h-3 w-0.5 -translate-y-1/2 ${isDarkMode ? 'bg-gray-400' : 'bg-gray-500'}`}
-                  style={{ left: `${position}%` }}
-                />
-              ))}
-
+            {chapterMarkers.map((position, index) => (
               <View
-                className="absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500"
-                style={{ left: `${bookProgress}%` }}
+                key={index}
+                className="absolute top-1/2 h-3 w-px -translate-y-1/2"
+                style={{ left: `${position}%`, backgroundColor: colors.onSurfaceVariant }}
               />
-            </View>
-            <View className="mt-1 flex w-full flex-row justify-between">
-              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Book {bookProgress}%
-              </Text>
-              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Chapter {chapterProgress}%
-              </Text>
-            </View>
+            ))}
+
+            <View
+              className="absolute top-1/2 z-10 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ left: `${bookProgress}%`, backgroundColor: colors.primary }}
+            />
+          </View>
+
+          <View className="flex-row justify-between">
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              Book {bookProgress}%
+            </Text>
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              Chapter {chapterProgress}%
+            </Text>
           </View>
         </View>
       )}

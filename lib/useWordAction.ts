@@ -54,7 +54,7 @@ export const useWordAction = () => {
         word: metadata?.word || '',
         translation: metadata?.translation || '',
         definition: metadata?.definition || '',
-        synonyms: metadata?.synonyms.join(' ,').toLowerCase() || '',
+        synonyms: metadata?.synonyms.join(', ') || '',
         examples: formatExamples(metadata?.examples ?? []),
       };
 
@@ -73,11 +73,15 @@ export const useWordAction = () => {
   const updateWordTag = async ({ colorCode, noteIds }: UpdateWordTag) => {
     const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
     const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
-    const mirroredModelId = currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
+    const mirroredModelId =
+      currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
     const key = `${deckId}:${modelId}`;
     const mirroredKey = `${deckId}:${mirroredModelId}`;
 
-    const mapping = deepMerge(settings.fieldMappings?.[key] || {}, currentBook.settings.fieldMapping || {});
+    const mapping = deepMerge(
+      settings.fieldMappings?.[key] || {},
+      currentBook.settings.fieldMapping || {}
+    );
     const mirroredMapping = deepMerge(
       settings.mirroredFieldMappings?.[mirroredKey] || {},
       currentBook.settings.mirroredFieldMapping || {}

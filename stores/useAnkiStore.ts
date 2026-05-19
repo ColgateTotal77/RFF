@@ -11,7 +11,7 @@ type Store = {
   checkPermission: () => Promise<void>;
   requestPermission: () => Promise<void>;
   loadAnkiData: () => Promise<void>;
-  loadFieldsInto: (modelId: string, slot: FieldsSlot) => Promise<void>;
+  loadFieldsInto: (modelId: string, slot: FieldsSlot) => Promise<number>;
   decks: { id: string; name: string }[];
   models: { id: string; name: string }[];
   fields: { id: number; name: string }[];
@@ -41,7 +41,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
   },
 
   loadFieldsInto: async (modelId, slot) => {
-    if (!get().hasPermission) return;
+    if (!get().hasPermission) return 0;
 
     const rawFields = await Anki.getFields(modelId);
     const fields = rawFields.map((field: string, index: number) => ({
@@ -50,6 +50,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
     }));
 
     set({ [slot]: fields } as Pick<Store, FieldsSlot>);
+    return rawFields.length;
   },
 
   loadAnkiData: async () => {

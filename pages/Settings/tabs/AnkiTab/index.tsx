@@ -72,12 +72,15 @@ export const AnkiTab = () => {
             label="Model"
             value={ankiModelId}
             options={models}
-            onSelect={(value) => {
+            onSelect={async (value) => {
+              const fieldCount = await loadFieldsInto(value, 'fields');
               updateSettings({
                 ankiModelId: value,
-                mirroredAnkiModelId: mirroredAnkiModelId ? mirroredAnkiModelId : ankiModelId,
+                fieldMappings: updateNestedMapping(fieldMappings, `${ankiDeckId}:${value}`, {
+                  modalId: value,
+                  fieldCount,
+                }),
               });
-              loadFieldsInto(ankiModelId, 'fields');
             }}
           />
         </View>
@@ -108,9 +111,16 @@ export const AnkiTab = () => {
                 label="Mirrored Model"
                 value={mirroredAnkiModelId}
                 options={models}
-                onSelect={(value) => {
-                  updateSettings({ mirroredAnkiModelId: value });
-                  loadFieldsInto(mirroredAnkiModelId, 'mirroredFields');
+                onSelect={async (value) => {
+                  const fieldCount = await loadFieldsInto(value, 'mirroredFields');
+                  updateSettings({
+                    mirroredAnkiModelId: value,
+                    mirroredFieldMappings: updateNestedMapping(
+                      mirroredFieldMappings,
+                      `${ankiDeckId}:${value}`,
+                      { modalId: value, fieldCount }
+                    ),
+                  });
                 }}
               />
               <FieldMappingSection

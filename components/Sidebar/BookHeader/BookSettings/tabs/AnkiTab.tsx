@@ -5,6 +5,7 @@ import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { useAnkiStore } from 'stores/useAnkiStore';
+import { updateNestedMapping } from 'lib/utils';
 const isInherited = (bookValue: any) => bookValue === undefined;
 
 export const AnkiTab = () => {
@@ -72,9 +73,15 @@ export const AnkiTab = () => {
               label="Model"
               value={ankiModelId}
               options={models}
-              onSelect={(value) => {
-                updateBookSettings({ ankiModelId: value });
-                loadFieldsInto(value, 'bookFields');
+              onSelect={async (value) => {
+                const fieldCount = await loadFieldsInto(value, 'bookFields');
+                updateBookSettings({
+                  ankiModelId: value,
+                  fieldMapping: {
+                    modalId: value,
+                    fieldCount,
+                  },
+                });
               }}
               isGrayed={isInherited(currentBook.settings.ankiModelId)}
             />
@@ -114,9 +121,15 @@ export const AnkiTab = () => {
                     label="Mirrored Model"
                     value={mirroredAnkiModelId}
                     options={models}
-                    onSelect={(value) => {
-                      updateBookSettings({ mirroredAnkiModelId: value });
-                      loadFieldsInto(value, 'bookMirroredFields');
+                    onSelect={async (value) => {
+                      const fieldCount = await loadFieldsInto(value, 'bookMirroredFields');
+                      updateBookSettings({
+                        mirroredAnkiModelId: value,
+                        mirroredFieldMapping: {
+                          modalId: value,
+                          fieldCount,
+                        },
+                      });
                     }}
                     isGrayed={isInherited(currentBook.settings.mirroredAnkiModelId)}
                   />

@@ -20,8 +20,8 @@ export const saveCardInDB = async (
   });
   const entries = Array.from(uniqueEntries.values());
 
-  await supabase.from('word_forms').insert(entries, {
-    onConflict: 'input_word, word_lang_code, lemma',
+  await supabase.from('word_forms').upsert(entries, {
+    onConflict: 'input_word,word_lang_code,lemma',
     ignoreDuplicates: true,
   });
 

@@ -1,5 +1,6 @@
 import Reverso from 'npm:reverso-api';
 import { ApiResponse } from './sharedTypes.ts';
+import { langMap } from './utils.ts';
 
 type ReversoContextResponse = {
   translations: string[];
@@ -43,14 +44,13 @@ export const getReversoData = async (
     }),
     new Promise<ReversoSynonymResponse>((resolve) => {
       reverso.getSynonyms(lemma, sourceReversoLang, (err: any, res: ReversoSynonymResponse) => {
-        if (err || !res) resolve({ ok: false, text: lemma, source: sourceReversoLang, synonyms: [] });
+        if (err || !res)
+          resolve({ ok: false, text: lemma, source: sourceReversoLang, synonyms: [] });
         else resolve(res);
       });
     }),
   ]);
 
-  console.log('reversoContext: ', JSON.stringify(reversoContext, null, 2));
-  console.log('reversoSynonyms: ', JSON.stringify(reversoSynonyms, null, 2));
   if (reversoContext?.translations?.[0]?.trim()) {
     return {
       lemma: lemma.toLowerCase(),
@@ -65,13 +65,4 @@ export const getReversoData = async (
   } else {
     throw new Error('Reverso empty results');
   }
-};
-
-const langMap: Record<string, string> = {
-  en: 'english',
-  ru: 'russian',
-  es: 'spanish',
-  fr: 'french',
-  de: 'german',
-  it: 'italian',
 };

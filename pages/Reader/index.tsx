@@ -8,6 +8,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
 import { Theme } from 'types';
 import { useMessageHandler } from './useMessageHandler';
+import { Loading } from 'components/Loading';
 
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
@@ -142,59 +143,50 @@ export const ReaderScreen = () => {
     registerWebViewAction('updateFont', onUpdateFont);
     registerWebViewAction('updateTheme', onUpdateTheme);
     registerWebViewAction('scrollToFragment', onScrollToFragment);
-  }, [registerWebViewAction, onScrollToBlock, onJumpToSearch, clearSearch, onUpdateTag, onUpdateFont, onUpdateTheme, onScrollToFragment]);
+  }, [
+    registerWebViewAction,
+    onScrollToBlock,
+    onJumpToSearch,
+    clearSearch,
+    onUpdateTag,
+    onUpdateFont,
+    onUpdateTheme,
+    onScrollToFragment,
+  ]);
 
   const handleMessage = useMessageHandler(webViewRef, containerRef);
 
-  if (!webViewSource) return;
+  if (!webViewSource || !currentBook) return <Loading />;
 
-    return (
-      <View ref={containerRef} collapsable={false} className="flex-1">
-        <WebView
-          ref={webViewRef}
-          originWhitelist={['*']}
-          source={webViewSource}
-          className="flex-1"
-          onMessage={handleMessage}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          allowFileAccess={true}
-          allowFileAccessFromFileURLs={true}
-          allowUniversalAccessFromFileURLs={true}
-          textZoom={100}
-          setBuiltInZoomControls={false}
-          setDisplayZoomControls={false}
-          scalesPageToFit={false}
-          showsVerticalScrollIndicator={false}
-          androidLayerType="hardware"
-          overScrollMode="never"
-          scrollEnabled={true}
-          mixedContentMode="always"
-        />
+  return (
+    <View ref={containerRef} collapsable={false} className="flex-1">
+      <WebView
+        ref={webViewRef}
+        originWhitelist={['*']}
+        source={webViewSource}
+        className="flex-1"
+        onMessage={handleMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        allowFileAccess={true}
+        allowFileAccessFromFileURLs={true}
+        allowUniversalAccessFromFileURLs={true}
+        textZoom={100}
+        setBuiltInZoomControls={false}
+        setDisplayZoomControls={false}
+        scalesPageToFit={false}
+        showsVerticalScrollIndicator={false}
+        androidLayerType="hardware"
+        overScrollMode="never"
+        scrollEnabled={true}
+        mixedContentMode="always"
+      />
 
-        {(!currentBook || !isWebViewReady) && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'white',
-            }}>
-            <ActivityIndicator size="large" />
-          </View>
-        )}
+      {!isWebViewReady && <Loading />}
 
-        {selectionMenu.visible && (
-          <SelectionMenu
-            selectionMenu={selectionMenu}
-          />
-        )}
+      {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
 
-        <Footer/>
-      </View>
-    );
+      <Footer />
+    </View>
+  );
 };

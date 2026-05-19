@@ -12,7 +12,7 @@ export const getWordForms = async (supabase: any, lemma: string, wordLangCode: s
   }
 
   return wordForms;
-}
+};
 
 export const getLemma = async (supabase: any, inputWord: string, word_lang_code: string) => {
   const { data: formMapping, error: formMappingError } = await supabase
@@ -30,4 +30,21 @@ export const getLemma = async (supabase: any, inputWord: string, word_lang_code:
   }
 
   return formMapping ? formMapping.lemma : inputWord;
-}
+};
+
+export const langMap: Record<string, string> = {
+  en: 'english',
+  ru: 'russian',
+  es: 'spanish',
+  fr: 'french',
+  de: 'german',
+  it: 'italian',
+  pt: 'portuguese',
+  nl: 'dutch',
+  sv: 'swedish',
+  no: 'norwegian',
+  da: 'danish',
+  fi: 'finnish',
+  pl: 'polish',
+  cs: 'czech',
+};
