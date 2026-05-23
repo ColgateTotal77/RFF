@@ -53,16 +53,16 @@ export interface Book {
   cssPaths: string[];
   settings: BookSettings;
   misc: Misc;
-  scrollPosition: number;
-  // bookmarks: Bookmark[];
+  bookmarks: Bookmark[];
 }
 
-export interface Bookmark {
-  id: string;
-  chapterIndex: number;
-  scrollPosition: number;
+export type Bookmark = {
+  id: number;
+  title: string;
+  blockId: number;
+  scrollPercent: number;
   createdAt: number;
-}
+};
 
 export interface Misc {
   percent: number;

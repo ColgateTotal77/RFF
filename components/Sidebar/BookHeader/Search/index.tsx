@@ -1,8 +1,9 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
-import { SearchCard } from 'components/Sidebar/BookHeader/SearchCard';
 import { SearchResult } from 'types';
+import { SearchCard } from './SearchCard';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 interface Props {
   onClose: () => void;
@@ -11,30 +12,38 @@ interface Props {
 export const MenuSearch = ({ onClose }: Props) => {
   const searchResults = useTempStore((state) => state.searchResults);
   const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
-  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
-  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
-
   const currentBook = useCurrentBook();
-  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
-  const clearSearchAction = useBookStore((state) => state.clearSearchAction);
+  const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
+  const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
+  const loadWindow = useWebViewStore((state) => state.loadWindow);
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
 
   const onPress = (searchResult: SearchResult) => {
-    clearSearchAction();
+    setCurrentSearchResult(searchResult);
 
     if (!currentBook.currentBlocks.includes(searchResult.blockId)) {
-      setIsWebViewReady(false);
-      jumpToBlock(searchResult.blockId);
+      addToPostLoadQueue({
+        type: 'jumpToSearch',
+        blockId: searchResult.blockId,
+        occurrenceIndex: searchResult.occurrenceIndex,
+      });
+      loadWindow(searchResult.blockId, 0);
+    } else {
+      setCurrentBlock(searchResult.blockId);
+      executeImmediateAction({
+        type: 'jumpToSearch',
+        blockId: searchResult.blockId,
+        occurrenceIndex: searchResult.occurrenceIndex,
+      });
     }
 
-    setIsSearchOperation(true);
-    setCurrentSearchResult(searchResult);
     onClose();
   };
 
   const renderSearchCard = ({ item }: { item: SearchResult }) => (
     <SearchCard
-      isCurrentSearch={ item.id === currentSearchResult.id }
+      isCurrentSearch={item.id === currentSearchResult.id}
       searchItem={item}
       onPress={() => onPress(item)}
     />

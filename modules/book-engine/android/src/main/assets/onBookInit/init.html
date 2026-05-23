@@ -1,15 +1,20 @@
 <script>
   window.log = (message, type = 'info') => {
-    window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-      type: 'LOG', logType: type, message: message
-    }));
-  }
+    window.ReactNativeWebView &&
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: 'LOG',
+          logType: type,
+          message: message,
+        })
+      );
+  };
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener('DOMContentLoaded', () => {
     window.isFetching = false;
     const config = window.BookConfig || {};
 
-    const currentFont = config.fontFamily || "sans-serif";
+    const currentFont = config.fontFamily || 'sans-serif';
     const currentFontSize = config.fontSize || 16;
     const currentTheme = config.theme || 'light';
 
@@ -17,7 +22,17 @@
     document.documentElement.style.setProperty('--book-font-size', `${currentFontSize}px`);
     window.setTheme(currentTheme);
 
-    window.log('DOMContentLoaded: font=' + currentFont + ', size=' + currentFontSize + 'px' + ', theme=' + currentTheme);
+    window.log(
+      'DOMContentLoaded: font=' +
+        currentFont +
+        ', size=' +
+        currentFontSize +
+        'px' +
+        ', theme=' +
+        currentTheme
+    );
+
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'INITIAL_LOAD_COMPLETE' }));
   });
 
   document.addEventListener('contextmenu', (event) => {
@@ -32,7 +47,6 @@
     window.log('setFontFamily: ' + family);
     document.body.style.fontFamily = family;
   };
-
 
   let selectionRafId = null;
   let lastSelectionText = '';
@@ -51,36 +65,46 @@
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return;
-        const menuX = rect.left + (rect.width / 2);
+        const menuX = rect.left + rect.width / 2;
         const menuY = rect.top;
         const commonAncestor = range.commonAncestorContainer;
 
         let noteIds = null;
         let colorCode = null;
 
-        const highlightedElement = commonAncestor.nodeType === Node.TEXT_NODE
-          ? commonAncestor.parentElement
-          : commonAncestor;
+        const highlightedElement =
+          commonAncestor.nodeType === Node.TEXT_NODE
+            ? commonAncestor.parentElement
+            : commonAncestor;
 
         if (highlightedElement && highlightedElement.classList.contains('anki-word')) {
           noteIds = highlightedElement.getAttribute('data-note-ids');
           colorCode = highlightedElement.getAttribute('data-flag');
         }
 
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'TEXT_SELECTED',
-          text: selectedText,
-          top: menuY,
-          left: menuX,
-          noteIds: noteIds ? noteIds : null,
-          colorCode: colorCode ? colorCode : null
-        }));
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: 'TEXT_SELECTED',
+            text: selectedText,
+            top: menuY,
+            left: menuX,
+            noteIds: noteIds ? noteIds : null,
+            colorCode: colorCode ? colorCode : null,
+          })
+        );
 
-        window.log('TEXT_SELECTED: "' + selectedText.substring(0, 20) + (selectedText.length > 20 ? '...' : '') + '"');
+        window.log(
+          'TEXT_SELECTED: "' +
+            selectedText.substring(0, 20) +
+            (selectedText.length > 20 ? '...' : '') +
+            '"'
+        );
       } else {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'SELECTION_CLEARED'
-        }));
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: 'SELECTION_CLEARED',
+          })
+        );
         lastSelectionText = '';
       }
     });
@@ -91,7 +115,10 @@
   let lastTapText = '';
   const TAP_DELAY = 230;
   document.addEventListener('touchend', (event) => {
-    const range = document.caretRangeFromPoint(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+    const range = document.caretRangeFromPoint(
+      event.changedTouches[0].clientX,
+      event.changedTouches[0].clientY
+    );
     let selectedText = '';
     let noteIds = null;
     let colorCode = null;
@@ -101,9 +128,8 @@
       const offset = range.startOffset;
 
       const commonAncestor = range.commonAncestorContainer;
-      const highlightedElement = commonAncestor.nodeType === Node.TEXT_NODE
-        ? commonAncestor.parentElement
-        : commonAncestor;
+      const highlightedElement =
+        commonAncestor.nodeType === Node.TEXT_NODE ? commonAncestor.parentElement : commonAncestor;
 
       if (highlightedElement && highlightedElement.classList.contains('anki-word')) {
         noteIds = highlightedElement.getAttribute('data-note-ids');
@@ -116,46 +142,52 @@
     }
 
     if (!selectedText) return;
-      if (tapTimer) {
-        clearTimeout(tapTimer);
-      }
+    if (tapTimer) {
+      clearTimeout(tapTimer);
+    }
 
-      tapCount++;
+    tapCount++;
 
-      if (selectedText !== lastTapText) {
-        tapCount = 1;
-        lastTapText = selectedText;
-      }
+    if (selectedText !== lastTapText) {
+      tapCount = 1;
+      lastTapText = selectedText;
+    }
 
     window.log('TAP: word="' + selectedText + '", count=' + tapCount);
 
     if (tapCount === 1) {
-        tapTimer = setTimeout(() => {
-          if (tapCount === 1 && lastSelectionText) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'SELECTION_CLEARED'
-            }));
-            lastSelectionText = '';
-          }
-          tapCount = 0;
-        }, TAP_DELAY);
-      } else if (tapCount === 2) {
-        tapTimer = setTimeout(() => {
-          tapCount = 0;
-          window.ReactNativeWebView.postMessage(JSON.stringify({
+      tapTimer = setTimeout(() => {
+        if (tapCount === 1 && lastSelectionText) {
+          window.ReactNativeWebView.postMessage(
+            JSON.stringify({
+              type: 'SELECTION_CLEARED',
+            })
+          );
+          lastSelectionText = '';
+        }
+        tapCount = 0;
+      }, TAP_DELAY);
+    } else if (tapCount === 2) {
+      tapTimer = setTimeout(() => {
+        tapCount = 0;
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
             type: 'DOUBLE_TAP',
             text: selectedText,
-          }));
-        }, TAP_DELAY);
-      } else if (tapCount === 3) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
+          })
+        );
+      }, TAP_DELAY);
+    } else if (tapCount === 3) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
           type: 'TRIPLE_TAP',
           text: selectedText,
           noteIds: noteIds,
           colorCode: colorCode,
-        }));
-        tapCount = 0;
-      }
+        })
+      );
+      tapCount = 0;
+    }
   });
 
   document.addEventListener('click', (event) => {
@@ -170,19 +202,18 @@
         event.preventDefault();
 
         window.log('BOOK_LINK_PRESSED: ' + href);
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'BOOK_LINK_PRESSED',
-          href: href
-        }));
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: 'BOOK_LINK_PRESSED',
+            href: href,
+          })
+        );
       }
     }
   });
 
-  let currentTheme = 'light';
   window.setTheme = (theme) => {
     window.log('setTheme: ' + theme);
-    if(theme === currentTheme) return;
     document.documentElement.setAttribute('data-theme', theme);
-    currentTheme = theme;
   };
 </script>

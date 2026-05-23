@@ -1,9 +1,9 @@
 <script>
-  window.loadNewBlock = function(fileUrl, position, fetchIndex, removeIndex) {
+  window.loadNewBlock = function (fileUrl, position, fetchIndex, removeIndex) {
     window.log('loadNewBlock: loading block ' + fetchIndex + ' from ' + fileUrl);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', fileUrl, true);
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         if (xhr.status === 0 || xhr.status === 200) {
           window.log('loadNewBlock: block ' + fetchIndex + ' loaded successfully');
@@ -18,7 +18,7 @@
             return;
           }
 
-          if (position === "top") {
+          if (position === 'top') {
             document.body.insertBefore(blockElement, document.body.firstChild);
           } else {
             document.body.appendChild(blockElement);
@@ -26,12 +26,15 @@
 
           var removeId = removeIndex !== undefined && removeIndex !== null ? removeIndex : null;
           if (removeId !== null) {
-            var blockToRemove = document.getElementById("block-" + removeId);
+            var blockToRemove = document.getElementById('block-' + removeId);
             if (blockToRemove) {
               blockToRemove.remove();
               window.log('loadNewBlock: removed block ' + removeId);
             }
           }
+
+          window.log('loadNewBlock: searchQuery', window.searchQuery);
+          if (window.searchQuery) window.highlightAll(window.searchQuery);
 
           window.isFetching = false;
         } else {
@@ -40,7 +43,7 @@
         }
       }
     };
-    xhr.onerror = function() {
+    xhr.onerror = function () {
       window.log('loadNewBlock: XHR network error for ' + fileUrl, 'error');
       window.isFetching = false;
     };

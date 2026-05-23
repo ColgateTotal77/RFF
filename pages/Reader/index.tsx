@@ -1,188 +1,121 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { IconButton, useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
+import { useWebViewStore } from 'stores/useWebViewStore';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
-import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
-import { Theme } from 'types';
 import { useMessageHandler } from './useMessageHandler';
 import { Loading } from 'components/Loading';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
-  const settings = useBookStore((state) => state.settings);
   const closeBook = useBookStore((state) => state.closeBook);
-  const lastJumpTo = useBookStore((state) => state.lastJumpTo);
-  const registerWebViewAction = useBookStore((state) => state.registerWebViewAction);
-  const lastFragmentId = useBookStore((state) => state.lastFragmentId);
-  const setLastFragmentId = useBookStore((state) => state.setLastFragmentId);
-
-  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+  const registerWebViewAction = useWebViewStore((state) => state.registerWebViewAction);
+  const webViewSource = useWebViewStore((state) => state.webViewSource);
+  const resetWebView = useWebViewStore((state) => state.resetWebView);
+  const isWebViewReady = useWebViewStore((state) => state.isWebViewReady);
+  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const resetSearch = useTempStore((state) => state.resetSearch);
-  const isWebViewReady = useTempStore((state) => state.isWebViewReady);
-  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
-  const searchQuery = useTempStore((state) => state.searchQuery);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
-
-  const font = currentBook?.settings?.font || settings.font;
+  const addBookmark = useBookStore((state) => state.addBookmark);
+  const removeBookmark = useBookStore((state) => state.removeBookmark);
+  const { colors } = useTheme();
 
   const webViewRef = useRef<WebView>(null);
   const containerRef = useRef<View>(null);
-  const [webViewSource, setWebViewSource] = useState<{ uri: string } | null>(null);
 
-  useEffect(() => {
-    return () => {
-      closeBook();
-      setWebViewSource(null);
-      setIsWebViewReady(false);
-      resetSearch();
-      closeMenu();
-    };
-  }, [closeBook]);
+  const insets = useSafeAreaInsets();
+
+  const activeBookmark = useMemo(() => {
+    if (!currentBook) return null;
+    return (currentBook.bookmarks ?? []).find(
+      (bookmark) =>
+        bookmark.blockId === currentBook.currentBlock &&
+        Math.abs(bookmark.scrollPercent - currentBook.misc.currentBlockScrollPercent) < 0.05
+    );
+  }, [
+    currentBook?.bookmarks,
+    currentBook?.currentBlock,
+    currentBook?.misc.currentBlockScrollPercent,
+  ]);
 
   useEffect(() => {
     if (!currentBook) return;
+    loadWindow(currentBook.currentBlock, currentBook.misc.currentBlockScrollPercent);
 
-    const loadInitialWindow = async () => {
-      try {
-        setWebViewSource(null);
-        setIsWebViewReady(false);
-
-        const { currentBlocks, blocks } = currentBook;
-        const paths = currentBlocks.map((index) => blocks[index].fullPath);
-
-        const generatedFileUrl = await BookEngine.loadInitialHtml(paths, currentBlocks, {
-          targetblockId: lastJumpTo,
-          scrollPosition: currentBook.scrollPosition,
-          fontSize: font.fontSize,
-          fontFamily: font.fontFamily,
-          theme: settings.theme || 'light',
-          cssPaths: currentBook.cssPaths,
-        });
-
-        if (typeof generatedFileUrl === 'string') {
-          setWebViewSource({ uri: generatedFileUrl });
-        }
-      } catch (e) {
-        console.error('Failed to prepare initial blocks:', e);
-      }
+    return () => {
+      resetWebView();
+      resetSearch();
+      closeMenu();
+      closeBook();
     };
-
-    loadInitialWindow();
-  }, [currentBook?.basePath, lastJumpTo]);
+  }, [currentBook?.basePath]);
 
   useEffect(() => {
-    if (lastFragmentId && isWebViewReady) {
-      onScrollToFragment(lastFragmentId);
-      setLastFragmentId('');
-    }
-  }, [isWebViewReady]);
-
-  useEffect(() => {
-    if (currentSearchResult.occurrenceIndex > -1 && isWebViewReady) {
-      highlightAllSearched(searchQuery, currentBook?.currentBlocks || []);
-    }
-  }, [currentBook?.currentBlocks, isWebViewReady, currentSearchResult]);
-
-  const onUpdateFont = useCallback((fontSize?: number, fontFamily?: string) => {
-    const parts: string[] = [];
-    if (fontSize !== undefined) parts.push(`window.setFontSize(${fontSize})`);
-    if (fontFamily !== undefined) parts.push(`window.setFontFamily('${fontFamily}')`);
-    if (parts.length === 0) return;
-
-    const script = `${parts.join('; ')}; true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
-
-  const onUpdateTag = useCallback(
-    (words: string | string[] | null, noteIds: string, colorCode: string) => {
-      const script = `window.updateTag(${JSON.stringify(words)}, ${JSON.stringify(noteIds)}, ${colorCode}); true;`;
+    registerWebViewAction((script) => {
       webViewRef.current?.injectJavaScript(script);
-    },
-    []
-  );
-
-  const onJumpToSearch = useCallback((blockId: number, occurrenceIndex: number) => {
-    const script = `window.jumpToSearch(${blockId}, ${occurrenceIndex}); true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
-
-  const onScrollToBlock = useCallback((blockId: number) => {
-    const script = `window.scrollToBlock(${blockId}); true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
-
-  const highlightAllSearched = (searchQuery: string, currentBlocks: number[]) => {
-    const script = `window.highlightAll(${JSON.stringify(searchQuery)}, ${JSON.stringify(currentBlocks)}); true;`;
-    webViewRef.current?.injectJavaScript(script);
-  };
-
-  const clearSearch = useCallback(() => {
-    const script = `window.clearSearch(); window._lastSearchQuery = ''; window._lastSearchBlocks = []; true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
-
-  const onUpdateTheme = useCallback((theme: Theme) => {
-    const script = `window.setTheme('${theme}'); true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
-
-  const onScrollToFragment = useCallback((fragmentId: string) => {
-    const script = `window.onScrollToFragment(${fragmentId}); true;`;
-    webViewRef.current?.injectJavaScript(script);
-  }, []);
-
-  useEffect(() => {
-    registerWebViewAction('scrollToBlock', onScrollToBlock);
-    registerWebViewAction('jumpToSearch', onJumpToSearch);
-    registerWebViewAction('clearSearch', clearSearch);
-    registerWebViewAction('updateTag', onUpdateTag);
-    registerWebViewAction('updateFont', onUpdateFont);
-    registerWebViewAction('updateTheme', onUpdateTheme);
-    registerWebViewAction('scrollToFragment', onScrollToFragment);
-  }, [
-    registerWebViewAction,
-    onScrollToBlock,
-    onJumpToSearch,
-    clearSearch,
-    onUpdateTag,
-    onUpdateFont,
-    onUpdateTheme,
-    onScrollToFragment,
-  ]);
+    });
+  }, [registerWebViewAction]);
 
   const handleMessage = useMessageHandler(webViewRef, containerRef);
 
-  if (!webViewSource || !currentBook) return <Loading />;
+  const isLoading = !webViewSource || !currentBook || !isWebViewReady;
 
   return (
-    <View ref={containerRef} collapsable={false} className="flex-1">
-      <WebView
-        ref={webViewRef}
-        originWhitelist={['*']}
-        source={webViewSource}
-        className="flex-1"
-        onMessage={handleMessage}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        allowFileAccess={true}
-        allowFileAccessFromFileURLs={true}
-        allowUniversalAccessFromFileURLs={true}
-        textZoom={100}
-        setBuiltInZoomControls={false}
-        setDisplayZoomControls={false}
-        scalesPageToFit={false}
-        showsVerticalScrollIndicator={false}
-        androidLayerType="hardware"
-        overScrollMode="never"
-        scrollEnabled={true}
-        mixedContentMode="always"
-      />
+    <View ref={containerRef} collapsable={false} className="flex-1 bg-white dark:bg-black">
+      {webViewSource && currentBook && (
+        <WebView
+          ref={webViewRef}
+          originWhitelist={['*']}
+          source={webViewSource}
+          className={`flex-1 ${!isLoading ? 'opacity-100' : 'opacity-0'}`}
+          onMessage={handleMessage}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          allowFileAccess={true}
+          allowFileAccessFromFileURLs={true}
+          allowUniversalAccessFromFileURLs={true}
+          textZoom={100}
+          setBuiltInZoomControls={false}
+          setDisplayZoomControls={false}
+          scalesPageToFit={false}
+          showsVerticalScrollIndicator={false}
+          androidLayerType="hardware"
+          overScrollMode="never"
+          scrollEnabled={true}
+          mixedContentMode="always"
+        />
+      )}
 
-      {!isWebViewReady && <Loading />}
+      {isLoading && (
+        <View className="absolute inset-0 z-50 flex-1 items-center justify-center bg-white dark:bg-black">
+          <Loading />
+        </View>
+      )}
+
+      <IconButton
+        icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
+        size={28}
+        iconColor={colors.primary}
+        className="rounded-none"
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 50,
+          elevation: 5,
+          borderRadius: 8,
+        }}
+        onPress={() => {
+          if (activeBookmark) removeBookmark(activeBookmark.id);
+          else addBookmark();
+        }}
+      />
 
       {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
 

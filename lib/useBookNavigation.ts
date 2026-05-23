@@ -6,8 +6,11 @@ import { BookEngine } from 'modules/book-engine';
 import { useTempStore } from 'stores/useTempStore';
 import { calculateBookProgress } from 'lib/utils';
 import { Book } from 'types';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
-export const shiftNext = (currentBook: Book): { fetchIndex: number; removeIndex: number | null; newWindow: number[] } | null => {
+export const shiftNext = (
+  currentBook: Book
+): { fetchIndex: number; removeIndex: number | null; newWindow: number[] } | null => {
   if (!currentBook) return null;
 
   const lastRendered = currentBook.currentBlocks[currentBook.currentBlocks.length - 1];
@@ -25,7 +28,9 @@ export const shiftNext = (currentBook: Book): { fetchIndex: number; removeIndex:
   return { fetchIndex, removeIndex, newWindow };
 };
 
-export const shiftPrev = (currentBook: Book): { fetchIndex: number; removeIndex: number | null; newWindow: number[] } | null => {
+export const shiftPrev = (
+  currentBook: Book
+): { fetchIndex: number; removeIndex: number | null; newWindow: number[] } | null => {
   if (!currentBook) return null;
 
   const firstRendered = currentBook.currentBlocks[0];
@@ -138,12 +143,12 @@ export const useJumpToNextSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
   const searchResults = useTempStore((state) => state.searchResults);
-  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
-  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
-  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
-  const jumpToSearchAction = useBookStore((state) => state.jumpToSearchAction);
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const updateMisc = useBookStore((state) => state.updateMisc);
+  const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const currentBook = useCurrentBook();
+  const loadWindow = useWebViewStore((state) => state.loadWindow);
 
   return () => {
     const newSearchResult = searchResults.find(
@@ -153,15 +158,23 @@ export const useJumpToNextSearchResult = () => {
     if (!newSearchResult) return;
 
     if (!currentBook.currentBlocks.includes(newSearchResult.blockId)) {
-      setIsWebViewReady(false);
-      setIsSearchOperation(true);
-      jumpToBlock(newSearchResult.blockId);
+      addToPostLoadQueue({
+        type: 'jumpToSearch',
+        blockId: newSearchResult.blockId,
+        occurrenceIndex: newSearchResult.occurrenceIndex,
+      });
+      loadWindow(newSearchResult.blockId, 0);
     } else {
-      jumpToSearchAction(newSearchResult.blockId, newSearchResult.occurrenceIndex);
+      setCurrentBlock(newSearchResult.blockId);
+      executeImmediateAction({
+        type: 'jumpToSearch',
+        blockId: newSearchResult.blockId,
+        occurrenceIndex: newSearchResult.occurrenceIndex,
+      });
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, newSearchResult.blockId, 0),
+      percent: calculateBookProgress(currentBook, 0),
     });
 
     setCurrentSearchResult(newSearchResult);
@@ -172,53 +185,71 @@ export const useJumpToPrevSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
   const searchResults = useTempStore((state) => state.searchResults);
-  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
-  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
-  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
-  const jumpToSearchAction = useBookStore((state) => state.jumpToSearchAction);
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const currentBook = useCurrentBook();
+  const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
+  const loadWindow = useWebViewStore((state) => state.loadWindow);
 
   return () => {
-    const newSearchResult = searchResults.find((result) => result.id === currentSearchResult.id - 1);
+    const newSearchResult = searchResults.find(
+      (result) => result.id === currentSearchResult.id - 1
+    );
 
     if (!newSearchResult) return;
 
     if (!currentBook.currentBlocks.includes(newSearchResult.blockId)) {
-      setIsWebViewReady(false);
-      setIsSearchOperation(true);
-      jumpToBlock(newSearchResult.blockId);
+      addToPostLoadQueue({
+        type: 'jumpToSearch',
+        blockId: newSearchResult.blockId,
+        occurrenceIndex: newSearchResult.occurrenceIndex,
+      });
+      loadWindow(newSearchResult.blockId, 0);
     } else {
-      jumpToSearchAction(newSearchResult.blockId, newSearchResult.occurrenceIndex);
+      setCurrentBlock(newSearchResult.blockId);
+      executeImmediateAction({
+        type: 'jumpToSearch',
+        blockId: newSearchResult.blockId,
+        occurrenceIndex: newSearchResult.occurrenceIndex,
+      });
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, newSearchResult.blockId, 0),
+      percent: calculateBookProgress(currentBook, 0),
     });
     setCurrentSearchResult(newSearchResult);
-  }
+  };
 };
 
 export const useProcessBookLinks = () => {
-  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
-  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
-  const scrollToFragment = useBookStore((state) => state.scrollToFragmentAction);
-  const setLastFragmentId = useBookStore((state) => state.setLastFragmentId);
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
+  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const currentBook = useCurrentBook();
 
   return (chapterId: number, fragmentId: string) => {
     const chapter = currentBook.chapters.find((c) => c.id === chapterId);
+
     if (!chapter) return;
+
+    if (!fragmentId) {
+      const blockId = chapter.blockIds[0];
+      if (!currentBook.currentBlocks.includes(blockId)) {
+        loadWindow(blockId, 0);
+      } else {
+        executeImmediateAction({ type: 'scrollToBlock', blockId, scrollPercent: 0 });
+      }
+    }
 
     const blockId = chapter.anchors[fragmentId];
     if (!blockId) return;
 
     if (!currentBook.currentBlocks.includes(blockId)) {
-      setIsWebViewReady(false);
-      setLastFragmentId(fragmentId);
-      jumpToBlock(blockId);
+      addToPostLoadQueue({ type: 'scrollToFragment', fragmentId });
+      loadWindow(blockId, 0);
     } else {
-      scrollToFragment(fragmentId);
+      executeImmediateAction({ type: 'scrollToFragment', fragmentId });
     }
   };
 };

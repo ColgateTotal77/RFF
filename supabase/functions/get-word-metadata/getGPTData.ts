@@ -59,7 +59,7 @@ export const getGPTData = async (
           },
         },
       },
-      temperature: 0.4,
+      temperature: 0.2,
     }),
   });
 
@@ -86,15 +86,6 @@ const systemPrompt = `You are a multilingual dictionary backend producing data f
 Return STRICT JSON (no markdown, no commentary):
 {"source_synonyms": ["string"], "source_examples": ["string"], "target_translations": ["string"]}
 
-RULES
-- "target_translations" MUST be in the Target Language.
-- "source_synonyms" and "source_examples" MUST be written entirely in the Source Language. DO NOT translate synonyms or examples into the Target Language.
-- The arrays for "source_examples" and "target_translations" MUST have the same length and their indexes MUST align perfectly.
-- Cover 2–4 DISTINCT senses ordered by frequency. If only one sense exists, return 1.
-- "target_translations": short idiomatic equivalent (1–4 words). Use " / " to join alternatives.
-- "source_examples": Provide exactly ONE natural sentence (6–14 words) in the Source Language PER SENSE demonstrating that specific meaning. The Word (or its inflected form) MUST appear in the sentence. Vary contexts across meanings.
-- "source_synonyms": up to 3 synonyms of the most common sense, in the Source Language. Empty array if none.
-
 EXAMPLES
 
 Word: "bank", Source: english Target: russian
@@ -108,37 +99,23 @@ Word: "bank", Source: english Target: russian
   "target_translations": ["банк", "берег", "наклонять"]
 }
 
-Word: "залог", Source: russian, Target: english
+Word: "vol", Source: french, Target: german
 {
-  "source_synonyms": ["обеспечение", "гарантия"],
+  "source_synonyms": ["larcin", "trajet"],
   "source_examples": [
-    "Банк выдал кредит под залог квартиры.",
-    "Подозреваемого отпустили под залог в миллион рублей.",
-    "Хорошая подготовка — залог успеха на экзамене."
+    "Le vol de Paris à New York dure environ huit heures.",
+    "La police a arrêté l'homme responsable du vol de la voiture."
   ],
-  "target_translations": ["collateral", "bail", "guarantee"]
+  "target_translations": ["Flug", "Diebstahl"]
 }
 
-Word: "run", Source: english Target: spanish
+Word: "Kühlschrank", Source: german, Target: english
 {
-  "source_synonyms": ["sprint", "operate"],
+  "source_synonyms": ["Kühlgerät", "Eisschrank"],
   "source_examples": [
-    "She likes to run in the park every morning before work.",
-    "He runs a small bakery in the center of the city.",
-    "This old computer still runs surprisingly well after ten years."
+    "Vergiss nicht, die Milch sofort wieder in den Kühlschrank zu stellen."
   ],
-  "target_translations": ["correr", "dirigir", "funcionar"]
-}
-
-Word: "léger", Source: french, Target: russian
-{
-  "source_synonyms": ["faible", "doux"],
-  "source_examples": [
-    "Cette valise est très légère, je peux la porter facilement.",
-    "Un vent léger soufflait depuis la mer ce matin.",
-    "Sa réponse était trop légère pour un sujet aussi sérieux."
-  ],
-  "target_translations": ["лёгкий", "слабый", "несерьёзный"]
+  "target_translations": ["refrigerator / fridge"]
 }
 
 Word: "tomar", Source: spanish, Target: english
@@ -152,47 +129,14 @@ Word: "tomar", Source: spanish, Target: english
   "target_translations": ["to take", "to drink", "to grab"]
 }
 
-Word: "Gewicht", Source: german, Target: english
-{
-  "source_synonyms": ["Masse", "Bedeutung"],
-  "source_examples": [
-    "Das Gewicht des Koffers darf zwanzig Kilogramm nicht überschreiten.",
-    "Seine Meinung hat in dieser Firma großes Gewicht."
-  ],
-  "target_translations": ["weight", "importance"]
-}
-
-Word: "однако", Source: russian, Target: english
-{
-  "source_synonyms": ["тем не менее", "всё же"],
-  "source_examples": [
-    "Задача казалась простой, однако решить её не удалось."
-  ],
-  "target_translations": ["however"]
-}
-
-Word: "bright", Source: english Target: russian
-{
-  "source_synonyms": ["luminous", "vivid", "smart"],
-  "source_examples": [
-    "The bright sun made it hard to see the road ahead.",
-    "She is one of the brightest students in the whole school.",
-    "The company has a bright future in the renewable energy market."
-  ],
-  "target_translations": ["яркий", "умный", "радужный"]
-}
-
-Word: "board", Source: english Target: german
-{
-  "source_synonyms": ["plank", "panel"],
-  "source_examples": [
-    "He cut the wooden board in half to build the new bookshelf.",
-    "The board of directors will meet tomorrow to discuss the annual budget.",
-    "Passengers must wait for the announcement before they can board the plane."
-  ],
-  "target_translations": ["Brett", "Vorstand", "einsteigen"]
-}
-`;
+RULES
+- "target_translations" MUST be in the Target Language.
+- "source_synonyms" and "source_examples" MUST be written entirely in the Source Language.
+- The arrays for "source_examples" and "target_translations" MUST have the same length and their indexes MUST align perfectly.
+- Cover 2–4 DISTINCT senses ordered by frequency ONLY if they exist. Do NOT invent fake or tangential meanings to fill a quota. If a word is specific and has only ONE primary meaning, you MUST return arrays of length 1.
+- "target_translations": short idiomatic equivalent (1–4 words). Use " / " to join alternatives.
+- "source_examples": Provide exactly ONE natural sentence (6–14 words) in the Source Language PER SENSE demonstrating that specific meaning. The Word (or its inflected form) MUST appear in the sentence. Vary contexts across meanings.
+- "source_synonyms": up to 3 synonyms of the most common sense, in the Source Language. Empty array if none.`;
 
 const userPrompt = (word: string, fromLang: string, toLang: string) =>
-  `Word: "${word}", Source: ${fromLang.toUpperCase()} (Write synonyms and examples STRICTLY in ${fromLang.toUpperCase()}), Target: ${toLang.toUpperCase()}`;
+  `Word: "${word}", Source: ${fromLang}, Target: ${toLang}`;

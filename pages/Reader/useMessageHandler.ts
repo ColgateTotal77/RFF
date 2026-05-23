@@ -6,6 +6,7 @@ import { useEpubNextBlock, useEpubPrevBlock, useProcessBookLinks } from 'lib/use
 import { calculateBookProgress } from 'lib/utils';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { View } from 'react-native';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 export const useMessageHandler = (
   webViewRef: RefObject<WebView | null>,
@@ -15,17 +16,13 @@ export const useMessageHandler = (
   const loadPrevBlock = useEpubPrevBlock(webViewRef, containerRef);
   const processBookLinks = useProcessBookLinks();
   const currentBook = useBookStore((state) => state.currentBook);
-  const setScrollPosition = useBookStore((state) => state.setScrollPosition);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const updateMisc = useBookStore((state) => state.updateMisc);
-  const setIsWebViewReady = useTempStore((state) => state.setIsWebViewReady);
-  const currentSearchResult = useTempStore((state) => state.currentSearchResult);
-  const isSearchOperation = useTempStore((state) => state.isSearchOperation);
-  const setIsSearchOperation = useTempStore((state) => state.setIsSearchOperation);
   const setSelectionMenu = useTempStore((state) => state.setSelectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
-  const jumpToSearchAction = useBookStore((state) => state.jumpToSearchAction);
   const { openSystemTranslator, addNewCard, updateWordTag } = useWordAction();
+  const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
+  const setIsWebViewReady = useWebViewStore((state) => state.setIsWebViewReady);
 
   return useCallback(
     async (event: WebViewMessageEvent) => {
@@ -60,7 +57,6 @@ export const useMessageHandler = (
 
             const percent = calculateBookProgress(
               currentBook,
-              parsedData.currentBlock,
               parsedData.currentBlockScrollPercent
             );
 
@@ -68,7 +64,6 @@ export const useMessageHandler = (
               percent,
               currentBlockScrollPercent: parsedData.currentBlockScrollPercent,
             });
-            setScrollPosition(parsedData.scrollPosition);
 
             if (parsedData.currentBlock !== currentBook.currentBlock)
               setCurrentBlock(parsedData.currentBlock);
@@ -76,6 +71,10 @@ export const useMessageHandler = (
             break;
 
           case 'INITIAL_LOAD_COMPLETE':
+            executeQueueActions();
+            break;
+
+          case 'QUEUE_ACTIONS_COMPLETE':
             setIsWebViewReady(true);
             break;
 
@@ -101,13 +100,6 @@ export const useMessageHandler = (
             closeMenu();
             break;
 
-          case 'SEARCH_HIGHLIGHT_COMPLETE':
-            if (currentSearchResult.occurrenceIndex > -1 && isSearchOperation) {
-              jumpToSearchAction(currentSearchResult.blockId, currentSearchResult.occurrenceIndex);
-              setIsSearchOperation(false);
-            }
-            break;
-
           case 'BOOK_LINK_PRESSED':
             const url = new URL(parsedData.href);
             const chapterId = parseInt(url.hostname);
@@ -126,14 +118,10 @@ export const useMessageHandler = (
       setSelectionMenu,
       closeMenu,
       currentBook,
-      jumpToSearchAction,
-      setScrollPosition,
       setCurrentBlock,
       updateMisc,
       setIsWebViewReady,
-      currentSearchResult,
-      isSearchOperation,
-      setIsSearchOperation,
+      executeQueueActions,
       openSystemTranslator,
       addNewCard,
       updateWordTag,

@@ -1,16 +1,18 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
-import { ChapterCard } from 'components/Sidebar/BookHeader/ChapterCard';
+import { ChapterCard } from './ChapterCard';
 import { TocItem } from 'types';
 import { calculateBookProgress } from 'lib/utils';
 import { useState, useEffect, useMemo } from 'react';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const currentBook = useCurrentBook();
-  const jumpToBlock = useBookStore((state) => state.jumpToBlock);
-  const scrollToBlockAction = useBookStore((state) => state.scrollToBlockAction);
   const updateMisc = useBookStore((state) => state.updateMisc);
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
+  const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
+  const loadWindow = useWebViewStore((state) => state.loadWindow);
 
   const { currentChapterId, currentChapter } = useMemo(() => {
     const chapterId = currentBook.blocks.find(
@@ -57,14 +59,15 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
     )?.id;
     if (!firstBlockId && firstBlockId !== 0) return;
 
-    if (currentBook.currentBlocks.find((b) => b === firstBlockId)) {
-      scrollToBlockAction(firstBlockId);
+    if (currentBook.currentBlocks.includes(firstBlockId)) {
+      setCurrentBlock(firstBlockId);
+      executeImmediateAction({ type: 'scrollToBlock', blockId: firstBlockId });
     } else {
-      jumpToBlock(firstBlockId);
+      loadWindow(firstBlockId, 0);
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, tocItem.chapterId, 0),
+      percent: calculateBookProgress(currentBook, 0),
     });
     onClose();
   };

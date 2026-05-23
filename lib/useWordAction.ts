@@ -3,6 +3,7 @@ import { Anki, BookEngine } from 'modules/book-engine';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { deepMerge } from 'lib/utils';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 interface UpdateWordTag {
   noteIds: string;
@@ -12,7 +13,7 @@ interface UpdateWordTag {
 export const useWordAction = () => {
   const currentBook = useCurrentBook();
   const settings = useBookStore((state) => state.settings);
-  const updateTagAction = useBookStore((state) => state.updateTagAction)!;
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
 
   const addNewCard = async (text: string) => {
     const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
@@ -25,7 +26,12 @@ export const useWordAction = () => {
         return;
       }
 
-      updateTagAction(cleanedText, '', '-1');
+      executeImmediateAction({
+        type: 'updateTag',
+        word: cleanedText,
+        noteIds: '',
+        colorCode: '-1',
+      });
 
       const metadata = await fetchWordMetadata(
         cleanedText,
@@ -62,11 +68,21 @@ export const useWordAction = () => {
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);
-        updateTagAction(metadata?.wordForms || cleanedText, noteIdsString, '1');
+        executeImmediateAction({
+          type: 'updateTag',
+          word: metadata?.wordForms || cleanedText,
+          noteIds: noteIdsString,
+          colorCode: '1',
+        });
       }
     } catch (error) {
       console.error('Anki error:', error);
-      updateTagAction(cleanedText, '', 'remove');
+      executeImmediateAction({
+        type: 'updateTag',
+        word: cleanedText,
+        noteIds: '',
+        colorCode: 'remove',
+      });
     }
   };
 
@@ -94,7 +110,12 @@ export const useWordAction = () => {
       const idsArray = JSON.parse(noteIds);
 
       Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`, 'New'], mapping, mirroredMapping);
-      updateTagAction(null, noteIds, newTagId);
+      executeImmediateAction({
+        type: 'updateTag',
+        word: null,
+        noteIds: noteIds,
+        colorCode: newTagId,
+      });
     } catch (error) {
       console.error('Anki error:', error);
     }

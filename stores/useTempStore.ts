@@ -1,16 +1,11 @@
-import { create } from 'zustand'
-import {
-  SelectionMenu,
-  SearchResult,
-} from 'types';
+import { create } from 'zustand';
+import { SelectionMenu, SearchResult } from 'types';
 
 type Store = {
   searchQuery: string;
   searchResults: SearchResult[];
   isSearchModuleOpen: boolean;
-  isWebViewReady: boolean;
   currentSearchResult: SearchResult;
-  isSearchOperation: boolean;
   selectionMenu: SelectionMenu;
 
   setSearchQuery: (searchQuery: string) => void;
@@ -18,8 +13,6 @@ type Store = {
   toggleIsSearchModuleOpen: () => void;
   setCurrentSearchResult: (searchResult: SearchResult) => void;
   resetSearch: () => void;
-  setIsWebViewReady: (isWebViewReady: boolean) => void;
-  setIsSearchOperation: (isSearchOperation: boolean) => void;
   setSelectionMenu: (menu: Partial<SelectionMenu>) => void;
   closeSelectionMenu: () => void;
 };
@@ -28,8 +21,6 @@ export const useTempStore = create<Store>()((set) => ({
   searchQuery: '',
   searchResults: [],
   isSearchModuleOpen: false,
-  isWebViewReady: false,
-  isSearchOperation: false,
   currentSearchResult: {
     id: -1,
     occurrenceIndex: -1,
@@ -58,14 +49,11 @@ export const useTempStore = create<Store>()((set) => ({
         blockId: -1,
         title: '',
         snippet: '',
-        query: ''
+        query: '',
       },
       searchQuery: '',
       searchResults: [],
-      isSearchOperation: false,
     }),
-  setIsWebViewReady: (isWebViewReady) => set({ isWebViewReady: isWebViewReady }),
-  setIsSearchOperation: (isSearchOperation) => set({ isSearchOperation: isSearchOperation }),
   setSelectionMenu: (menu) =>
     set((state) => ({ selectionMenu: { ...state.selectionMenu, ...menu } })),
   closeSelectionMenu: () =>

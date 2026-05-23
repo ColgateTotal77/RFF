@@ -47,13 +47,14 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
 
       const blockContents = splitHtmlIntoBlocks(processedHtml, globalBlockId);
 
-      const { newBlocks, chapterBlockIds, chapterAnchors, chapterCharCount } =
-        processChapterBlocks({
+      const { newBlocks, chapterBlockIds, chapterAnchors, chapterCharCount } = processChapterBlocks(
+        {
           blockContents,
           chapterId: chapter.id,
           startingBlockId: globalBlockId,
           blocksDir,
-        });
+        }
+      );
 
       blocks.push(...newBlocks);
       totalCharCount += chapterCharCount;
@@ -76,7 +77,7 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
     chapters.forEach((chapter, chapterIndex) => {
       chapter.charOffset = globalCharOffset;
 
-      for (const block of blocks.filter(b => b.chapterId === chapterIndex)) {
+      for (const block of blocks.filter((b) => b.chapterId === chapterIndex)) {
         block.charOffset = globalCharOffset;
         globalCharOffset += block.charCount;
         chapterCharCounts[chapterIndex] += block.charCount;
@@ -92,11 +93,11 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
         unzippedPath,
         opfDirName,
         manifestMap,
-        mapHrefChapterId
+        mapHrefChapterId,
       });
     }
 
-    const blockPath = blocks.map((block) => block.fullPath)
+    const blockPath = blocks.map((block) => block.fullPath);
 
     let detectedLanguage = await detectLanguage(blockPath);
 
@@ -120,9 +121,9 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
       chapters,
       toc,
       blocks,
+      bookmarks: [],
       currentBlocks: [0, 1],
       currentBlock: 0,
-      scrollPosition: 0,
       misc: {
         percent: 0,
         totalCharCount,

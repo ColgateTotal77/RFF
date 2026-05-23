@@ -4,13 +4,14 @@ import React from 'react';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 export const Footer = () => {
   const { colors } = useTheme();
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const resetSearch = useTempStore((state) => state.resetSearch);
-  const clearSearchAction = useBookStore((state) => state.clearSearchAction);
   const currentBook = useBookStore((state) => state.currentBook);
+  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
   const jumpToNext = useJumpToNextSearchResult();
   const jumpToPrev = useJumpToPrevSearchResult();
 
@@ -52,7 +53,7 @@ export const Footer = () => {
             mode="contained"
             icon="close"
             onPress={() => {
-              clearSearchAction();
+              executeImmediateAction({ type: 'clearSearch' });
               resetSearch();
             }}
             buttonColor={colors.errorContainer}

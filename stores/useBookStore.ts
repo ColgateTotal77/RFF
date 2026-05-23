@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, BookSettings, CurrentCTree, DeepPartial, Settings, Misc, Theme } from 'types';
+import { Book, BookSettings, Bookmark, CurrentCTree, DeepPartial, Settings, Misc } from 'types';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
 import { useAnkiStore } from './useAnkiStore';
+import { useWebViewStore } from './useWebViewStore';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -29,49 +30,23 @@ type Store = {
   books: Book[];
   currentBook: Book | null;
   settings: Settings;
-  lastJumpTo: number;
-  lastFragmentId: string;
   currentCTree: CurrentCTree | null;
 
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => void;
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
-  setLastFragmentId: (fragmentId: string) => void;
   setCurrentBlock: (currentBlock: number) => void;
   closeBook: () => void;
   removeBook: (basePath: string) => Promise<void>;
   toggleHaveRead: (basePath: string) => void;
   updateCurrentBlocks: (newBlocks: number[]) => void;
+  addBookmark: () => void;
+  removeBookmark: (id: number) => void;
 
   updateSettings: (toUpdate: DeepPartial<Settings>) => void;
   updateBookSettings: (toUpdate: DeepPartial<BookSettings>) => void;
-  setScrollPosition: (scrollY: number) => void;
   updateMisc: (misc: Partial<Misc>) => void;
-
-  webViewActions: {
-    scrollToBlock?: (index: number) => void;
-    jumpToSearch?: (currentBlock: number, occurrence: number) => void;
-    highlightAll?: (query: string, blocks: number[]) => void;
-    clearSearch?: () => void;
-    updateTag?: (word: string | string[] | null, noteIds: string, colorCode: string) => void;
-    updateFont?: (fontSize?: number, fontFamily?: string) => void;
-    updateTheme?: (theme: Theme) => void;
-    scrollToFragment?: (fragmentId: string) => void;
-  };
-
-  registerWebViewAction: <K extends keyof Store['webViewActions']>(
-    name: K,
-    fn: Store['webViewActions'][K]
-  ) => void;
-
-  scrollToBlockAction: (currentBlock: number) => void;
-  jumpToSearchAction: (currentBlock: number, occurrence: number) => void;
-  clearSearchAction: () => void;
-  updateTagAction: (words: string | string[] | null, noteIds: string, colorCode: string) => void;
-  updateFontAction: (fontSize?: number, fontFamily?: string) => void;
-  updateThemeAction: (theme: Theme) => void;
-  scrollToFragmentAction: (fragmentId: string) => void;
 };
 
 export const useBookStore = create<Store>()(
@@ -80,9 +55,6 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       currentCTree: null,
-      lastJumpTo: -1,
-      lastFragmentId: '',
-      webViewActions: {},
       settings: {
         ankiDeckId: '',
         ankiModelId: '',
@@ -107,7 +79,6 @@ export const useBookStore = create<Store>()(
 
           set((state) => ({
             currentBook: book,
-            lastJumpTo: -1,
             lastFragmentId: '',
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
@@ -155,7 +126,6 @@ export const useBookStore = create<Store>()(
 
           set((state) => ({
             currentBook: bookToOpen,
-            lastJumpTo: -1,
             lastFragmentId: '',
             books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
           }));
@@ -219,12 +189,6 @@ export const useBookStore = create<Store>()(
           };
         }),
 
-      setLastFragmentId: (fragmentId) =>
-        set((state) => ({
-          ...state,
-          lastFragmentId: fragmentId,
-        })),
-
       updateCurrentBlocks: (newBlocks) =>
         set((state) => {
           if (!state.currentBook) return state;
@@ -250,18 +214,6 @@ export const useBookStore = create<Store>()(
             ...state.currentBook,
             settings: deepMerge(state.currentBook.settings, toUpdate),
           };
-
-          return {
-            currentBook: updatedBook,
-            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
-          };
-        }),
-
-      setScrollPosition: (scrollY) =>
-        set((state) => {
-          if (!state.currentBook) return state;
-
-          const updatedBook = { ...state.currentBook, scrollPosition: scrollY };
 
           return {
             currentBook: updatedBook,
@@ -306,80 +258,64 @@ export const useBookStore = create<Store>()(
             ...state.currentBook,
             currentBlocks: newBlocksWindow,
             currentBlock,
-            currentBlockScrollPosition: 0,
+          };
+
+          useWebViewStore.getState().setIsWebViewReady(false);
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
+
+      addBookmark: () =>
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const bookmarks = state.currentBook.bookmarks || [];
+          const lastBookmarkId = bookmarks.length > 0 ? bookmarks[bookmarks.length - 1].id : 0;
+
+          const chapter = state.currentBook.toc.find(
+            (item) =>
+              item.chapterId ===
+              state.currentBook!.blocks.find(
+                (block) => block.id === state.currentBook!.currentBlock
+              )?.chapterId
+          );
+
+          const bookmark = {
+            id: lastBookmarkId + 1,
+            blockId: state.currentBook.currentBlock,
+            title: `${chapter?.title} - ${lastBookmarkId + 1}`,
+            scrollPercent: state.currentBook.misc.currentBlockScrollPercent,
+            createdAt: Date.now(),
+          };
+
+          const updatedBook = {
+            ...state.currentBook,
+            bookmarks: [...state.currentBook.bookmarks, bookmark],
           };
 
           return {
             currentBook: updatedBook,
             books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
-            lastJumpTo: currentBlock,
           };
         }),
 
-      registerWebViewAction: (name, fn) =>
-        set((state) => ({
-          webViewActions: { ...state.webViewActions, [name]: fn },
-        })),
-
-      updateFontAction: (fontSize, fontFamily) => {
-        get().webViewActions.updateFont?.(fontSize, fontFamily);
-      },
-
-      scrollToBlockAction: (currentBlock) => {
-        get().webViewActions.scrollToBlock?.(currentBlock);
+      removeBookmark: (id: number) =>
         set((state) => {
           if (!state.currentBook) return state;
 
           const updatedBook = {
             ...state.currentBook,
-            currentBlock,
-            currentBlockScrollPosition: 0,
+            bookmarks: [...state.currentBook.bookmarks.filter((bm) => bm.id !== id)],
           };
 
           return {
             currentBook: updatedBook,
             books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
           };
-        });
-      },
-
-      jumpToSearchAction: (currentBlock, occurrence) => {
-        get().webViewActions.jumpToSearch?.(currentBlock, occurrence);
-
-        set((state) => {
-          if (!state.currentBook || state.currentBook.currentBlock === currentBlock) return state;
-
-          const updatedBook = {
-            ...state.currentBook,
-            currentBlock,
-          };
-
-          return {
-            currentBook: updatedBook,
-            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
-          };
-        });
-      },
-
-      clearSearchAction: () => {
-        get().webViewActions.clearSearch?.();
-      },
-
-      updateTagAction: (words, noteIds, colorCode) => {
-        get().webViewActions.updateTag?.(words, noteIds, colorCode);
-      },
-
-      updateThemeAction: (theme: Theme) => {
-        get().webViewActions.updateTheme?.(theme);
-
-        set((state) => ({
-          settings: { ...state.settings, theme },
-        }));
-      },
-
-      scrollToFragmentAction: (fragmentId: string) => {
-        get().webViewActions.scrollToFragment?.(fragmentId);
-      },
+        }),
     }),
     {
       name: 'book-storage',

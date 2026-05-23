@@ -1,35 +1,33 @@
 <script>
-  window.addEventListener('load', function () {
-    const config = window.BookConfig || {};
-    const targetblockId = config.targetblockId || 0;
-    const scrollPosition = config.scrollPosition || 0;
+  function scrollToBlock(targetBlockId, blockScrollPercent) {
+    return new Promise((resolve) => {
+      var targetBlock = document.getElementById('block-' + targetBlockId);
 
-    var targetBlock = null;
-    if (targetblockId >= 0) {
-      targetBlock = document.getElementById('block-' + targetblockId);
-    }
-
-    if (targetBlock) {
       requestAnimationFrame(() => {
-        targetBlock.scrollIntoView({ behavior: 'instant', block: 'start' });
-        window.log('scroll: jumping to block ' + targetblockId);
+        requestAnimationFrame(() => {
+          if (blockScrollPercent != null && blockScrollPercent > 0) {
+            var top =
+              window.scrollY +
+              targetBlock.getBoundingClientRect().top +
+              targetBlock.offsetHeight * blockScrollPercent;
+            window.scrollTo({ top: top, behavior: 'instant' });
+            window.log(
+              'instantScroll: scrolling to block-' +
+                targetBlockId +
+                ' at ' +
+                blockScrollPercent +
+                '%'
+            );
+          } else {
+            var top = window.scrollY + targetBlock.getBoundingClientRect().top;
+            window.scrollTo({ top: top, behavior: 'instant' });
+            window.log('instantScroll: scrolling to block-' + targetBlockId + ' at 0%');
+          }
+          resolve(true);
+        });
       });
-    } else {
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollPosition);
-        window.log('scroll: scrolled to absolute position ' + scrollPosition);
-      });
-    }
-
-    setTimeout(function () {
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({
-          type: 'INITIAL_LOAD_COMPLETE',
-        })
-      );
-      window.log('scroll: initial load complete');
-    }, 0);
-  });
+    });
+  }
 
   let lastSentTime = 0;
   let ticking = false;
@@ -109,22 +107,10 @@
     { passive: true }
   );
 
-  window.scrollToBlock = function (blockId) {
-    var targetId = 'block-' + blockId;
-    var target = document.getElementById(targetId);
-
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      window.log('scrollToBlock: scrolling to ' + targetId);
-    } else {
-      window.error('scrollToBlock: block not found ' + targetId);
-    }
-  };
-
   window.scrollToFragment = function (fragmentId) {
     const element = document.getElementById(fragmentId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: 'instant', block: 'start' });
       window.log('scrollToFragment: scrolling to ' + fragmentId);
     } else {
       window.error('scrollToFragment: fragment not found ' + fragmentId);

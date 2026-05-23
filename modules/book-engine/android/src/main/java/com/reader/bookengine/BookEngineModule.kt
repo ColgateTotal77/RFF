@@ -324,7 +324,7 @@ class BookEngineModule : Module() {
             freeAnkiDictionary()
         }
 
-        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, options: Map<String, Any> ->
+        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, cssPaths: List<String>, options: Map<String, Any> ->
             try {
                 val t1 = System.currentTimeMillis()
 
@@ -342,7 +342,6 @@ class BookEngineModule : Module() {
                 val headEndIdx = header.indexOf("</head>", ignoreCase = true)
                 if (headEndIdx != -1) {
                     @Suppress("UNCHECKED_CAST")
-                    val cssPaths = (options["cssPaths"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                     val cssLinks = cssPaths.joinToString("\n") { path ->
                         """<link rel="stylesheet" href="$path">"""
                     }

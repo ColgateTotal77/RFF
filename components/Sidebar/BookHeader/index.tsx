@@ -1,26 +1,29 @@
 import { Appbar, TextInput } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
-import { MenuChapters } from 'components/Sidebar/BookHeader/MenuChapters';
 import { useCurrentBook } from 'stores/useBookStore';
 import { useState } from 'react';
 import { View, Modal } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
-import { MenuSearch } from 'components/Sidebar/BookHeader/MenuSearch';
 import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
+import BookHeaderNavigation from 'components/Sidebar/BookHeader/BookHeaderNavigation';
+import { MenuSearch } from 'components/Sidebar/BookHeader/Search';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
-  const [localQuery, setLocalQuery] = useState('');
+  const setSearchQuery = useTempStore((state) => state.setSearchQuery);
+  const searchQuery = useTempStore((state) => state.searchQuery);
+
   return (
     <TextInput
       placeholder="search..."
-      value={localQuery}
-      onChangeText={setLocalQuery}
+      value={searchQuery}
+      onChangeText={setSearchQuery}
       mode="flat"
       style={{ flex: 1 }}
       returnKeyType="search"
       autoCapitalize="none"
-      onSubmitEditing={() => onSubmit(localQuery)}
+      onSubmitEditing={() => onSubmit(searchQuery)}
     />
   );
 };
@@ -32,12 +35,28 @@ export const BookHeader = () => {
   const isSearchModuleOpen = useTempStore((state) => state.isSearchModuleOpen);
   const currentBook = useCurrentBook();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isChaptersMenuOpen, setIsChaptersMenuOpen] = useState(false);
   const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
+  const [isBookHeaderNavigationOpen, setIsBookHeaderNavigationOpen] = useState(false);
+  const setPostLoadQueue = useWebViewStore((state) => state.setPostLoadQueue);
+  const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
+  const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
 
   const onSearchSubmit = async (localQuery: string) => {
-    setSearchQuery(localQuery);
-    const results = await BookEngine.searchInBook(localQuery, currentBook.basePath);
+    const cleanedQuery = localQuery.trim();
+
+    setPostLoadQueue([{ type: 'clearSearch' }]);
+    if (cleanedQuery) {
+      addToPostLoadQueue({
+        type: 'highlightAll',
+        query: cleanedQuery,
+      });
+    }
+    executeQueueActions();
+
+    if (!cleanedQuery) return;
+
+    setSearchQuery(cleanedQuery);
+    const results = await BookEngine.searchInBook(cleanedQuery, currentBook.basePath);
     setSearchResults(results);
   };
 
@@ -53,22 +72,17 @@ export const BookHeader = () => {
           onBookSettingsOpen={() => setIsBookSettingsOpen(true)}
         />
 
-        <Appbar.Action icon="format-list-bulleted" onPress={() => setIsChaptersMenuOpen(true)} />
+        <Appbar.Action
+          icon="format-list-bulleted"
+          onPress={() => setIsBookHeaderNavigationOpen(true)}
+        />
       </Appbar.Header>
 
-      <Modal
-        visible={isChaptersMenuOpen}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setIsChaptersMenuOpen(false)}>
-        <View className="flex-1 bg-white">
-          <Appbar.Header className="bg-white">
-            <Appbar.Action icon="close" onPress={() => setIsChaptersMenuOpen(false)} />
-            <Appbar.Content title="Chapters" />
-          </Appbar.Header>
-          <MenuChapters onClose={() => setIsChaptersMenuOpen(false)} />
-        </View>
-      </Modal>
+      <BookHeaderNavigation
+        onClose={() => setIsBookHeaderNavigationOpen(false)}
+        isOpen={isBookHeaderNavigationOpen}
+        bookTitle={currentBook.title}
+      />
 
       <Modal
         visible={isSearchModuleOpen}
