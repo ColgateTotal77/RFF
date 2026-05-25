@@ -1,0 +1,58 @@
+{
+  "ankiTab": {
+    "title": "Інтеграція з Anki",
+    "connect": "Підключитися до AnkiDroid",
+    "connected": "✓ Підключено до AnkiDroid",
+    "decksLabel": "Колоди",
+    "modelLabel": "Модель",
+    "mirroredModelLabel": "Дзеркальна модель",
+    "fieldMapping": "Співставлення полів",
+    "mirroredFieldMapping": "Співставлення дзеркальних полів",
+    "fieldMappingLabel": "Поле застосунку \"{{fieldKey}}\" → Поле Anki:",
+    "twoSidedTitle": "Двостороння колода",
+    "twoSidedDescription": "Створювати дзеркальні картки (лицьова↔зворотна)"
+  },
+  "miscTab": {
+    "title": "Різне",
+    "bookLanguageLabel": "Мова книги",
+    "targetLanguageLabel": "Цільова мова",
+    "defaultTargetLanguageLabel": "Цільова мова за замовчуванням",
+    "appLanguageLabel": "Мова застосунку",
+    "autoCardTitle": "Автоматичне оновлення картки подвійним кліком",
+    "autoCardDescription": "При перекладі слова подвійним кліком також оновлювати/створювати картку"
+  },
+  "reader": {
+    "footer": {
+      "prev": "Попередня",
+      "clear": "Очистити",
+      "next": "Наступна",
+      "bookProgress": "Книга {{progress}}%",
+      "chapterProgress": "Розділ {{progress}}%"
+    },
+    "selectionMenu": {
+      "translate": "Перекласти",
+      "copy": "Копіювати",
+      "updateTag": "+F",
+      "anki": "Anki"
+    }
+  },
+  "bookHeader": {
+    "searchPlaceholder": "пошук...",
+    "bookSettings": "Налаштування книги",
+    "other": {
+      "switchTheme": "Змінити тему",
+      "addBookmark": "Додати закладку",
+      "settings": "Налаштування"
+    },
+    "navigation": {
+      "chapters": "Розділи",
+      "bookmarks": "Закладки"
+    }
+  },
+  "sidebar": {
+    "brand": "RFF",
+    "readingNow": "Зараз читаю",
+    "haveRead": "Прочитано",
+    "settings": "Налаштування"
+  }
+}

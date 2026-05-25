@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
   const { word, word_lang_code, translation_lang_code } = await req.json();
   const inputWord = word.toLowerCase();
 
-  let lemma = await getLemma(supabase, inputWord, word_lang_code)
+  let lemma = await getLemma(supabase, inputWord, word_lang_code);
 
   await checkWordInDB(supabase, word, word_lang_code, translation_lang_code);
 
@@ -47,7 +47,12 @@ Deno.serve(async (req) => {
     } catch (reversoError) {
       console.error('[Error] Reverso failed, calling Gemini:', reversoError);
       try {
-        apiResponse = await getGeminiData(lemma, word_lang_code, translation_lang_code, geminiApiKey);
+        apiResponse = await getGeminiData(
+          lemma,
+          word_lang_code,
+          translation_lang_code,
+          geminiApiKey
+        );
       } catch (geminiError) {
         console.error('[Error] Gemini failed, falling back to Groq:', geminiError);
         try {
@@ -72,7 +77,7 @@ Deno.serve(async (req) => {
     apiResponse,
     definition,
     word_lang_code,
-    translation_lang_code,
+    translation_lang_code
   );
 
   const wordForms = await getWordForms(supabase, newWord.word, word_lang_code);

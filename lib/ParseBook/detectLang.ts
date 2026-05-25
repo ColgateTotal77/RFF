@@ -1,8 +1,8 @@
 import { File } from 'expo-file-system';
 import { franc } from 'franc';
-import { normalizeLanguageCode } from 'lib/utils';
+import { LanguageCode, normalizeLanguageCode } from 'lib/langHelper';
 
-export const detectLanguage = async (blocksPaths: string[]): Promise<(string | null)> => {
+export const detectLanguage = async (blocksPaths: string[]): Promise<LanguageCode | null> => {
   let sampleText = '';
   for (const blockPath of blocksPaths) {
     const blockFile = new File('file://' + blockPath);

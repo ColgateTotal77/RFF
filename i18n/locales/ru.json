@@ -1,0 +1,58 @@
+{
+  "ankiTab": {
+    "title": "Интеграция с Anki",
+    "connect": "Подключиться к AnkiDroid",
+    "connected": "✓ Подключено к AnkiDroid",
+    "decksLabel": "Колоды",
+    "modelLabel": "Модель",
+    "mirroredModelLabel": "Зеркальная модель",
+    "fieldMapping": "Сопоставление полей",
+    "mirroredFieldMapping": "Сопоставление зеркальных полей",
+    "fieldMappingLabel": "Поле приложения \"{{fieldKey}}\" → Поле Anki:",
+    "twoSidedTitle": "Двусторонняя колода",
+    "twoSidedDescription": "Создавать зеркальные карточки (лицо↔оборот)"
+  },
+  "miscTab": {
+    "title": "Разное",
+    "bookLanguageLabel": "Язык книги",
+    "targetLanguageLabel": "Целевой язык",
+    "defaultTargetLanguageLabel": "Целевой язык по умолчанию",
+    "appLanguageLabel": "Язык приложения",
+    "autoCardTitle": "Автообновление карточки по двойному клику",
+    "autoCardDescription": "При переводе слова двойным кликом также обновлять/создавать карточку"
+  },
+  "reader": {
+    "footer": {
+      "prev": "Пред.",
+      "clear": "Очистить",
+      "next": "След.",
+      "bookProgress": "Книга {{progress}}%",
+      "chapterProgress": "Глава {{progress}}%"
+    },
+    "selectionMenu": {
+      "translate": "Перевести",
+      "copy": "Копировать",
+      "updateTag": "+F",
+      "anki": "Anki"
+    }
+  },
+  "bookHeader": {
+    "searchPlaceholder": "поиск...",
+    "bookSettings": "Настройки книги",
+    "other": {
+      "switchTheme": "Сменить тему",
+      "addBookmark": "Добавить закладку",
+      "settings": "Настройки"
+    },
+    "navigation": {
+      "chapters": "Главы",
+      "bookmarks": "Закладки"
+    }
+  },
+  "sidebar": {
+    "brand": "RFF",
+    "readingNow": "Читаю сейчас",
+    "haveRead": "Прочитано",
+    "settings": "Настройки"
+  }
+}

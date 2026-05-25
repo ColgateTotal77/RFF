@@ -9,11 +9,9 @@ import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
 import { useMessageHandler } from './useMessageHandler';
 import { Loading } from 'components/Loading';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
-  const closeBook = useBookStore((state) => state.closeBook);
   const registerWebViewAction = useWebViewStore((state) => state.registerWebViewAction);
   const webViewSource = useWebViewStore((state) => state.webViewSource);
   const resetWebView = useWebViewStore((state) => state.resetWebView);
@@ -29,8 +27,6 @@ export const ReaderScreen = () => {
   const webViewRef = useRef<WebView>(null);
   const containerRef = useRef<View>(null);
 
-  const insets = useSafeAreaInsets();
-
   const activeBookmark = useMemo(() => {
     if (!currentBook) return null;
     return (currentBook.bookmarks ?? []).find(
@@ -45,14 +41,16 @@ export const ReaderScreen = () => {
   ]);
 
   useEffect(() => {
-    if (!currentBook) return;
-    loadWindow(currentBook.currentBlock, currentBook.misc.currentBlockScrollPercent);
+    if (currentBook) {
+      console.log('loadWindow');
+      loadWindow(currentBook.currentBlock, currentBook.misc.currentBlockScrollPercent);
+    }
 
     return () => {
       resetWebView();
       resetSearch();
       closeMenu();
-      closeBook();
+      console.log('closeBook');
     };
   }, [currentBook?.basePath]);
 
@@ -98,28 +96,30 @@ export const ReaderScreen = () => {
         </View>
       )}
 
-      <IconButton
-        icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
-        size={28}
-        iconColor={colors.primary}
-        className="rounded-none"
-        style={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          zIndex: 50,
-          elevation: 5,
-          borderRadius: 8,
-        }}
-        onPress={() => {
-          if (activeBookmark) removeBookmark(activeBookmark.id);
-          else addBookmark();
-        }}
-      />
+      {!isLoading && (
+        <IconButton
+          icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
+          size={28}
+          iconColor={colors.primary}
+          className="rounded-none"
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 50,
+            elevation: 5,
+            borderRadius: 8,
+          }}
+          onPress={() => {
+            if (activeBookmark) removeBookmark(activeBookmark.id);
+            else addBookmark();
+          }}
+        />
+      )}
 
       {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
 
-      <Footer />
+      {!isLoading && <Footer />}
     </View>
   );
 };

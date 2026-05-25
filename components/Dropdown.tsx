@@ -2,17 +2,22 @@ import { useState, useRef } from 'react';
 import { Button, Text } from 'react-native-paper';
 import { View, Modal, TouchableOpacity, FlatList, StyleSheet, Dimensions } from 'react-native';
 
-interface Props {
+interface DropdownOption<T extends string> {
+  id: T;
+  name: string;
+}
+
+interface Props<T extends string> {
   label?: string;
-  value: string | undefined;
-  options: { id: string; name: string }[];
-  onSelect: (id: string) => void;
+  value: any | undefined;
+  options: DropdownOption<T>[];
+  onSelect: (id: T) => void;
   isLoading?: boolean;
   placeholder?: string;
   isGrayed?: boolean;
 }
 
-export const Dropdown = (props: Props) => {
+export const Dropdown = <T extends string>(props: Props<T>) => {
   const {
     label,
     value,
@@ -24,7 +29,14 @@ export const Dropdown = (props: Props) => {
   } = props;
 
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownLayout, setDropdownLayout] = useState({ x: 0, y: 0, width: 0, height: 0, shouldPositionAbove: false, dropdownHeight: 0 });
+  const [dropdownLayout, setDropdownLayout] = useState({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    shouldPositionAbove: false,
+    dropdownHeight: 0,
+  });
   const buttonRef = useRef<View>(null);
 
   const selectedOption = options.find((o) => o.id === value);

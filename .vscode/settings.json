@@ -1,0 +1,20 @@
+{
+  "cSpell.words": [
+    "androidx",
+    "anki",
+    "Anki",
+    "bookengine",
+    "ichi",
+    "jboolean",
+    "jint",
+    "jlong",
+    "JNICALL",
+    "JNIEXPORT",
+    "jobject",
+    "jsize",
+    "jword",
+    "kotlinx",
+    "thiz"
+  ],
+  "i18n-ally.localesPaths": ["i18n", "i18n/locales"]
+}

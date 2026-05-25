@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, BookSettings, Bookmark, CurrentCTree, DeepPartial, Settings, Misc } from 'types';
+import { Book, BookSettings, CurrentCTree, DeepPartial, Settings, Misc } from 'types';
 import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
 import { useAnkiStore } from './useAnkiStore';
 import { useWebViewStore } from './useWebViewStore';
+import i18n from 'i18n';
+import { LanguageCode } from 'lib/langHelper';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -63,19 +65,16 @@ export const useBookStore = create<Store>()(
         mirroredFieldMappings: {},
         isTwoSided: false,
         autoCardOnDoubleTap: false,
-        targetLang: 'en',
+        targetLang: i18n.language as LanguageCode,
         font: { fontSize: 30, fontFamily: 'Georgia, serif' },
         theme: 'light',
       },
 
       loadBook: async (uri: string) => {
-        set({ currentBook: null });
+        get().closeBook();
 
         try {
-          const { settings } = get();
           const book = await parseBook(uri);
-
-          book.settings.targetLang = settings.targetLang;
 
           set((state) => ({
             currentBook: book,
@@ -88,7 +87,8 @@ export const useBookStore = create<Store>()(
       },
 
       openBook: async (basePath: string) => {
-        set({ currentBook: null });
+        get().closeBook();
+
         const { books, settings, currentCTree } = get();
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;

@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { Dropdown } from 'components/Dropdown';
 import { Text } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { FIELD_MAPPING_KEYS, FieldMapping } from 'types';
 
 interface FieldMappingSectionProps {
@@ -11,11 +12,12 @@ interface FieldMappingSectionProps {
   onUpdate: (partialMapping: Partial<FieldMapping>) => void;
 }
 
-const isInherited = (bookValue: any) => bookValue === undefined;
+const isInherited = (bookValue: unknown) => bookValue === undefined;
 
 export const FieldMappingSection = (props: FieldMappingSectionProps) => {
   const { title, fieldMapping, defaultFieldMapping, fields, onUpdate } = props;
   const defaults: Partial<FieldMapping> = defaultFieldMapping ?? {};
+  const { t } = useTranslation('translation', { keyPrefix: 'ankiTab' });
 
   const optionsWithNone = [
     { id: '', name: 'None' },
@@ -36,7 +38,7 @@ export const FieldMappingSection = (props: FieldMappingSectionProps) => {
       {FIELD_MAPPING_KEYS.map((key) => (
         <Dropdown
           key={key}
-          label={`App field "${key}" → Anki field:`}
+          label={t('fieldMappingLabel', { fieldKey: key })}
           value={getEffectiveValue(key)?.toString() ?? ''}
           options={optionsWithNone}
           onSelect={(idx) => {

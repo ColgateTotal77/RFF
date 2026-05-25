@@ -1,6 +1,6 @@
 import { Appbar, Divider, Menu } from 'react-native-paper';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { useMemo } from 'react';
+import { useBookStore } from 'stores/useBookStore';
+import { useTranslation } from 'react-i18next';
 import { useWebViewStore } from 'stores/useWebViewStore';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 
 export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose, onBookSettingsOpen } = props;
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.other' });
   const settings = useBookStore((state) => state.settings);
   const addBookmark = useBookStore((state) => state.addBookmark);
   const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
@@ -32,7 +33,7 @@ export const Other = (props: Props) => {
             theme: settings.theme === 'dark' ? 'light' : 'dark',
           });
         }}
-        title="Switch Theme"
+        title={t('switchTheme')}
       />
       <Divider />
 
@@ -41,10 +42,10 @@ export const Other = (props: Props) => {
           addBookmark();
           onClose();
         }}
-        title="Add Bookmark"
+        title={t('addBookmark')}
       />
       <Divider />
-      <Menu.Item onPress={() => onBookSettingsOpen()} title="Settings" />
+      <Menu.Item onPress={() => onBookSettingsOpen()} title={t('settings')} />
     </Menu>
   );
 };

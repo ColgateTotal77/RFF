@@ -10,7 +10,10 @@
               window.scrollY +
               targetBlock.getBoundingClientRect().top +
               targetBlock.offsetHeight * blockScrollPercent;
-            window.scrollTo({ top: top, behavior: 'instant' });
+
+            var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
+            window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
+
             window.log(
               'instantScroll: scrolling to block-' +
                 targetBlockId +
@@ -20,7 +23,9 @@
             );
           } else {
             var top = window.scrollY + targetBlock.getBoundingClientRect().top;
-            window.scrollTo({ top: top, behavior: 'instant' });
+
+            var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
+            window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
             window.log('instantScroll: scrolling to block-' + targetBlockId + ' at 0%');
           }
           resolve(true);
@@ -58,7 +63,6 @@
       JSON.stringify({
         type: 'SCROLL_POSITION_CHANGED',
         currentBlock: actualblockId,
-        scrollPosition: window.scrollY,
         currentBlockScrollPercent: currentBlockScrollPercent,
       })
     );
@@ -110,7 +114,10 @@
   window.scrollToFragment = function (fragmentId) {
     const element = document.getElementById(fragmentId);
     if (element) {
-      element.scrollIntoView({ behavior: 'instant', block: 'start' });
+      var top = window.scrollY + element.getBoundingClientRect().top;
+
+      var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
+      window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
       window.log('scrollToFragment: scrolling to ' + fragmentId);
     } else {
       window.error('scrollToFragment: fragment not found ' + fragmentId);

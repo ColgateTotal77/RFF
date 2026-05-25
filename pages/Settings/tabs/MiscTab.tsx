@@ -1,30 +1,40 @@
 import { List, Switch, Text } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { useBookStore } from 'stores/useBookStore';
 import { Dropdown } from 'components/Dropdown';
-import { LANGUAGE_OPTIONS } from 'lib/constants';
+import i18n, { changeLanguage } from 'i18n';
+import { APP_LANGUAGE_OPTIONS, BOOK_LANGUAGE_OPTIONS } from 'lib/langHelper';
 
 export const MiscTab = () => {
   const {
     settings: { autoCardOnDoubleTap, targetLang },
     updateSettings,
   } = useBookStore();
+  const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
 
   return (
     <>
       <Text variant="titleMedium" className="font-bold">
-        Misc
+        {t('title')}
       </Text>
 
       <Dropdown
-        label="Default target language"
+        label={t('defaultTargetLanguageLabel')}
         value={targetLang}
-        options={LANGUAGE_OPTIONS.map((l) => ({ id: l.code, name: l.name }))}
+        options={BOOK_LANGUAGE_OPTIONS}
         onSelect={(value) => updateSettings({ targetLang: value })}
       />
 
+      <Dropdown
+        label={t('appLanguageLabel')}
+        value={i18n.language}
+        options={APP_LANGUAGE_OPTIONS}
+        onSelect={(value) => changeLanguage(value)}
+      />
+
       <List.Item
-        title="Auto card update on double click"
-        description="When you translate word on double click also update/create card"
+        title={t('autoCardTitle')}
+        description={t('autoCardDescription')}
         right={() => (
           <Switch
             value={autoCardOnDoubleTap}

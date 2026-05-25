@@ -1,6 +1,7 @@
 import { Modal, View } from 'react-native';
 import { useState } from 'react';
 import { Appbar, SegmentedButtons } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { MenuChapters } from './MenuChapters';
 import { MenuBookmarks } from './MenuBookmarks';
 
@@ -16,6 +17,7 @@ const BookHeaderNavigation = ({
   bookTitle: string;
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey>('chapters');
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
 
   return (
     <Modal
@@ -41,8 +43,8 @@ const BookHeaderNavigation = ({
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as TabKey)}
             buttons={[
-              { value: 'chapters', label: 'Chapters' },
-              { value: 'bookmarks', label: 'Bookmarks' },
+              { value: 'chapters', label: t('chapters') },
+              { value: 'bookmarks', label: t('bookmarks') },
             ]}
           />
         </View>

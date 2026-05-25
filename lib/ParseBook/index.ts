@@ -9,6 +9,8 @@ import { processChapterDom } from 'lib/ParseBook/processChapterDom';
 import { processChapterBlocks } from 'lib/ParseBook/processChapterBlock';
 import { extractToc } from 'lib/ParseBook/extractToc';
 import { detectLanguage } from 'lib/ParseBook/detectLang';
+import i18n from 'i18n';
+import { LanguageCode } from 'lib/langHelper';
 
 export const parseBook = async (bookUri: string): Promise<Book> => {
   try {
@@ -115,8 +117,8 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
       basePath,
       cssPaths,
       settings: {
-        bookLang: detectedLanguage ? detectedLanguage : bookLanguage,
-        targetLang: '',
+        bookLang: detectedLanguage || bookLanguage || 'en',
+        targetLang: i18n.language as LanguageCode,
       },
       chapters,
       toc,

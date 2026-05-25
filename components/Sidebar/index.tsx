@@ -8,19 +8,33 @@ import { DrawerTab, RootStackParamList } from 'types';
 import { BookHeader } from 'components/Sidebar/BookHeader';
 import { useBookStore } from 'stores/useBookStore';
 import { BookListScreen } from 'pages/BookLists';
+import { useTranslation } from 'react-i18next';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
-const ReadingNowScreen = () => (
-  <BookListScreen filterFn={(book) => !book.misc.haveRead} toggleLabel="Reading Now" />
-);
+const ReadingNowScreen = () => {
+  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
+  return (
+    <BookListScreen
+      filterFn={(book) => !book.misc.haveRead}
+      toggleLabel={t('readingNow')}
+    />
+  );
+};
 
-const HaveReadScreen = () => (
-  <BookListScreen filterFn={(book) => book.misc.haveRead} toggleLabel="Have Read" />
-);
+const HaveReadScreen = () => {
+  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
+  return (
+    <BookListScreen
+      filterFn={(book) => book.misc.haveRead}
+      toggleLabel={t('haveRead')}
+    />
+  );
+};
 
 export const Sidebar = () => {
   const currentBook = useBookStore((state) => state.currentBook);
+  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
 
   return (
     <Drawer.Navigator
@@ -33,9 +47,9 @@ export const Sidebar = () => {
           return <Header navigation={navigation} title={getHeaderTitle(options, route.name)} />;
         },
       }}>
-      <Drawer.Screen name="Reading Now" component={ReadingNowScreen} />
-      <Drawer.Screen name="Have Read" component={HaveReadScreen} />
-      <Drawer.Screen name="Settings" component={SettingsScreen} />
+      <Drawer.Screen name="Reading Now" component={ReadingNowScreen} options={{ title: t('readingNow') }} />
+      <Drawer.Screen name="Have Read" component={HaveReadScreen} options={{ title: t('haveRead') }} />
+      <Drawer.Screen name="Settings" component={SettingsScreen} options={{ title: t('settings') }} />
       <Drawer.Screen
         name="Reader"
         component={ReaderScreen}

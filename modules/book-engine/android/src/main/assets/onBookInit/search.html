@@ -96,7 +96,9 @@
       target.classList.add('active-match');
       var targetRect = target.getBoundingClientRect();
       var top = window.scrollY + targetRect.top - window.innerHeight / 2 + targetRect.height / 2;
-      window.scrollTo({ top: top, behavior: 'instant' });
+
+      var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
+      window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
     } else {
       window.log(
         'jumpToSearch: target not found (search-match-' + blockId + '-' + occurrenceIndex + ')',

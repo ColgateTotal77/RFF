@@ -1,12 +1,14 @@
 import { View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 
 export const Footer = () => {
+  const { t } = useTranslation('translation', { keyPrefix: 'reader.footer' });
   const { colors } = useTheme();
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const resetSearch = useTempStore((state) => state.resetSearch);
@@ -46,7 +48,7 @@ export const Footer = () => {
             onPress={jumpToPrev}
             contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
             className="rounded-full">
-            Prev
+            {t('prev')}
           </Button>
 
           <Button
@@ -60,7 +62,7 @@ export const Footer = () => {
             textColor={colors.onErrorContainer}
             contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
             className="rounded-full">
-            Clear
+            {t('clear')}
           </Button>
 
           <Button
@@ -69,7 +71,7 @@ export const Footer = () => {
             onPress={jumpToNext}
             contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
             className="rounded-full">
-            Next
+            {t('next')}
           </Button>
         </View>
       ) : (
@@ -98,10 +100,10 @@ export const Footer = () => {
 
           <View className="flex-row justify-between">
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              Book {bookProgress}%
+              {t('bookProgress', { progress: bookProgress })}
             </Text>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              Chapter {chapterProgress}%
+              {t('chapterProgress', { progress: chapterProgress })}
             </Text>
           </View>
         </View>

@@ -1,12 +1,11 @@
 import { File } from 'expo-file-system';
 import { XMLParser } from 'fast-xml-parser';
-import { normalizeLanguageCode } from 'lib/utils';
-
+import { LanguageCode, normalizeLanguageCode } from 'lib/langHelper';
 interface Response {
   title: string;
   author: string;
   coverPath: string | undefined;
-  language: string;
+  language: LanguageCode;
   absoluteBasePath: string;
   basePath: string;
   opfDirName: string;

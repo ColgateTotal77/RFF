@@ -1,12 +1,13 @@
 import { View } from 'react-native';
 import { Dropdown } from 'components/Dropdown';
 import { Text, Switch, List, Button } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { useAnkiStore } from 'stores/useAnkiStore';
-import { updateNestedMapping } from 'lib/utils';
-const isInherited = (bookValue: any) => bookValue === undefined;
+
+const isInherited = (bookValue: unknown) => bookValue === undefined;
 
 export const AnkiTab = () => {
   const currentBook = useCurrentBook();
@@ -19,6 +20,7 @@ export const AnkiTab = () => {
   const fields = useAnkiStore((state) => state.bookFields);
   const mirroredFields = useAnkiStore((state) => state.bookMirroredFields);
   const loadFieldsInto = useAnkiStore((state) => state.loadFieldsInto);
+  const { t } = useTranslation('translation', { keyPrefix: 'ankiTab' });
 
   const getInheritedValue = <T,>(bookValue: T | undefined, globalValue: T) => {
     return bookValue !== undefined ? bookValue : globalValue;
@@ -50,27 +52,27 @@ export const AnkiTab = () => {
   return (
     <>
       <Text variant="titleMedium" className="font-bold">
-        Anki Integration
+        {t('title')}
       </Text>
 
       {!hasPermission ? (
         <Button mode="contained" onPress={requestPermission} icon="database-plus">
-          Connect to AnkiDroid
+          {t('connect')}
         </Button>
       ) : (
         <>
           <View>
-            <Text className="text-green-700">✓ Connected to AnkiDroid</Text>
+            <Text className="text-green-700">{t('connected')}</Text>
 
             <Dropdown
-              label="Decks"
+              label={t('decksLabel')}
               value={ankiDeckId}
               options={decks}
               onSelect={(value) => updateBookSettings({ ankiDeckId: value })}
               isGrayed={isInherited(currentBook.settings.ankiDeckId)}
             />
             <Dropdown
-              label="Model"
+              label={t('modelLabel')}
               value={ankiModelId}
               options={models}
               onSelect={async (value) => {
@@ -89,7 +91,7 @@ export const AnkiTab = () => {
           {fields.length > 0 && (
             <>
               <FieldMappingSection
-                title="Field Mapping"
+                title={t('fieldMapping')}
                 fieldMapping={currentBook.settings.fieldMapping}
                 defaultFieldMapping={
                   settings.fieldMappings[`${settings.ankiDeckId}:${settings.ankiModelId}`]
@@ -99,8 +101,8 @@ export const AnkiTab = () => {
               />
 
               <List.Item
-                title="Two-sided deck"
-                description="Create mirrored cards (front↔back)"
+                title={t('twoSidedTitle')}
+                description={t('twoSidedDescription')}
                 titleStyle={
                   isInherited(currentBook.settings.isTwoSided) ? { color: '#9ca3af' } : undefined
                 }
@@ -118,7 +120,7 @@ export const AnkiTab = () => {
               {isTwoSided && (
                 <>
                   <Dropdown
-                    label="Mirrored Model"
+                    label={t('mirroredModelLabel')}
                     value={mirroredAnkiModelId}
                     options={models}
                     onSelect={async (value) => {
@@ -134,7 +136,7 @@ export const AnkiTab = () => {
                     isGrayed={isInherited(currentBook.settings.mirroredAnkiModelId)}
                   />
                   <FieldMappingSection
-                    title="Mirrored Field Mapping"
+                    title={t('mirroredFieldMapping')}
                     fieldMapping={currentBook.settings.mirroredFieldMapping}
                     defaultFieldMapping={
                       settings.mirroredFieldMappings[

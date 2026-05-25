@@ -2,19 +2,21 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer, Text } from 'react-native-paper';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
+import { useTranslation } from 'react-i18next';
 
 export const SidebarContent = (props: DrawerContentComponentProps) => {
   const activeRouteName = props.state.routes[props.state.index].name;
+  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="items-center py-6">
-        <Text className="mt-2 text-xl font-bold">RFF</Text>
+        <Text className="mt-2 text-xl font-bold">{t('brand')}</Text>
       </View>
 
       <Drawer.Section className="flex gap-2 px-2">
         <Drawer.Item
-          label="Reading Now"
+          label={t('readingNow')}
           icon="home"
           active={activeRouteName === 'Reading Now'}
           onPress={() => {
@@ -23,7 +25,7 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
           className="rounded-lg"
         />
         <Drawer.Item
-          label="Have Read"
+          label={t('haveRead')}
           icon="book"
           active={activeRouteName === 'Have Read'}
           onPress={() => {
@@ -35,7 +37,7 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
 
       <Drawer.Section showDivider={false} className="px-2">
         <Drawer.Item
-          label="Settings"
+          label={t('settings')}
           icon="cog"
           active={activeRouteName === 'Settings'}
           onPress={() => {

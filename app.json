@@ -9,7 +9,9 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [],
+    "plugins": [
+      "expo-localization"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +20,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.colgatetotal77.RFF"
@@ -28,7 +32,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["com.ichi2.anki.permission.READ_WRITE_DATABASE"],
+      "permissions": [
+        "com.ichi2.anki.permission.READ_WRITE_DATABASE"
+      ],
       "package": "com.colgatetotal77.RFF"
     },
     "extra": {

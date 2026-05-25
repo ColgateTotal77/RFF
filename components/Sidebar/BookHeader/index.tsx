@@ -9,14 +9,16 @@ import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
 import BookHeaderNavigation from 'components/Sidebar/BookHeader/BookHeaderNavigation';
 import { MenuSearch } from 'components/Sidebar/BookHeader/Search';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { useTranslation } from 'react-i18next';
 
 const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
   const setSearchQuery = useTempStore((state) => state.setSearchQuery);
   const searchQuery = useTempStore((state) => state.searchQuery);
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   return (
     <TextInput
-      placeholder="search..."
+      placeholder={t('searchPlaceholder')}
       value={searchQuery}
       onChangeText={setSearchQuery}
       mode="flat"
@@ -40,6 +42,7 @@ export const BookHeader = () => {
   const setPostLoadQueue = useWebViewStore((state) => state.setPostLoadQueue);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   const onSearchSubmit = async (localQuery: string) => {
     const cleanedQuery = localQuery.trim();
@@ -105,7 +108,7 @@ export const BookHeader = () => {
         <View className="flex-1 bg-white">
           <Appbar.Header className="bg-white">
             <Appbar.Action icon="close" onPress={() => setIsBookSettingsOpen(false)} />
-            <Appbar.Content title="Book Settings" />
+            <Appbar.Content title={t('bookSettings')} />
           </Appbar.Header>
           <BookSettings />
         </View>

@@ -1,5 +1,6 @@
 import { Button, Surface } from 'react-native-paper';
 import { View, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useWordAction } from 'lib/useWordAction';
 import { useTempStore } from 'stores/useTempStore';
 import { type SelectionMenu as SelectedMenu } from 'types';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const SelectionMenu = ({ selectionMenu }: Props) => {
+  const { t } = useTranslation('translation', { keyPrefix: 'reader.selectionMenu' });
   const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator } = useWordAction();
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
   const { width: screenWidth } = Dimensions.get('window');
@@ -64,7 +66,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         className="px-1"
         style={{ borderRadius: 0 }}
         onPress={async () => await openSystemTranslator(selectionMenu.text)}>
-        Translate
+        {t('translate')}
       </Button>
 
       <View className="mx-1 h-6 w-[1px] bg-gray-500" />
@@ -77,7 +79,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         className="px-1"
         style={{ borderRadius: 0 }}
         onPress={onCopy}>
-        Copy
+        {t('copy')}
       </Button>
 
       <View className="mx-1 h-6 w-[1px] bg-gray-500" />
@@ -90,7 +92,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
           className="px-1"
           style={{ borderRadius: 0 }}
           onPress={onUpdateTagPress}>
-          +F
+        {t('updateTag')}
         </Button>
       ) : (
         <Button
@@ -101,7 +103,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
           className="px-1"
           style={{ borderRadius: 0 }}
           onPress={onAddNewCardPress}>
-          Anki
+        {t('anki')}
         </Button>
       )}
     </Surface>

@@ -24,7 +24,7 @@ export const getGPTData = async (
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
@@ -88,7 +88,7 @@ Return STRICT JSON (no markdown, no commentary):
 
 EXAMPLES
 
-Word: "bank", Source: english Target: russian
+Word: "bank", Source language: English, Target language: Russian
 {
   "source_synonyms": ["financial institution", "shore"],
   "source_examples": [
@@ -99,7 +99,7 @@ Word: "bank", Source: english Target: russian
   "target_translations": ["банк", "берег", "наклонять"]
 }
 
-Word: "vol", Source: french, Target: german
+Word: "vol", Source language: French, Target language: German
 {
   "source_synonyms": ["larcin", "trajet"],
   "source_examples": [
@@ -109,7 +109,7 @@ Word: "vol", Source: french, Target: german
   "target_translations": ["Flug", "Diebstahl"]
 }
 
-Word: "Kühlschrank", Source: german, Target: english
+Word: "Kühlschrank", Source language: German, Target language: English
 {
   "source_synonyms": ["Kühlgerät", "Eisschrank"],
   "source_examples": [
@@ -118,7 +118,7 @@ Word: "Kühlschrank", Source: german, Target: english
   "target_translations": ["refrigerator / fridge"]
 }
 
-Word: "tomar", Source: spanish, Target: english
+Word: "tomar", Source language: Spanish, Target language: English
 {
   "source_synonyms": ["coger", "agarrar"],
   "source_examples": [
@@ -127,6 +127,58 @@ Word: "tomar", Source: spanish, Target: english
     "Toma este libro, creo que te va a gustar mucho."
   ],
   "target_translations": ["to take", "to drink", "to grab"]
+}
+
+Word: "piano", Source language: Italian, Target language: English
+{
+  "source_synonyms": ["progetto", "lentamente", "livello"],
+  "source_examples": [
+    "Parla più piano per favore, i bambini stanno dormendo.",
+    "Il mio ufficio si trova al terzo piano dell'edificio.",
+    "Dobbiamo elaborare un nuovo piano per risolvere questo problema."
+  ],
+  "target_translations": ["slowly / softly", "floor / level", "plan / strategy"]
+}
+
+Word: "мир", Source language: Russian, Target language: English
+{
+  "source_synonyms": ["вселенная", "перемирие"],
+  "source_examples": [
+    "Они мечтают отправиться в путешествие и увидеть весь мир.",
+    "После долгих переговоров две страны наконец-то заключили мир."
+  ],
+  "target_translations": ["world", "peace"]
+}
+
+Word: "ponto", Source language: Portuguese, Target language: Italian
+{
+  "source_synonyms": ["marca", "parada", "momento"],
+  "source_examples": [
+    "Ele desenhou um pequeno ponto preto no centro da folha branca.",
+    "O médico teve que dar um ponto no meu dedo machucado.",
+    "Eu te encontro no ponto de ônibus às cinco da tarde."
+  ],
+  "target_translations": ["punto", "punto di cucitura", "fermata dell'autobus"]
+}
+
+Word: "weer", Source language: Dutch, Target language: French
+{
+  "source_synonyms": ["opnieuw", "klimaat"],
+  "source_examples": [
+    "Het weer is vandaag erg mooi voor een lange wandeling.",
+    "Ik heb mijn sleutels weer op de keukentafel laten liggen."
+  ],
+  "target_translations": ["temps / météo", "encore / à nouveau"]
+}
+
+Word: "голова", Source language: Ukrainian, Target language: German
+{
+  "source_synonyms": ["керівник", "очільник", "шеф"],
+  "source_examples": [
+    "Після вчорашньої довгої поїздки у мене дуже сильно болить голова.",
+    "Голова сільської ради скликав термінове засідання для вирішення цього питання."
+  ],
+  "target_translations": ["Kopf", "Vorsitzender / Leiter"]
 }
 
 RULES
@@ -139,4 +191,4 @@ RULES
 - "source_synonyms": up to 3 synonyms of the most common sense, in the Source Language. Empty array if none.`;
 
 const userPrompt = (word: string, fromLang: string, toLang: string) =>
-  `Word: "${word}", Source: ${fromLang}, Target: ${toLang}`;
+  `Word: "${word}", Source language: ${fromLang}, Target language: ${toLang}`;

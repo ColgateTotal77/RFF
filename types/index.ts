@@ -1,5 +1,5 @@
 import { DrawerNavigationProp } from '@react-navigation/drawer';
-
+import { LanguageCode } from 'lib/langHelper';
 export type RootStackParamList = {
   'Reading Now': undefined;
   Settings: undefined;
@@ -104,8 +104,8 @@ export interface BookSettings {
   mirroredFieldMapping?: FieldMapping;
   isTwoSided?: boolean;
   autoCardOnDoubleTap?: boolean;
-  bookLang: string;
-  targetLang: string;
+  bookLang: LanguageCode;
+  targetLang: LanguageCode;
   font?: Font;
 }
 
@@ -117,7 +117,7 @@ export interface Settings {
   mirroredFieldMappings: Record<string, FieldMapping>;
   isTwoSided: boolean;
   autoCardOnDoubleTap: boolean;
-  targetLang: string;
+  targetLang: LanguageCode;
   font: Font;
   theme: Theme;
 }
@@ -134,7 +134,7 @@ export interface SearchResult {
 }
 
 export interface CurrentCTree {
-  langCode: string;
+  langCode: LanguageCode;
   deckId: string;
 }
 

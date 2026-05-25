@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { Dropdown } from 'components/Dropdown';
 import { Text, Button, Switch, List } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { useBookStore } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
@@ -26,6 +27,7 @@ export const AnkiTab = () => {
   const fields = useAnkiStore((state) => state.fields);
   const mirroredFields = useAnkiStore((state) => state.mirroredFields);
   const loadFieldsInto = useAnkiStore((state) => state.loadFieldsInto);
+  const { t } = useTranslation('translation', { keyPrefix: 'ankiTab' });
 
   const key = `${ankiDeckId}:${ankiModelId}`;
   const mirroredKey = `${ankiDeckId}:${mirroredAnkiModelId}`;
@@ -49,19 +51,19 @@ export const AnkiTab = () => {
   return (
     <>
       <Text variant="titleMedium" className="font-bold">
-        Anki Integration
+        {t('title')}
       </Text>
 
       {!hasPermission ? (
         <Button mode="contained" onPress={requestPermission} icon="database-plus">
-          Connect to AnkiDroid
+          {t('connect')}
         </Button>
       ) : (
         <View>
-          <Text className="text-green-700">✓ Connected to AnkiDroid</Text>
+          <Text className="text-green-700">{t('connected')}</Text>
 
           <Dropdown
-            label="Decks"
+            label={t('decksLabel')}
             value={ankiDeckId}
             options={decks}
             onSelect={(value) => {
@@ -69,7 +71,7 @@ export const AnkiTab = () => {
             }}
           />
           <Dropdown
-            label="Model"
+            label={t('modelLabel')}
             value={ankiModelId}
             options={models}
             onSelect={async (value) => {
@@ -88,15 +90,15 @@ export const AnkiTab = () => {
       {fields.length > 0 && (
         <>
           <FieldMappingSection
-            title="Field Mapping"
+            title={t('fieldMapping')}
             fieldMapping={fieldMappings[key]}
             fields={fields}
             onUpdate={updateFieldMapping}
           />
 
           <List.Item
-            title="Two-sided deck"
-            description="Create mirrored cards (front↔back)"
+            title={t('twoSidedTitle')}
+            description={t('twoSidedDescription')}
             right={() => (
               <Switch
                 value={isTwoSided}
@@ -108,7 +110,7 @@ export const AnkiTab = () => {
           {isTwoSided && (
             <>
               <Dropdown
-                label="Mirrored Model"
+                label={t('mirroredModelLabel')}
                 value={mirroredAnkiModelId}
                 options={models}
                 onSelect={async (value) => {
@@ -124,7 +126,7 @@ export const AnkiTab = () => {
                 }}
               />
               <FieldMappingSection
-                title="Mirrored Field Mapping"
+                title={t('mirroredFieldMapping')}
                 fieldMapping={mirroredFieldMappings[mirroredKey]}
                 fields={mirroredFields}
                 onUpdate={updateMirroredFieldMapping}

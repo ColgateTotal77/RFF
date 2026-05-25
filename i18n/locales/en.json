@@ -1,0 +1,58 @@
+{
+  "ankiTab": {
+    "title": "Anki Integration",
+    "connect": "Connect to AnkiDroid",
+    "connected": "✓ Connected to AnkiDroid",
+    "decksLabel": "Decks",
+    "modelLabel": "Model",
+    "mirroredModelLabel": "Mirrored Model",
+    "fieldMapping": "Field Mapping",
+    "mirroredFieldMapping": "Mirrored Field Mapping",
+    "fieldMappingLabel": "App field \"{{fieldKey}}\" → Anki field:",
+    "twoSidedTitle": "Two-sided deck",
+    "twoSidedDescription": "Create mirrored cards (front↔back)"
+  },
+  "miscTab": {
+    "title": "Misc",
+    "bookLanguageLabel": "Book language",
+    "targetLanguageLabel": "Target language",
+    "defaultTargetLanguageLabel": "Default target language",
+    "appLanguageLabel": "App Language",
+    "autoCardTitle": "Auto card update on double click",
+    "autoCardDescription": "When you translate word on double click also update/create card"
+  },
+  "reader": {
+    "footer": {
+      "prev": "Prev",
+      "clear": "Clear",
+      "next": "Next",
+      "bookProgress": "Book {{progress}}%",
+      "chapterProgress": "Chapter {{progress}}%"
+    },
+    "selectionMenu": {
+      "translate": "Translate",
+      "copy": "Copy",
+      "updateTag": "+F",
+      "anki": "Anki"
+    }
+  },
+  "bookHeader": {
+    "searchPlaceholder": "search...",
+    "bookSettings": "Book Settings",
+    "other": {
+      "switchTheme": "Switch Theme",
+      "addBookmark": "Add Bookmark",
+      "settings": "Settings"
+    },
+    "navigation": {
+      "chapters": "Chapters",
+      "bookmarks": "Bookmarks"
+    }
+  },
+  "sidebar": {
+    "brand": "RFF",
+    "readingNow": "Reading Now",
+    "haveRead": "Have Read",
+    "settings": "Settings"
+  }
+}
