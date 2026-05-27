@@ -1,15 +1,16 @@
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Drawer, Text } from 'react-native-paper';
+import { Drawer, Text, useTheme } from 'react-native-paper';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useTranslation } from 'react-i18next';
 
 export const SidebarContent = (props: DrawerContentComponentProps) => {
+  const theme = useTheme();
   const activeRouteName = props.state.routes[props.state.index].name;
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View className="items-center py-6">
         <Text className="mt-2 text-xl font-bold">{t('brand')}</Text>
       </View>

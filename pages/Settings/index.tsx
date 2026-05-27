@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { View, ScrollView } from 'react-native';
-import { SegmentedButtons } from 'react-native-paper';
 import { MiscTab } from 'pages/Settings/tabs/MiscTab';
 import { AnkiTab } from 'pages/Settings/tabs/AnkiTab';
+import { SegmentedButtons } from 'components/ui/SegmentedButtons';
+import { useTheme } from 'react-native-paper';
 
 type TabKey = 'anki' | 'misc';
 
 export const SettingsScreen = () => {
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState<TabKey>('anki');
 
   return (
-    <View className="flex-1 bg-white dark:bg-[#1e1e1e]">
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <SegmentedButtons
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as TabKey)}
@@ -18,14 +20,12 @@ export const SettingsScreen = () => {
           { value: 'anki', label: 'Anki' },
           { value: 'misc', label: 'Misc' },
         ]}
-        style={{ margin: 16 }}
+        style={{ marginHorizontal: 16, marginBottom: 16 }}
       />
 
-      <ScrollView className="flex-1">
-        <View className="gap-4 p-4">
-          {activeTab === 'anki' && <AnkiTab />}
-          {activeTab === 'misc' && <MiscTab />}
-        </View>
+      <ScrollView>
+        {activeTab === 'anki' && <AnkiTab />}
+        {activeTab === 'misc' && <MiscTab />}
       </ScrollView>
     </View>
   );

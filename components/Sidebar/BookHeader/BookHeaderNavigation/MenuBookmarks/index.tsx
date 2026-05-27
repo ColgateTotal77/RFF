@@ -48,7 +48,7 @@ export const MenuBookmarks = ({ onClose }: Props) => {
       data={currentBook.bookmarks || []}
       keyExtractor={(bookmark) => bookmark.id.toString()}
       renderItem={renderBookmarkCard}
-      contentContainerClassName="p-4 gap-4"
+      contentContainerClassName="gap-4 p-4"
       initialNumToRender={15}
     />
   );

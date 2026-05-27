@@ -1,8 +1,9 @@
-import { Card, IconButton, Text } from 'react-native-paper';
+import { Card, Text } from 'react-native-paper';
 import { View } from 'react-native';
 import React from 'react';
 import { Bookmark } from 'types';
 import { useBookStore } from 'stores/useBookStore';
+import { IconButton } from 'components/ui/IconButton';
 
 interface Props {
   bookmark: Bookmark;

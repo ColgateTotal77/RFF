@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Dropdown } from 'components/Dropdown';
+import { Dropdown } from 'components/ui/Dropdown';
 import { Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { FIELD_MAPPING_KEYS, FieldMapping } from 'types';

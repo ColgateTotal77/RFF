@@ -103,18 +103,16 @@ export const useWordAction = () => {
       currentBook.settings.mirroredFieldMapping || {}
     );
 
-    const newTagIdNum = Number(colorCode) + 1;
-    if (newTagIdNum > 8) return;
-    const newTagId = String(newTagIdNum);
+    if (Number(colorCode) > 8) return;
     try {
       const idsArray = JSON.parse(noteIds);
 
-      Anki.updateNoteTags(idsArray, [`Lookups_${newTagId}`, 'New'], mapping, mirroredMapping);
+      Anki.updateNoteTags(idsArray, [`Lookups_${colorCode}`, 'New'], mapping, mirroredMapping);
       executeImmediateAction({
         type: 'updateTag',
         word: null,
         noteIds: noteIds,
-        colorCode: newTagId,
+        colorCode: colorCode,
       });
     } catch (error) {
       console.error('Anki error:', error);
@@ -133,7 +131,22 @@ export const useWordAction = () => {
     }
   };
 
-  return { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator };
+  const deleteNote = async (noteIds: string, word: string) => {
+    const idsArray = JSON.parse(noteIds);
+    try {
+      await Anki.deleteNote(idsArray);
+      executeImmediateAction({
+        type: 'updateTag',
+        word,
+        noteIds: noteIds,
+        colorCode: 'remove',
+      });
+    } catch (error) {
+      console.error('Anki error:', error);
+    }
+  };
+
+  return { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator, deleteNote };
 };
 
 const formatExamples = (examples: string[]) => {

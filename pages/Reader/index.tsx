@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { IconButton, useTheme } from 'react-native-paper';
+import { useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { useTempStore } from 'stores/useTempStore';
 import { Footer } from 'pages/Reader/Footer';
 import { useMessageHandler } from './useMessageHandler';
-import { Loading } from 'components/Loading';
+import { Loading } from 'components/ui/Loading';
+import { IconButton } from 'components/ui/IconButton';
 
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
@@ -22,7 +23,7 @@ export const ReaderScreen = () => {
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
   const addBookmark = useBookStore((state) => state.addBookmark);
   const removeBookmark = useBookStore((state) => state.removeBookmark);
-  const { colors } = useTheme();
+  const theme = useTheme();
 
   const webViewRef = useRef<WebView>(null);
   const containerRef = useRef<View>(null);
@@ -65,7 +66,10 @@ export const ReaderScreen = () => {
   const isLoading = !webViewSource || !currentBook || !isWebViewReady;
 
   return (
-    <View ref={containerRef} collapsable={false} className="flex-1 bg-white dark:bg-black">
+    <View
+      ref={containerRef}
+      collapsable={false}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}>
       {webViewSource && currentBook && (
         <WebView
           ref={webViewRef}
@@ -91,7 +95,7 @@ export const ReaderScreen = () => {
       )}
 
       {isLoading && (
-        <View className="absolute inset-0 z-50 flex-1 items-center justify-center bg-white dark:bg-black">
+        <View className="absolute inset-0 z-50 flex-1 items-center justify-center ">
           <Loading />
         </View>
       )}
@@ -100,15 +104,13 @@ export const ReaderScreen = () => {
         <IconButton
           icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
           size={28}
-          iconColor={colors.primary}
-          className="rounded-none"
+          iconColor={theme.colors.primary}
           style={{
             position: 'absolute',
             top: 16,
             right: 16,
             zIndex: 50,
             elevation: 5,
-            borderRadius: 8,
           }}
           onPress={() => {
             if (activeBookmark) removeBookmark(activeBookmark.id);

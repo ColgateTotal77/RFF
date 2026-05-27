@@ -19,7 +19,9 @@
     "defaultTargetLanguageLabel": "Default target language",
     "appLanguageLabel": "App Language",
     "autoCardTitle": "Auto card update on double click",
-    "autoCardDescription": "When you translate word on double click also update/create card"
+    "autoCardDescription": "When you translate word on double click also update/create card",
+    "themeTitle": "Theme",
+    "themeDescription": "Switch between light and dark mode"
   },
   "reader": {
     "footer": {
@@ -30,10 +32,8 @@
       "chapterProgress": "Chapter {{progress}}%"
     },
     "selectionMenu": {
-      "translate": "Translate",
-      "copy": "Copy",
-      "updateTag": "+F",
-      "anki": "Anki"
+      "deleteNote": "Delete note",
+      "decreaseTag": "Decrease tag"
     }
   },
   "bookHeader": {

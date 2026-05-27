@@ -9,10 +9,9 @@ import { processChapterDom } from 'lib/ParseBook/processChapterDom';
 import { processChapterBlocks } from 'lib/ParseBook/processChapterBlock';
 import { extractToc } from 'lib/ParseBook/extractToc';
 import { detectLanguage } from 'lib/ParseBook/detectLang';
-import i18n from 'i18n';
 import { LanguageCode } from 'lib/langHelper';
 
-export const parseBook = async (bookUri: string): Promise<Book> => {
+export const parseBook = async (bookUri: string, targetLang: LanguageCode): Promise<Book> => {
   try {
     const unzippedPath = await unzipEpubBook(bookUri);
 
@@ -118,7 +117,7 @@ export const parseBook = async (bookUri: string): Promise<Book> => {
       cssPaths,
       settings: {
         bookLang: detectedLanguage || bookLanguage || 'en',
-        targetLang: i18n.language as LanguageCode,
+        targetLang,
       },
       chapters,
       toc,

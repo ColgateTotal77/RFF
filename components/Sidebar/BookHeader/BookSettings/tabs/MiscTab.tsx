@@ -1,5 +1,5 @@
 import { Text, Switch, List } from 'react-native-paper';
-import { Dropdown } from 'components/Dropdown';
+import { Dropdown } from 'components/ui/Dropdown';
 import { useTranslation } from 'react-i18next';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { View } from 'react-native';
@@ -13,7 +13,7 @@ export const MiscTab = () => {
   const { updateBookSettings } = useBookStore();
 
   return (
-    <>
+    <View className="gap-4 p-4">
       <Text variant="titleMedium" className="font-bold">
         {t('title')}
       </Text>
@@ -43,6 +43,6 @@ export const MiscTab = () => {
           />
         )}
       />
-    </>
+    </View>
   );
 };

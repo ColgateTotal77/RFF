@@ -1,4 +1,4 @@
-import { PaperProvider } from 'react-native-paper';
+import { DefaultTheme, MD3DarkTheme, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Sidebar } from 'components/Sidebar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -55,10 +55,12 @@ export default function App() {
     checkAnkiPermission();
   }, []);
 
+  const isDarkMode = settings.theme === 'dark';
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <PaperProvider>
+        <PaperProvider theme={isDarkMode ? MD3DarkTheme : DefaultTheme}>
           <AppContent />
         </PaperProvider>
       </NavigationContainer>

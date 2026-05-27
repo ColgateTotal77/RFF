@@ -1,7 +1,9 @@
-import { Appbar, Divider, Menu } from 'react-native-paper';
+import { Divider, Menu } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { useTranslation } from 'react-i18next';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { AppbarAction } from 'components/ui/AppbarAction';
+import { useAppStore } from 'stores/useAppStore';
 
 interface Props {
   isOpen: boolean;
@@ -13,28 +15,17 @@ interface Props {
 export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose, onBookSettingsOpen } = props;
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.other' });
-  const settings = useBookStore((state) => state.settings);
   const addBookmark = useBookStore((state) => state.addBookmark);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
-  const updateSettings = useBookStore((state) => state.updateSettings);
+  const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   return (
     <Menu
       visible={isOpen}
       onDismiss={onClose}
-      anchor={<Appbar.Action icon="dots-vertical" onPress={onOpen} />}
+      anchor={<AppbarAction icon="dots-vertical" onPress={onOpen} />}
       anchorPosition={'bottom'}
       elevation={1}>
-      <Menu.Item
-        onPress={() => {
-          updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' });
-          executeImmediateAction({
-            type: 'setTheme',
-            theme: settings.theme === 'dark' ? 'light' : 'dark',
-          });
-        }}
-        title={t('switchTheme')}
-      />
+      <Menu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />
       <Divider />
 
       <Menu.Item

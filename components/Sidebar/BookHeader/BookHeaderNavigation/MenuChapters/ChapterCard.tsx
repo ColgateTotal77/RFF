@@ -1,8 +1,8 @@
-import { Card, Text, IconButton } from 'react-native-paper';
+import { Card, Text, useTheme } from 'react-native-paper';
 import { View } from 'react-native';
 import React from 'react';
 import { TocItem } from 'types';
-
+import { IconButton } from 'components/ui/IconButton';
 interface Props {
   tocItem: TocItem;
   hasChildren: boolean;
@@ -20,21 +20,20 @@ export const ChapterCard = ({
   onPress,
   onToggle,
 }: Props) => {
-
-  const indentStyle = { marginLeft: (tocItem.level) * 16 };
-  const textColor = isCurrentChapter ? 'text-white' : 'text-black';
-  const iconColor = isCurrentChapter ? '#ffffff' : '#6b7280';
-  const backgroundColor = isCurrentChapter ? { backgroundColor: '#1e40af' } : undefined;
+  const theme = useTheme();
+  const indentStyle = { marginLeft: tocItem.level * 16 };
+  const backgroundColor = isCurrentChapter
+    ? { backgroundColor: theme.colors.secondaryContainer }
+    : undefined;
 
   return (
     <Card style={[backgroundColor, indentStyle]} onPress={onPress}>
       <View className="flex flex-row items-center justify-between p-4">
-        <Text className={textColor}>{tocItem.title}</Text>
+        <Text>{tocItem.title}</Text>
 
         {hasChildren && (
           <IconButton
             icon={isExpanded ? 'chevron-down' : 'chevron-right'}
-            iconColor={iconColor}
             onPress={onToggle}
             size={20}
           />

@@ -1,10 +1,13 @@
-import { Button, Surface } from 'react-native-paper';
+import { Menu, Surface, useTheme } from 'react-native-paper';
 import { View, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useWordAction } from 'lib/useWordAction';
 import { useTempStore } from 'stores/useTempStore';
 import { type SelectionMenu as SelectedMenu } from 'types';
 import { useState } from 'react';
+import { Button } from 'components/ui/Button';
+import { AppbarAction } from 'components/ui/AppbarAction';
+import { IconButton } from 'components/ui/IconButton';
 
 interface Props {
   selectionMenu: SelectedMenu;
@@ -12,19 +15,31 @@ interface Props {
 
 export const SelectionMenu = ({ selectionMenu }: Props) => {
   const { t } = useTranslation('translation', { keyPrefix: 'reader.selectionMenu' });
-  const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator } = useWordAction();
+  const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator, deleteNote } =
+    useWordAction();
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
   const { width: screenWidth } = Dimensions.get('window');
   const [menuWidth, setMenuWidth] = useState(0);
   const [menuHeight, setMenuHeight] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
 
   const onUpdateTagPress = () => {
     updateWordTag({
       noteIds: selectionMenu.noteIds!,
-      colorCode: selectionMenu.colorCode!,
+      colorCode: String(Number(selectionMenu.colorCode!) + 1),
     });
     closeMenu();
   };
+
+  const onDecreaseTagPress = () => {
+    updateWordTag({
+      noteIds: selectionMenu.noteIds!,
+      colorCode: String(Number(selectionMenu.colorCode!) - 1),
+    });
+    closeMenu();
+  };
+
+  const theme = useTheme();
 
   const onAddNewCardPress = () => {
     addNewCard(selectionMenu.text);
@@ -36,21 +51,32 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
     closeMenu();
   };
 
+  const onDeleteNotePress = () => {
+    deleteNote(selectionMenu.noteIds!, selectionMenu.text);
+    closeMenu();
+  };
+
   return (
     <Surface
       elevation={1}
-      className="absolute z-50 flex-row items-center rounded-lg border border-gray-500 bg-gray-800 px-2 py-2"
-      style={{
-        opacity: menuWidth === 0 ? 0 : 1,
-        top:
-          selectionMenu.top - menuHeight < 0
-            ? selectionMenu.top - menuHeight + 110
-            : selectionMenu.top - menuHeight - 5,
-        left: Math.max(
-          10,
-          Math.min(selectionMenu.left - menuWidth / 2, screenWidth - menuWidth - 10)
-        ),
-      }}
+      className="absolute z-50 flex-row items-center rounded-lg border"
+      style={[
+        {
+          opacity: menuWidth === 0 ? 0 : 1,
+          top:
+            selectionMenu.top - menuHeight < 0
+              ? selectionMenu.top - menuHeight + 110
+              : selectionMenu.top - menuHeight - 5,
+          left: Math.max(
+            10,
+            Math.min(selectionMenu.left - menuWidth / 2, screenWidth - menuWidth - 10)
+          ),
+        },
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.outline,
+        },
+      ]}
       onLayout={(e) => {
         const newWidth = Math.round(e.nativeEvent.layout.width);
         const newHeight = Math.round(e.nativeEvent.layout.height);
@@ -58,54 +84,72 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         if (Math.abs(menuWidth - newWidth) > 1) setMenuWidth(newWidth);
         if (Math.abs(menuHeight - newHeight) > 1) setMenuHeight(newHeight);
       }}>
-      <Button
-        mode="text"
-        textColor="white"
+      <IconButton
         icon="translate"
-        compact={true}
-        className="px-1"
-        style={{ borderRadius: 0 }}
-        onPress={async () => await openSystemTranslator(selectionMenu.text)}>
-        {t('translate')}
-      </Button>
+        onPress={async () => await openSystemTranslator(selectionMenu.text)}></IconButton>
 
-      <View className="mx-1 h-6 w-[1px] bg-gray-500" />
+      <View
+        style={{
+          marginHorizontal: 4,
+          height: 24,
+          width: 1,
+          backgroundColor: theme.colors.outline,
+        }}
+      />
 
-      <Button
-        mode="text"
-        textColor="white"
-        icon="content-copy"
-        compact={true}
-        className="px-1"
-        style={{ borderRadius: 0 }}
-        onPress={onCopy}>
-        {t('copy')}
-      </Button>
+      <IconButton icon="content-copy" onPress={onCopy}></IconButton>
 
-      <View className="mx-1 h-6 w-[1px] bg-gray-500" />
+      <View
+        style={{
+          marginHorizontal: 4,
+          height: 24,
+          width: 1,
+          backgroundColor: theme.colors.outline,
+        }}
+      />
       {selectionMenu.noteIds ? (
         <Button
           mode="text"
-          textColor="white"
-          icon="tag-plus"
+          textColor={theme.colors.onSurface}
           compact={true}
-          className="px-1"
-          style={{ borderRadius: 0 }}
+          contentStyle={{ paddingHorizontal: 4, paddingVertical: 0 }}
           onPress={onUpdateTagPress}>
-        {t('updateTag')}
+          +F
         </Button>
       ) : (
-        <Button
-          mode="text"
-          textColor="white"
-          icon="plus-circle"
-          compact={true}
-          className="px-1"
-          style={{ borderRadius: 0 }}
-          onPress={onAddNewCardPress}>
-        {t('anki')}
-        </Button>
+        <IconButton icon="plus-circle" onPress={onAddNewCardPress}></IconButton>
       )}
+
+      <View
+        style={{
+          marginHorizontal: 4,
+          height: 24,
+          width: 1,
+          backgroundColor: theme.colors.outline,
+        }}
+      />
+
+      <Menu
+        visible={isOpen}
+        onDismiss={() => setIsOpen(false)}
+        anchor={<AppbarAction icon="dots-vertical" onPress={() => setIsOpen(true)} />}
+        anchorPosition={'bottom'}
+        elevation={1}>
+        {selectionMenu.noteIds && (
+          <>
+            <Menu.Item onPress={() => onDeleteNotePress()} title={t('deleteNote')} />
+            {selectionMenu.colorCode && Number(selectionMenu.colorCode) > 0 && (
+              <>
+                <View
+                  style={{ marginHorizontal: 4, height: 1, backgroundColor: theme.colors.outline }}
+                />
+                <Menu.Item onPress={() => onDecreaseTagPress()} title={t('decreaseTag')} />
+              </>
+            )}
+          </>
+        )}
+        <Menu.Item title="?????" />
+      </Menu>
     </Surface>
   );
 };

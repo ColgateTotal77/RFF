@@ -19,7 +19,9 @@
     "defaultTargetLanguageLabel": "Целевой язык по умолчанию",
     "appLanguageLabel": "Язык приложения",
     "autoCardTitle": "Автообновление карточки по двойному клику",
-    "autoCardDescription": "При переводе слова двойным кликом также обновлять/создавать карточку"
+    "autoCardDescription": "При переводе слова двойным кликом также обновлять/создавать карточку",
+    "themeTitle": "Тема",
+    "themeDescription": "Переключить между светлой и тёмной темой"
   },
   "reader": {
     "footer": {
@@ -30,10 +32,8 @@
       "chapterProgress": "Глава {{progress}}%"
     },
     "selectionMenu": {
-      "translate": "Перевести",
-      "copy": "Копировать",
-      "updateTag": "+F",
-      "anki": "Anki"
+      "deleteNote": "Удалить заметку",
+      "decreaseTag": "Уменьшить тег"
     }
   },
   "bookHeader": {

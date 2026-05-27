@@ -1,19 +1,23 @@
 import { List, Switch, Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useBookStore } from 'stores/useBookStore';
-import { Dropdown } from 'components/Dropdown';
+import { Dropdown } from 'components/ui/Dropdown';
 import i18n, { changeLanguage } from 'i18n';
 import { APP_LANGUAGE_OPTIONS, BOOK_LANGUAGE_OPTIONS } from 'lib/langHelper';
+import { View } from 'react-native';
+import { useAppStore } from 'stores/useAppStore';
 
 export const MiscTab = () => {
   const {
-    settings: { autoCardOnDoubleTap, targetLang },
+    settings: { autoCardOnDoubleTap, targetLang, theme: currentTheme },
     updateSettings,
   } = useBookStore();
+  const toggleTheme = useAppStore((state) => state.toggleTheme);
+
   const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
 
   return (
-    <>
+    <View className="gap-4 p-4">
       <Text variant="titleMedium" className="font-bold">
         {t('title')}
       </Text>
@@ -42,6 +46,12 @@ export const MiscTab = () => {
           />
         )}
       />
-    </>
+
+      <List.Item
+        title={t('themeTitle')}
+        description={t('themeDescription')}
+        right={() => <Switch value={currentTheme === 'dark'} onValueChange={() => toggleTheme()} />}
+      />
+    </View>
   );
 };

@@ -60,6 +60,7 @@ export const getGPTData = async (
         },
       },
       temperature: 0.2,
+      prompt_cache_key: 'card_data_generator',
     }),
   });
 
@@ -70,6 +71,19 @@ export const getGPTData = async (
   }
 
   const data = await response.json();
+
+  console.log(
+    'Token Usage:',
+    JSON.stringify(
+      {
+        total_prompt_tokens: data.usage?.prompt_tokens,
+        cached_tokens: data.usage?.prompt_tokens_details?.cached_tokens,
+      },
+      null,
+      2
+    )
+  );
+
   const flatData = JSON.parse(data.choices[0].message.content) as AiResponse;
 
   return {
@@ -179,6 +193,25 @@ Word: "голова", Source language: Ukrainian, Target language: German
     "Голова сільської ради скликав термінове засідання для вирішення цього питання."
   ],
   "target_translations": ["Kopf", "Vorsitzender / Leiter"]
+}
+
+Word: "手紙", Source language: Japanese, Target language: English
+{
+  "source_synonyms": ["文書", "メッセージ"],
+  "source_examples": [
+    "祖母に長い手紙を書いて、近況を伝えました。"
+  ],
+  "target_translations": ["letter"]
+}
+
+Word: "عين", Source language: Arabic, Target language: English
+{
+  "source_synonyms": ["بصر", "ينبوع"],
+  "source_examples": [
+    "فتحت عيني ببطء عندما سمعت صوت المطر على النافذة.",
+    "وجدنا عيناً صافية في وسط الصحراء الجافة."
+  ],
+  "target_translations": ["eye", "spring / water source"]
 }
 
 RULES

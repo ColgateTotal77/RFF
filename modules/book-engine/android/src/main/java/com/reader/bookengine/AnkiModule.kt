@@ -200,5 +200,21 @@ class AnkiModule : Module() {
                 if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
             }
         }
+
+        AsyncFunction("deleteNote") { noteIds: LongArray ->
+            val context = appContext.reactContext ?: throw Exception("React context is null")
+
+            try {
+                val baseUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
+
+                for (noteId in noteIds) {
+                    val noteUri = Uri.withAppendedPath(baseUri, noteId.toString())
+                    val deletedRows = context.contentResolver.delete(noteUri, null, null)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("BookEngine", "Failed to delete Anki notes", e)
+                throw Exception("Failed to delete Anki notes: ${e.message}")
+            }
+        }
     }
 }

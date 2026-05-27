@@ -1,4 +1,4 @@
-import { Appbar, TextInput } from 'react-native-paper';
+import { Appbar, TextInput, useTheme } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
 import { useCurrentBook } from 'stores/useBookStore';
 import { useState } from 'react';
@@ -10,8 +10,10 @@ import BookHeaderNavigation from 'components/Sidebar/BookHeader/BookHeaderNaviga
 import { MenuSearch } from 'components/Sidebar/BookHeader/Search';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTranslation } from 'react-i18next';
+import { AppbarAction } from 'components/ui/AppbarAction';
 
 const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
+  const theme = useTheme();
   const setSearchQuery = useTempStore((state) => state.setSearchQuery);
   const searchQuery = useTempStore((state) => state.searchQuery);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
@@ -22,7 +24,7 @@ const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
       value={searchQuery}
       onChangeText={setSearchQuery}
       mode="flat"
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
       returnKeyType="search"
       autoCapitalize="none"
       onSubmitEditing={() => onSubmit(searchQuery)}
@@ -31,6 +33,7 @@ const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
 };
 
 export const BookHeader = () => {
+  const theme = useTheme();
   const setSearchQuery = useTempStore((state) => state.setSearchQuery);
   const toggleIsSearchModuleOpen = useTempStore((state) => state.toggleIsSearchModuleOpen);
   const setSearchResults = useTempStore((state) => state.setSearchResults);
@@ -65,9 +68,9 @@ export const BookHeader = () => {
 
   return (
     <>
-      <Appbar.Header className="bg-white">
+      <Appbar.Header style={{ backgroundColor: theme.colors.background }}>
         <Appbar.Content title={currentBook?.title} />
-        <Appbar.Action icon="magnify" onPress={toggleIsSearchModuleOpen} />
+        <AppbarAction icon="magnify" onPress={toggleIsSearchModuleOpen} />
         <Other
           isOpen={isMenuOpen}
           onOpen={() => setIsMenuOpen(true)}
@@ -75,7 +78,7 @@ export const BookHeader = () => {
           onBookSettingsOpen={() => setIsBookSettingsOpen(true)}
         />
 
-        <Appbar.Action
+        <AppbarAction
           icon="format-list-bulleted"
           onPress={() => setIsBookHeaderNavigationOpen(true)}
         />
@@ -92,9 +95,9 @@ export const BookHeader = () => {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={toggleIsSearchModuleOpen}>
-        <View className="flex-1 bg-white">
-          <Appbar.Header className="bg-white">
-            <Appbar.Action icon="close" onPress={toggleIsSearchModuleOpen} />
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <Appbar.Header>
+            <AppbarAction icon="close" onPress={toggleIsSearchModuleOpen} />
             <SearchInput onSubmit={onSearchSubmit} />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
@@ -105,9 +108,9 @@ export const BookHeader = () => {
         visible={isBookSettingsOpen}
         animationType="slide"
         onRequestClose={() => setIsBookSettingsOpen(false)}>
-        <View className="flex-1 bg-white">
-          <Appbar.Header className="bg-white">
-            <Appbar.Action icon="close" onPress={() => setIsBookSettingsOpen(false)} />
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <Appbar.Header>
+            <AppbarAction icon="close" onPress={() => setIsBookSettingsOpen(false)} />
             <Appbar.Content title={t('bookSettings')} />
           </Appbar.Header>
           <BookSettings />

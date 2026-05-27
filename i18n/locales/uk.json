@@ -19,7 +19,9 @@
     "defaultTargetLanguageLabel": "Цільова мова за замовчуванням",
     "appLanguageLabel": "Мова застосунку",
     "autoCardTitle": "Автоматичне оновлення картки подвійним кліком",
-    "autoCardDescription": "При перекладі слова подвійним кліком також оновлювати/створювати картку"
+    "autoCardDescription": "При перекладі слова подвійним кліком також оновлювати/створювати картку",
+    "themeTitle": "Тема",
+    "themeDescription": "Перемкнути між світлою та темною темою"
   },
   "reader": {
     "footer": {
@@ -30,10 +32,8 @@
       "chapterProgress": "Розділ {{progress}}%"
     },
     "selectionMenu": {
-      "translate": "Перекласти",
-      "copy": "Копіювати",
-      "updateTag": "+F",
-      "anki": "Anki"
+      "deleteNote": "Видалити нотатку",
+      "decreaseTag": "Зменшити тег"
     }
   },
   "bookHeader": {

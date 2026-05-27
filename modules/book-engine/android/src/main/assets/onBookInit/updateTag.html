@@ -8,6 +8,15 @@
 
     const targetWords = new Set(cleanedWordArray);
 
+    if (colorCode === 'remove') {
+      const existingSpans = document.querySelectorAll('span.anki-word');
+      existingSpans.forEach(function (span) {
+        const spanText = span.textContent.trim().toLowerCase();
+        if (targetWords.has(spanText)) span.outerHTML = span.textContent;
+      });
+      return;
+    }
+
     if (!words || (Array.isArray(words) && words.length === 0)) {
       const existingSpans = document.querySelectorAll(
         `span.anki-word[data-note-ids='${noteIdsString}']`

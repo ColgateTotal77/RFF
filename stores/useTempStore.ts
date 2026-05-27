@@ -13,6 +13,7 @@ type Store = {
   toggleIsSearchModuleOpen: () => void;
   setCurrentSearchResult: (searchResult: SearchResult) => void;
   resetSearch: () => void;
+
   setSelectionMenu: (menu: Partial<SelectionMenu>) => void;
   closeSelectionMenu: () => void;
 };

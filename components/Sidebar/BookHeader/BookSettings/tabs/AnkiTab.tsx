@@ -1,11 +1,12 @@
 import { View } from 'react-native';
-import { Dropdown } from 'components/Dropdown';
-import { Text, Switch, List, Button } from 'react-native-paper';
+import { Dropdown } from 'components/ui/Dropdown';
+import { Text, Switch, List } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { useAnkiStore } from 'stores/useAnkiStore';
+import { Button } from 'components/ui/Button';
 
 const isInherited = (bookValue: unknown) => bookValue === undefined;
 
@@ -50,7 +51,7 @@ export const AnkiTab = () => {
   };
 
   return (
-    <>
+    <View className="gap-4 p-4">
       <Text variant="titleMedium" className="font-bold">
         {t('title')}
       </Text>
@@ -61,33 +62,31 @@ export const AnkiTab = () => {
         </Button>
       ) : (
         <>
-          <View>
-            <Text className="text-green-700">{t('connected')}</Text>
+          <Text className="text-green-700">{t('connected')}</Text>
 
-            <Dropdown
-              label={t('decksLabel')}
-              value={ankiDeckId}
-              options={decks}
-              onSelect={(value) => updateBookSettings({ ankiDeckId: value })}
-              isGrayed={isInherited(currentBook.settings.ankiDeckId)}
-            />
-            <Dropdown
-              label={t('modelLabel')}
-              value={ankiModelId}
-              options={models}
-              onSelect={async (value) => {
-                const fieldCount = await loadFieldsInto(value, 'bookFields');
-                updateBookSettings({
-                  ankiModelId: value,
-                  fieldMapping: {
-                    modalId: value,
-                    fieldCount,
-                  },
-                });
-              }}
-              isGrayed={isInherited(currentBook.settings.ankiModelId)}
-            />
-          </View>
+          <Dropdown
+            label={t('decksLabel')}
+            value={ankiDeckId}
+            options={decks}
+            onSelect={(value) => updateBookSettings({ ankiDeckId: value })}
+            isGrayed={isInherited(currentBook.settings.ankiDeckId)}
+          />
+          <Dropdown
+            label={t('modelLabel')}
+            value={ankiModelId}
+            options={models}
+            onSelect={async (value) => {
+              const fieldCount = await loadFieldsInto(value, 'bookFields');
+              updateBookSettings({
+                ankiModelId: value,
+                fieldMapping: {
+                  modalId: value,
+                  fieldCount,
+                },
+              });
+            }}
+            isGrayed={isInherited(currentBook.settings.ankiModelId)}
+          />
           {fields.length > 0 && (
             <>
               <FieldMappingSection
@@ -99,59 +98,61 @@ export const AnkiTab = () => {
                 fields={fields}
                 onUpdate={updateFieldMapping}
               />
+            </>
+          )}
 
-              <List.Item
-                title={t('twoSidedTitle')}
-                description={t('twoSidedDescription')}
-                titleStyle={
-                  isInherited(currentBook.settings.isTwoSided) ? { color: '#9ca3af' } : undefined
-                }
-                descriptionStyle={
-                  isInherited(currentBook.settings.isTwoSided) ? { color: '#9ca3af' } : undefined
-                }
-                right={() => (
-                  <Switch
-                    value={isTwoSided}
-                    onValueChange={(value) => updateBookSettings({ isTwoSided: value })}
-                  />
-                )}
-              />
-
-              {isTwoSided && (
-                <>
-                  <Dropdown
-                    label={t('mirroredModelLabel')}
-                    value={mirroredAnkiModelId}
-                    options={models}
-                    onSelect={async (value) => {
-                      const fieldCount = await loadFieldsInto(value, 'bookMirroredFields');
-                      updateBookSettings({
-                        mirroredAnkiModelId: value,
-                        mirroredFieldMapping: {
-                          modalId: value,
-                          fieldCount,
-                        },
-                      });
-                    }}
-                    isGrayed={isInherited(currentBook.settings.mirroredAnkiModelId)}
-                  />
-                  <FieldMappingSection
-                    title={t('mirroredFieldMapping')}
-                    fieldMapping={currentBook.settings.mirroredFieldMapping}
-                    defaultFieldMapping={
-                      settings.mirroredFieldMappings[
-                        `${settings.ankiDeckId}:${settings.mirroredAnkiModelId}`
-                      ]
-                    }
-                    fields={mirroredFields}
-                    onUpdate={updateMirroredFieldMapping}
-                  />
-                </>
+          {fields.length > 0 && (
+            <List.Item
+              title={t('twoSidedTitle')}
+              description={t('twoSidedDescription')}
+              titleStyle={
+                isInherited(currentBook.settings.isTwoSided) ? { color: '#9ca3af' } : undefined
+              }
+              descriptionStyle={
+                isInherited(currentBook.settings.isTwoSided) ? { color: '#9ca3af' } : undefined
+              }
+              right={() => (
+                <Switch
+                  value={isTwoSided}
+                  onValueChange={(value) => updateBookSettings({ isTwoSided: value })}
+                />
               )}
+            />
+          )}
+
+          {mirroredFields.length > 0 && isTwoSided && (
+            <>
+              <Dropdown
+                label={t('mirroredModelLabel')}
+                value={mirroredAnkiModelId}
+                options={models}
+                onSelect={async (value) => {
+                  const fieldCount = await loadFieldsInto(value, 'bookMirroredFields');
+                  updateBookSettings({
+                    mirroredAnkiModelId: value,
+                    mirroredFieldMapping: {
+                      modalId: value,
+                      fieldCount,
+                    },
+                  });
+                }}
+                isGrayed={isInherited(currentBook.settings.mirroredAnkiModelId)}
+              />
+              <FieldMappingSection
+                title={t('mirroredFieldMapping')}
+                fieldMapping={currentBook.settings.mirroredFieldMapping}
+                defaultFieldMapping={
+                  settings.mirroredFieldMappings[
+                    `${settings.ankiDeckId}:${settings.mirroredAnkiModelId}`
+                  ]
+                }
+                fields={mirroredFields}
+                onUpdate={updateMirroredFieldMapping}
+              />
             </>
           )}
         </>
       )}
-    </>
+    </View>
   );
 };

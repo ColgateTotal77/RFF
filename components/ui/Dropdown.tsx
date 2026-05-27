@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { Button, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { View, Modal, TouchableOpacity, FlatList, StyleSheet, Dimensions } from 'react-native';
+import { Button } from 'components/ui/Button';
 
 interface DropdownOption<T extends string> {
   id: T;

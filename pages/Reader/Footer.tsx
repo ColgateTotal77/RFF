@@ -1,11 +1,12 @@
 import { View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { Button } from 'components/ui/Button';
 
 export const Footer = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'reader.footer' });

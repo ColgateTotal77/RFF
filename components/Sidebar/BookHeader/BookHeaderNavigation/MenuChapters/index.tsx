@@ -99,7 +99,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
       data={visibleToc}
       keyExtractor={(item) => item.id}
       renderItem={renderChapter}
-      contentContainerClassName="p-4 gap-4"
+      contentContainerClassName="gap-4 p-4"
       initialNumToRender={15}
     />
   );

@@ -74,7 +74,7 @@ export const useBookStore = create<Store>()(
         get().closeBook();
 
         try {
-          const book = await parseBook(uri);
+          const book = await parseBook(uri, get().settings.targetLang);
 
           set((state) => ({
             currentBook: book,

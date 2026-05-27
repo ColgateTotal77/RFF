@@ -35,6 +35,7 @@ export const getLemma = async (supabase: any, inputWord: string, word_lang_code:
 export const langMap: Record<string, string> = {
   en: 'English',
   ru: 'Russian',
+  uk: 'Ukrainian',
   es: 'Spanish',
   fr: 'French',
   de: 'German',

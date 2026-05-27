@@ -1,12 +1,13 @@
 import { View } from 'react-native';
-import { Dropdown } from 'components/Dropdown';
-import { Text, Button, Switch, List } from 'react-native-paper';
+import { Dropdown } from 'components/ui/Dropdown';
+import { Text, Switch, List } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useBookStore } from 'stores/useBookStore';
 import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { updateNestedMapping } from 'lib/utils';
 import { useAnkiStore } from 'stores/useAnkiStore';
+import { Button } from 'components/ui/Button';
 
 export const AnkiTab = () => {
   const {
@@ -49,7 +50,7 @@ export const AnkiTab = () => {
   };
 
   return (
-    <>
+    <View className="gap-4 p-4">
       <Text variant="titleMedium" className="font-bold">
         {t('title')}
       </Text>
@@ -59,7 +60,7 @@ export const AnkiTab = () => {
           {t('connect')}
         </Button>
       ) : (
-        <View>
+        <>
           <Text className="text-green-700">{t('connected')}</Text>
 
           <Dropdown
@@ -85,56 +86,57 @@ export const AnkiTab = () => {
               });
             }}
           />
-        </View>
-      )}
-      {fields.length > 0 && (
-        <>
-          <FieldMappingSection
-            title={t('fieldMapping')}
-            fieldMapping={fieldMappings[key]}
-            fields={fields}
-            onUpdate={updateFieldMapping}
-          />
-
-          <List.Item
-            title={t('twoSidedTitle')}
-            description={t('twoSidedDescription')}
-            right={() => (
-              <Switch
-                value={isTwoSided}
-                onValueChange={(value) => updateSettings({ isTwoSided: value })}
-              />
-            )}
-          />
-
-          {isTwoSided && (
-            <>
-              <Dropdown
-                label={t('mirroredModelLabel')}
-                value={mirroredAnkiModelId}
-                options={models}
-                onSelect={async (value) => {
-                  const fieldCount = await loadFieldsInto(value, 'mirroredFields');
-                  updateSettings({
-                    mirroredAnkiModelId: value,
-                    mirroredFieldMappings: updateNestedMapping(
-                      mirroredFieldMappings,
-                      `${ankiDeckId}:${value}`,
-                      { modalId: value, fieldCount }
-                    ),
-                  });
-                }}
-              />
-              <FieldMappingSection
-                title={t('mirroredFieldMapping')}
-                fieldMapping={mirroredFieldMappings[mirroredKey]}
-                fields={mirroredFields}
-                onUpdate={updateMirroredFieldMapping}
-              />
-            </>
-          )}
         </>
       )}
-    </>
+
+      {fields.length > 0 && (
+        <FieldMappingSection
+          title={t('fieldMapping')}
+          fieldMapping={fieldMappings[key]}
+          fields={fields}
+          onUpdate={updateFieldMapping}
+        />
+      )}
+
+      {fields.length > 0 && (
+        <List.Item
+          title={t('twoSidedTitle')}
+          description={t('twoSidedDescription')}
+          right={() => (
+            <Switch
+              value={isTwoSided}
+              onValueChange={(value) => updateSettings({ isTwoSided: value })}
+            />
+          )}
+        />
+      )}
+
+      {mirroredFields.length > 0 && isTwoSided && (
+        <>
+          <Dropdown
+            label={t('mirroredModelLabel')}
+            value={mirroredAnkiModelId}
+            options={models}
+            onSelect={async (value) => {
+              const fieldCount = await loadFieldsInto(value, 'mirroredFields');
+              updateSettings({
+                mirroredAnkiModelId: value,
+                mirroredFieldMappings: updateNestedMapping(
+                  mirroredFieldMappings,
+                  `${ankiDeckId}:${value}`,
+                  { modalId: value, fieldCount }
+                ),
+              });
+            }}
+          />
+          <FieldMappingSection
+            title={t('mirroredFieldMapping')}
+            fieldMapping={mirroredFieldMappings[mirroredKey]}
+            fields={mirroredFields}
+            onUpdate={updateMirroredFieldMapping}
+          />
+        </>
+      )}
+    </View>
   );
 };
