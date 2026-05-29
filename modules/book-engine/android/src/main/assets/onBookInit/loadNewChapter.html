@@ -1,52 +1,69 @@
 <script>
-  window.loadNewBlock = function (fileUrl, position, fetchIndex, removeIndex) {
-    window.log('loadNewBlock: loading block ' + fetchIndex + ' from ' + fileUrl);
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', fileUrl, true);
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 0 || xhr.status === 200) {
-          window.log('loadNewBlock: block ' + fetchIndex + ' loaded successfully');
-          var htmlContent = xhr.responseText;
+  window.loadNewBlock = function (htmlContent, position, fetchIndex) {
+    window.log('loadNewBlock: inserting block ' + fetchIndex);
 
-          var tempDiv = document.createElement('div');
-          tempDiv.innerHTML = htmlContent;
-          var blockElement = tempDiv.querySelector('[id^="block-"]');
+    if (!htmlContent) {
+      window.log('loadNewBlock: ERROR - empty html content', 'error');
+      window.isFetching = false;
+      return;
+    }
 
-          if (!blockElement) {
-            window.log('loadNewBlock: ERROR - no block element found in content', 'error');
-            return;
-          }
+    try {
+      var tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      var blockElement = tempDiv.querySelector('[id^="block-"]');
 
-          if (position === 'top') {
-            document.body.insertBefore(blockElement, document.body.firstChild);
-          } else {
-            document.body.appendChild(blockElement);
-          }
+      if (!blockElement) {
+        window.log('loadNewBlock: ERROR - no block element found', 'error');
+        window.isFetching = false;
+        return;
+      }
 
-          var removeId = removeIndex !== undefined && removeIndex !== null ? removeIndex : null;
-          if (removeId !== null) {
-            var blockToRemove = document.getElementById('block-' + removeId);
-            if (blockToRemove) {
-              blockToRemove.remove();
-              window.log('loadNewBlock: removed block ' + removeId);
-            }
-          }
+      var maxBlocks = 3;
 
-          window.log('loadNewBlock: searchQuery', window.searchQuery);
-          if (window.searchQuery) window.highlightAll(window.searchQuery);
+      if (position === 'top') {
+        var oldScrollY = window.scrollY;
+        var oldScrollHeight = document.documentElement.scrollHeight;
 
-          window.isFetching = false;
+        document.body.insertBefore(blockElement, document.body.firstChild);
+
+        var scrollDelta = document.documentElement.scrollHeight - oldScrollHeight;
+        window.scrollBy(0, scrollDelta);
+      } else {
+        document.body.appendChild(blockElement);
+      }
+
+      var currentBlocksElements = Array.from(document.querySelectorAll('[id^="block-"]'));
+      var maxBlocks = 3;
+
+      while (currentBlocksElements.length > maxBlocks) {
+        if (position === 'top') {
+          var blockToRemove = currentBlocksElements.pop();
+          if (blockToRemove) blockToRemove.remove();
         } else {
-          window.log('loadNewBlock: XHR failed with status ' + xhr.status, 'error');
-          window.isFetching = false;
+          var blockToRemove = currentBlocksElements.shift();
+          if (blockToRemove) blockToRemove.remove();
         }
       }
-    };
-    xhr.onerror = function () {
-      window.log('loadNewBlock: XHR network error for ' + fileUrl, 'error');
+
+      var newWindow = currentBlocksElements.map(function (el) {
+        return parseInt(el.id.replace('block-', ''));
+      });
+
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: 'UPDATE_BLOCK_WINDOW',
+            newWindow: newWindow,
+          })
+        );
+      }
+
+      if (window.searchQuery) window.highlightAll(window.searchQuery);
+    } catch (error) {
+      window.log('loadNewBlock: CAUGHT EXCEPTION - ' + error.message, 'error');
+    } finally {
       window.isFetching = false;
-    };
-    xhr.send();
+    }
   };
 </script>

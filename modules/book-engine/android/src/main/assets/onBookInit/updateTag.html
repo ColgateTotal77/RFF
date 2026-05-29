@@ -1,6 +1,15 @@
 <script>
   window.updateTag = function (words, noteIdsString, colorCode) {
+    const DASH_CHARS = '-‐‑‒–—−';
+    const escapeForClass = (value) => value.replace(/[-\\\]]/g, '\\$&');
+    const WORD_CHAR_REGEX = new RegExp('[\\w' + escapeForClass(DASH_CHARS) + ']');
+    const isBoundaryChar = (char) => !char || !WORD_CHAR_REGEX.test(char);
+
     const wordArray = Array.isArray(words) ? words : [words];
+
+    window.log(
+      'updateTag: words=' + words + ', noteIds=' + noteIdsString + ', colorCode=' + colorCode
+    );
 
     const cleanedWordArray = wordArray
       .map((w) => (w ? w.toLowerCase().trim() : ''))
@@ -19,7 +28,7 @@
 
     if (!words || (Array.isArray(words) && words.length === 0)) {
       const existingSpans = document.querySelectorAll(
-        `span.anki-word[data-note-ids='${noteIdsString}']`
+        `span.anki-word[data-note-ids="${noteIdsString}"]`
       );
       existingSpans.forEach(function (span) {
         span.setAttribute('data-flag', colorCode);
@@ -39,7 +48,7 @@
 
     if (escapedWords.length === 0) return;
 
-    const combinedRegex = new RegExp('\\b(' + escapedWords.join('|') + ')\\b', 'gi');
+    const combinedRegex = new RegExp(escapedWords.join('|'), 'gi');
 
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     const textNodes = [];
@@ -69,7 +78,12 @@
         .replace(/</g, '&​lt;')
         .replace(/>/g, '&​gt;');
 
-      const newHtml = safeText.replace(combinedRegex, function (match) {
+      const newHtml = safeText.replace(combinedRegex, function (match, offset, input) {
+        const beforeChar = input[offset - 1];
+        const afterChar = input[offset + match.length];
+        if (!isBoundaryChar(beforeChar) || !isBoundaryChar(afterChar)) {
+          return match;
+        }
         return `<span class="anki-word" data-note-ids='${noteIdsString}' data-flag="${colorCode}">${match}</span>`;
       });
 

@@ -1,4 +1,7 @@
-const BLOCK_SIZE = 5000;
+import { END_OF_SENTENCE_REGEX_STRING } from 'lib/constants';
+
+const BLOCK_SIZE = 10000;
+const MAX_BLOCK_SIZE = 15000; // Hard limit to prevent infinite growth if no punctuation is found
 
 interface Response {
   blocks: string[];
@@ -27,6 +30,24 @@ const VOID_ELEMENTS = new Set([
   'wbr',
 ]);
 
+const BLOCK_ELEMENTS = new Set([
+  'p',
+  'div',
+  'br',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'li',
+  'tr',
+  'td',
+  'blockquote',
+  'article',
+  'section',
+]);
+
 export const splitHtmlIntoBlocks = (html: string, globalBlockId: number): Response => {
   const blocks: string[] = [];
   let localGlobalBlockId = globalBlockId;
@@ -48,12 +69,14 @@ export const splitHtmlIntoBlocks = (html: string, globalBlockId: number): Respon
 
     const isTag = token.startsWith('<') && token.endsWith('>');
     const tagName = isTag ? /^<\/?([a-z0-9]+)/i.exec(token)?.[1]?.toLowerCase() : null;
+    let isSelfClosing = false;
+    let isClosing = false;
 
     if (!isTag) {
       currentSize += token.trim().length;
     } else if (tagName) {
-      const isSelfClosing = token.endsWith('/>') || VOID_ELEMENTS.has(tagName);
-      const isClosing = token.startsWith('</');
+      isSelfClosing = token.endsWith('/>') || VOID_ELEMENTS.has(tagName);
+      isClosing = token.startsWith('</');
 
       if (!isSelfClosing && isClosing) {
         const idx = unclosedTags.map((t) => t.name).lastIndexOf(tagName);
@@ -64,14 +87,29 @@ export const splitHtmlIntoBlocks = (html: string, globalBlockId: number): Respon
     }
 
     if (currentSize >= BLOCK_SIZE) {
-      blocks.push(`${currentBlock}${closeTags()}</div>`);
-      localGlobalBlockId++;
-      currentBlock = `<div id="block-${localGlobalBlockId}">${openTags()}`;
-      currentSize = 0;
+      let isSafeToSplit = false;
+
+      if (!isTag) {
+        if (new RegExp(`[${END_OF_SENTENCE_REGEX_STRING}]$`).test(token.trimEnd())) {
+          isSafeToSplit = true;
+        }
+      } else if (tagName) {
+        if (BLOCK_ELEMENTS.has(tagName) && (isClosing || isSelfClosing)) {
+          isSafeToSplit = true;
+        }
+      }
+
+      if (isSafeToSplit || currentSize >= MAX_BLOCK_SIZE) {
+        blocks.push(`${currentBlock}${closeTags()}</div>`);
+        localGlobalBlockId++;
+        currentBlock = `<div id="block-${localGlobalBlockId}">${openTags()}`;
+        currentSize = 0;
+      }
     }
   }
 
-  if (currentBlock !== `<div id="block-${localGlobalBlockId}">`) {
+  const emptyWrapper = `<div id="block-${localGlobalBlockId}">${openTags()}`;
+  if (currentBlock !== emptyWrapper && currentBlock !== `<div id="block-${localGlobalBlockId}">`) {
     blocks.push(`${currentBlock}${closeTags()}</div>`);
   }
 

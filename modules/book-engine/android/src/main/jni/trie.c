@@ -118,24 +118,13 @@ void trie_free(TrieNode* root) {
     free(root);
 }
 
-static bool is_unicode_dash(const char* p) {
-    if ((unsigned char)p[0] != 0xE2 || (unsigned char)p[1] != 0x80) {
-        return false;
-    }
-    unsigned char b2 = (unsigned char)p[2];
-    return b2 >= 0x93 && b2 <= 0x95;
-}
-
 bool is_word_char_at(const char* p) {
     if (p == NULL || *p == '\0') {
         return false;
     }
     unsigned char c = (unsigned char)*p;
     if (c < 0x80) {
-        return isalnum(c) || c == '\'';
-    }
-    if (is_unicode_dash(p)) {
-        return false;
+        return isalnum(c) || c == '\'' || c == '-';
     }
     return true;
 }

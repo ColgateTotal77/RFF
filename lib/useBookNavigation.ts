@@ -8,9 +8,7 @@ import { calculateBookProgress } from 'lib/utils';
 import { Book } from 'types';
 import { useWebViewStore } from 'stores/useWebViewStore';
 
-export const shiftNext = (
-  currentBook: Book
-): { fetchIndex: number; removeIndex: number | null; newWindow: number[] } | null => {
+export const shiftNext = (currentBook: Book): { fetchIndex: number } | null => {
   if (!currentBook) return null;
 
   const lastRendered = currentBook.currentBlocks[currentBook.currentBlocks.length - 1];
@@ -18,19 +16,10 @@ export const shiftNext = (
 
   if (fetchIndex >= currentBook.blocks.length) return null;
 
-  let newWindow = [...currentBook.currentBlocks, fetchIndex];
-  let removeIndex: number | null = null;
-
-  if (newWindow.length > 3) {
-    removeIndex = newWindow.shift() || null;
-  }
-
-  return { fetchIndex, removeIndex, newWindow };
+  return { fetchIndex };
 };
 
-export const shiftPrev = (
-  currentBook: Book
-): { fetchIndex: number; removeIndex: number | null; newWindow: number[] } | null => {
+export const shiftPrev = (currentBook: Book): { fetchIndex: number } | null => {
   if (!currentBook) return null;
 
   const firstRendered = currentBook.currentBlocks[0];
@@ -38,14 +27,7 @@ export const shiftPrev = (
 
   if (fetchIndex < 0) return null;
 
-  let newWindow = [fetchIndex, ...currentBook.currentBlocks];
-  let removeIndex: number | null = null;
-
-  if (newWindow.length > 3) {
-    removeIndex = newWindow.pop() || null;
-  }
-
-  return { fetchIndex, removeIndex, newWindow };
+  return { fetchIndex };
 };
 
 export const useEpubNextBlock = (
@@ -53,7 +35,6 @@ export const useEpubNextBlock = (
   containerRef: RefObject<View | null>
 ) => {
   const currentBook = useCurrentBook();
-  const updateCurrentBlocks = useBookStore((state) => state.updateCurrentBlocks);
 
   return async () => {
     const shiftResult = shiftNext(currentBook);
@@ -64,10 +45,7 @@ export const useEpubNextBlock = (
       return;
     }
 
-    const { fetchIndex, removeIndex, newWindow } = shiftResult;
-    console.log('Shift result:', { fetchIndex, removeIndex, newWindow });
-
-    updateCurrentBlocks(newWindow);
+    const { fetchIndex } = shiftResult;
 
     try {
       const nextBlock = currentBook.blocks[fetchIndex];
@@ -80,7 +58,7 @@ export const useEpubNextBlock = (
       const reactTag = findNodeHandle(containerRef.current);
 
       if (reactTag) {
-        BookEngine.injectBlock(reactTag, nextBlock.fullPath, fetchIndex, removeIndex, 'bottom');
+        BookEngine.injectBlock(reactTag, nextBlock.fullPath, fetchIndex, 'bottom');
       } else {
         console.error('No react tag found');
         webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);
@@ -99,7 +77,6 @@ export const useEpubPrevBlock = (
   containerRef: RefObject<View | null>
 ) => {
   const currentBook = useCurrentBook();
-  const updateCurrentBlocks = useBookStore((state) => state.updateCurrentBlocks);
 
   return async () => {
     const shiftResult = shiftPrev(currentBook);
@@ -110,10 +87,7 @@ export const useEpubPrevBlock = (
       return;
     }
 
-    const { fetchIndex, removeIndex, newWindow } = shiftResult;
-    console.log('Shift result:', { fetchIndex, removeIndex, newWindow });
-
-    updateCurrentBlocks(newWindow);
+    const { fetchIndex } = shiftResult;
 
     try {
       const prevBlock = currentBook.blocks[fetchIndex];
@@ -125,7 +99,7 @@ export const useEpubPrevBlock = (
 
       const reactTag = findNodeHandle(containerRef.current);
       if (reactTag) {
-        BookEngine.injectBlock(reactTag, prevBlock.fullPath, fetchIndex, removeIndex, 'top');
+        BookEngine.injectBlock(reactTag, prevBlock.fullPath, fetchIndex, 'top');
       } else {
         console.error('No react tag found');
         webViewRef.current?.injectJavaScript(`window.isFetching = false; true;`);

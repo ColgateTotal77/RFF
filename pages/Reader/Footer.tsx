@@ -42,12 +42,11 @@ export const Footer = () => {
   return (
     <View className="absolute bottom-8 left-0 right-0 items-center">
       {currentSearchResult.blockId > -1 ? (
-        <View className="flex-row items-center gap-4">
+        <View className="flex-row items-center gap-3">
           <Button
             mode="contained-tonal"
             icon="chevron-left"
             onPress={jumpToPrev}
-            contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
             className="rounded-full">
             {t('prev')}
           </Button>
@@ -61,7 +60,6 @@ export const Footer = () => {
             }}
             buttonColor={colors.errorContainer}
             textColor={colors.onErrorContainer}
-            contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
             className="rounded-full">
             {t('clear')}
           </Button>
@@ -70,8 +68,8 @@ export const Footer = () => {
             mode="contained-tonal"
             icon="chevron-right"
             onPress={jumpToNext}
-            contentStyle={{ paddingVertical: 4, paddingHorizontal: 8 }}
-            className="rounded-full">
+            className="rounded-full"
+            contentStyle={{ flexDirection: 'row-reverse' }}>
             {t('next')}
           </Button>
         </View>

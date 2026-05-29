@@ -26,3 +26,4 @@ modules/book-engine/android/cmake-build-debug/
 /android/
 /modules/book-engine/android/.gradle/
 /scripts/
+.history/

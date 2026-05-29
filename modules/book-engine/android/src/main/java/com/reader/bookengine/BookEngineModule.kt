@@ -127,19 +127,12 @@ class BookEngineModule : Module() {
     }
 
     private fun findWebView(view: View): WebView? {
-        android.util.Log.d("BookEngine", "Searching in view: ${view.javaClass.simpleName}")
+        if (view is WebView) return view
+        if (view !is ViewGroup) return null
 
-        if (view is WebView) {
-            android.util.Log.d("BookEngine", "Found WebView!")
-            return view
-        }
-
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) {
-                val child = view.getChildAt(i)
-                val foundWebView = findWebView(child)
-                if (foundWebView != null) return foundWebView
-            }
+        for (i in 0 until view.childCount) {
+            val foundWebView = findWebView(view.getChildAt(i))
+            if (foundWebView != null) return foundWebView
         }
 
         return null
@@ -157,6 +150,8 @@ class BookEngineModule : Module() {
             android.util.Log.e("BookEngine", "No WebView found in view hierarchy")
         }
     }
+
+    private external fun extractBlockHtml(filePath: String): String?
 
     private external fun extractBlockToFile(filePath: String, outputPath: String): Boolean
 
@@ -195,6 +190,8 @@ class BookEngineModule : Module() {
         AsyncFunction("openSystemTranslator") { text: String ->
             val activity = appContext.activityProvider?.currentActivity
                 ?: throw Exception("No current activity found")
+
+            android.util.Log.d("BookEngine", "Opening system translator for text: $text")
 
             val translateIntent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
                 putExtra(Intent.EXTRA_PROCESS_TEXT, text)
@@ -439,25 +436,22 @@ class BookEngineModule : Module() {
             }
         }
 
-        AsyncFunction("injectBlock") { viewTag: Int, path: String, fetchIndex: Int, removeIndex: Int?, position: String ->
+        AsyncFunction("injectBlock") { viewTag: Int, path: String, fetchIndex: Int, position: String ->
             val t1 = System.currentTimeMillis()
 
-            val cacheDir = appContext.reactContext?.cacheDir ?: throw Exception("No cache dir")
-            cacheDir.listFiles { _, name -> name.startsWith("initial_book_$viewTag") }?.forEach { it.delete() }
-
-            val timestamp = System.currentTimeMillis()
-            val tempFile = File(cacheDir, "temp_block_${fetchIndex}_$timestamp.html")
-
-            val outputPath = tempFile.absolutePath
-
-            val success = extractBlockToFile(path, outputPath)
-
-            if (!success) {
-                android.util.Log.e("BookEngine", "C failed to write block to file")
+            val html = extractBlockHtml(path)
+            if (html == null) {
+                android.util.Log.e("BookEngine", "Failed to extract block HTML from $path")
+                appContext.activityProvider?.currentActivity?.runOnUiThread {
+                    val activity = appContext.activityProvider?.currentActivity ?: return@runOnUiThread
+                    injectInWebView(activity, viewTag, "window.isFetching = false; true;")
+                }
+                return@AsyncFunction
             }
 
-            val fileUrl = "file://$outputPath"
-            val jsScript = "window.loadNewBlock('$fileUrl', '$position', $fetchIndex, ${removeIndex ?: "null"});"
+            val htmlJson = JSONObject.quote(html)
+            val jsScript =
+                "window.loadNewBlock($htmlJson, '$position', $fetchIndex);"
 
             appContext.activityProvider?.currentActivity?.runOnUiThread {
                 val activity = appContext.activityProvider?.currentActivity ?: return@runOnUiThread
@@ -469,7 +463,7 @@ class BookEngineModule : Module() {
             }
 
             val t2 = System.currentTimeMillis()
-            android.util.Log.d("BookEngine", "C File Write & Injection took: ${t2 - t1} ms")
+            android.util.Log.d("BookEngine", "Block extract & injection took: ${t2 - t1} ms")
         }
     }
 }

@@ -113,6 +113,15 @@ Word: "bank", Source language: English, Target language: Russian
   "target_translations": ["банк", "берег", "наклонять"]
 }
 
+Word: "tapestry", Source language: English, Target language: Ukrainian
+{
+  "source_synonyms": ["wall hanging", "arras"],
+  "source_examples": [
+    "The tapestry hung above the fireplace in the old hall."
+  ],
+  "target_translations": ["гобелен"]
+}
+
 Word: "vol", Source language: French, Target language: German
 {
   "source_synonyms": ["larcin", "trajet"],
@@ -129,7 +138,7 @@ Word: "Kühlschrank", Source language: German, Target language: English
   "source_examples": [
     "Vergiss nicht, die Milch sofort wieder in den Kühlschrank zu stellen."
   ],
-  "target_translations": ["refrigerator / fridge"]
+  "target_translations": ["refrigerator"]
 }
 
 Word: "tomar", Source language: Spanish, Target language: English
@@ -143,6 +152,16 @@ Word: "tomar", Source language: Spanish, Target language: English
   "target_translations": ["to take", "to drink", "to grab"]
 }
 
+Word: "letter", Source language: English, Target language: Spanish
+{
+  "source_synonyms": ["message", "character", "note"],
+  "source_examples": [
+    "I wrote a long handwritten letter to my grandmother overseas.",
+    "The teacher asked the student to write every letter of the alphabet on the board."
+  ],
+  "target_translations": ["carta", "letra"]
+}
+
 Word: "piano", Source language: Italian, Target language: English
 {
   "source_synonyms": ["progetto", "lentamente", "livello"],
@@ -151,7 +170,16 @@ Word: "piano", Source language: Italian, Target language: English
     "Il mio ufficio si trova al terzo piano dell'edificio.",
     "Dobbiamo elaborare un nuovo piano per risolvere questo problema."
   ],
-  "target_translations": ["slowly / softly", "floor / level", "plan / strategy"]
+  "target_translations": ["slowly / softly", "floor", "plan"]
+}
+
+Word: "shack", Source language: English, Target language: Ukrainian
+{
+  "source_synonyms": ["hut", "cabin"],
+  "source_examples": [
+    "They lived in a small shack near the river."
+  ],
+  "target_translations": ["халупа"]
 }
 
 Word: "мир", Source language: Russian, Target language: English
@@ -164,27 +192,6 @@ Word: "мир", Source language: Russian, Target language: English
   "target_translations": ["world", "peace"]
 }
 
-Word: "ponto", Source language: Portuguese, Target language: Italian
-{
-  "source_synonyms": ["marca", "parada", "momento"],
-  "source_examples": [
-    "Ele desenhou um pequeno ponto preto no centro da folha branca.",
-    "O médico teve que dar um ponto no meu dedo machucado.",
-    "Eu te encontro no ponto de ônibus às cinco da tarde."
-  ],
-  "target_translations": ["punto", "punto di cucitura", "fermata dell'autobus"]
-}
-
-Word: "weer", Source language: Dutch, Target language: French
-{
-  "source_synonyms": ["opnieuw", "klimaat"],
-  "source_examples": [
-    "Het weer is vandaag erg mooi voor een lange wandeling.",
-    "Ik heb mijn sleutels weer op de keukentafel laten liggen."
-  ],
-  "target_translations": ["temps / météo", "encore / à nouveau"]
-}
-
 Word: "голова", Source language: Ukrainian, Target language: German
 {
   "source_synonyms": ["керівник", "очільник", "шеф"],
@@ -192,26 +199,7 @@ Word: "голова", Source language: Ukrainian, Target language: German
     "Після вчорашньої довгої поїздки у мене дуже сильно болить голова.",
     "Голова сільської ради скликав термінове засідання для вирішення цього питання."
   ],
-  "target_translations": ["Kopf", "Vorsitzender / Leiter"]
-}
-
-Word: "手紙", Source language: Japanese, Target language: English
-{
-  "source_synonyms": ["文書", "メッセージ"],
-  "source_examples": [
-    "祖母に長い手紙を書いて、近況を伝えました。"
-  ],
-  "target_translations": ["letter"]
-}
-
-Word: "عين", Source language: Arabic, Target language: English
-{
-  "source_synonyms": ["بصر", "ينبوع"],
-  "source_examples": [
-    "فتحت عيني ببطء عندما سمعت صوت المطر على النافذة.",
-    "وجدنا عيناً صافية في وسط الصحراء الجافة."
-  ],
-  "target_translations": ["eye", "spring / water source"]
+  "target_translations": ["Kopf", "Leiter / Chef"]
 }
 
 RULES
@@ -219,7 +207,7 @@ RULES
 - "source_synonyms" and "source_examples" MUST be written entirely in the Source Language.
 - The arrays for "source_examples" and "target_translations" MUST have the same length and their indexes MUST align perfectly.
 - Cover 2–4 DISTINCT senses ordered by frequency ONLY if they exist. Do NOT invent fake or tangential meanings to fill a quota. If a word is specific and has only ONE primary meaning, you MUST return arrays of length 1.
-- "target_translations": short idiomatic equivalent (1–4 words). Use " / " to join alternatives.
+- "target_translations": Provide exactly ONE best translation per sense (1-4 words). ONLY use " / " to join alternatives if they are perfectly interchangeable for that specific meaning. Do NOT overuse " / ".
 - "source_examples": Provide exactly ONE natural sentence (6–14 words) in the Source Language PER SENSE demonstrating that specific meaning. The Word (or its inflected form) MUST appear in the sentence. Vary contexts across meanings.
 - "source_synonyms": up to 3 synonyms of the most common sense, in the Source Language. Empty array if none.`;
 

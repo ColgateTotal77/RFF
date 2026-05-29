@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <android/log.h>
 #include "trie.h"
+#include "logic.h"
 
 TrieNode* global_dictionary = NULL;
 
@@ -79,36 +80,39 @@ Java_com_reader_bookengine_BookEngineModule_freeAnkiDictionary(JNIEnv* env, jobj
 }
 
 // TODO(19): NUL at bytes_read not size; handle short fread; prefer fseeko/ftello for large files
-JNIEXPORT jboolean JNICALL
-Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
-    JNIEnv* env, jobject thiz, jstring filePath, jstring outputPath) {
-
-    const char *pathFrom = (*env)->GetStringUTFChars(env, filePath, 0);
-    FILE *file = fopen(pathFrom, "rb");
+char* extract_block_html_from_file(const char* path_from) {
+    FILE* file = fopen(path_from, "rb");
     if (!file) {
-        (*env)->ReleaseStringUTFChars(env, filePath, pathFrom);
-        return JNI_FALSE;
+        return NULL;
     }
 
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    char *buffer = (char *)malloc(size + 1);
-    size_t bytes_read = fread(buffer, 1, size, file);
+    if (size <= 0) {
+        fclose(file);
+        return NULL;
+    }
+
+    char* buffer = (char*)malloc((size_t)size + 1);
+    if (!buffer) {
+        fclose(file);
+        return NULL;
+    }
+
+    size_t bytes_read = fread(buffer, 1, (size_t)size, file);
     buffer[bytes_read] = '\0';
     fclose(file);
-    (*env)->ReleaseStringUTFChars(env, filePath, pathFrom);
 
-    char *content_start = buffer;
-    size_t content_length = size;
+    char* content_start = buffer;
+    size_t content_length = bytes_read;
 
     char temp_end_char = content_start[content_length];
     content_start[content_length] = '\0';
 
     StringBuffer* out = sb_create(content_length * 2);
     const char* p = content_start;
-
 
     while (*p != '\0') {
         if (*p == '<') {
@@ -178,25 +182,61 @@ Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
 
     content_start[content_length] = temp_end_char;
 
-    jboolean success = JNI_FALSE;
-
-    const char *pathTo = (*env)->GetStringUTFChars(env, outputPath, 0);
-
-    FILE *outFile = fopen(pathTo, "wb");
-    if (outFile) {
-        size_t len = strlen(out->data);
-        if (fwrite(out->data, 1, len, outFile) == len) {
-            success = JNI_TRUE;
-        } else {
-        }
-        fclose(outFile);
-    }
-
-    (*env)->ReleaseStringUTFChars(env, outputPath, pathTo);
-
-    free(out->data);
+    char* result = out->data;
     free(out);
     free(buffer);
 
+    return result;
+}
+
+bool extract_block_html_to_file(const char* path_from, const char* path_to) {
+    char* html = extract_block_html_from_file(path_from);
+    if (html == NULL) {
+        return false;
+    }
+
+    FILE* out_file = fopen(path_to, "wb");
+    if (!out_file) {
+        free(html);
+        return false;
+    }
+
+    size_t len = strlen(html);
+    bool success = fwrite(html, 1, len, out_file) == len;
+    fclose(out_file);
+    free(html);
+
     return success;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
+    JNIEnv* env, jobject thiz, jstring filePath, jstring outputPath) {
+
+    const char* path_from = (*env)->GetStringUTFChars(env, filePath, 0);
+    const char* path_to = (*env)->GetStringUTFChars(env, outputPath, 0);
+
+    bool success = extract_block_html_to_file(path_from, path_to);
+
+    (*env)->ReleaseStringUTFChars(env, filePath, path_from);
+    (*env)->ReleaseStringUTFChars(env, outputPath, path_to);
+
+    return success ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_reader_bookengine_BookEngineModule_extractBlockHtml(
+    JNIEnv* env, jobject thiz, jstring filePath) {
+
+    const char* path_from = (*env)->GetStringUTFChars(env, filePath, 0);
+    char* html = extract_block_html_from_file(path_from);
+    (*env)->ReleaseStringUTFChars(env, filePath, path_from);
+
+    if (html == NULL) {
+        return NULL;
+    }
+
+    jstring result = (*env)->NewStringUTF(env, html);
+    free(html);
+    return result;
 }

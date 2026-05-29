@@ -1,4 +1,4 @@
-import { Menu, Surface, useTheme } from 'react-native-paper';
+import { Menu, Surface, useTheme, Text } from 'react-native-paper';
 import { View, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useWordAction } from 'lib/useWordAction';
@@ -8,7 +8,6 @@ import { useState } from 'react';
 import { Button } from 'components/ui/Button';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { IconButton } from 'components/ui/IconButton';
-
 interface Props {
   selectionMenu: SelectedMenu;
 }
@@ -134,16 +133,27 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         onDismiss={() => setIsOpen(false)}
         anchor={<AppbarAction icon="dots-vertical" onPress={() => setIsOpen(true)} />}
         anchorPosition={'bottom'}
-        elevation={1}>
+        contentStyle={{
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.outline,
+        }}>
         {selectionMenu.noteIds && (
           <>
-            <Menu.Item onPress={() => onDeleteNotePress()} title={t('deleteNote')} />
+            <Menu.Item
+              onPress={() => onDeleteNotePress()}
+              title={t('deleteNote')}
+              leadingIcon="delete-outline"
+            />
             {selectionMenu.colorCode && Number(selectionMenu.colorCode) > 0 && (
               <>
                 <View
                   style={{ marginHorizontal: 4, height: 1, backgroundColor: theme.colors.outline }}
                 />
-                <Menu.Item onPress={() => onDecreaseTagPress()} title={t('decreaseTag')} />
+                <Menu.Item
+                  onPress={() => onDecreaseTagPress()}
+                  title={t('decreaseTag')}
+                  leadingIcon={() => <Text variant="bodyLarge">-F</Text>}
+                />
               </>
             )}
           </>

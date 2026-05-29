@@ -4,6 +4,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { deepMerge } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { DASH_REGEX_STRING } from './constants';
 
 interface UpdateWordTag {
   noteIds: string;
@@ -18,7 +19,7 @@ export const useWordAction = () => {
   const addNewCard = async (text: string) => {
     const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
     const targetLang = currentBook.settings.targetLang || settings.targetLang;
-    const cleanedText = text.replace(/[^\w\s]|_/g, '');
+    const cleanedText = text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '');
 
     try {
       if (!deckId) {
@@ -108,6 +109,18 @@ export const useWordAction = () => {
       const idsArray = JSON.parse(noteIds);
 
       Anki.updateNoteTags(idsArray, [`Lookups_${colorCode}`, 'New'], mapping, mirroredMapping);
+      console.log(
+        'updateWordTag: ',
+        JSON.stringify(
+          {
+            word: null,
+            noteIds: noteIds,
+            colorCode: colorCode,
+          },
+          null,
+          2
+        )
+      );
       executeImmediateAction({
         type: 'updateTag',
         word: null,

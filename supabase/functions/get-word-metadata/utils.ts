@@ -20,14 +20,15 @@ export const getLemma = async (supabase: any, inputWord: string, word_lang_code:
     .select('lemma')
     .eq('input_word', inputWord)
     .eq('word_lang_code', word_lang_code)
+    .limit(1)
     .maybeSingle();
 
   if (formMappingError) {
-    return new Response(JSON.stringify({ error: formMappingError }), {
-      status: 400,
-      headers: corsHeaders,
-    });
+    console.error('formMappingError: ', formMappingError);
+    throw formMappingError;
   }
+
+  console.log('formMapping: ', JSON.stringify(formMapping, null, 2));
 
   return formMapping ? formMapping.lemma : inputWord;
 };

@@ -87,8 +87,6 @@ export const useWebViewStore = create<Store>()((set, get) => ({
         ]);
       }
 
-      console.log('-----------------------------');
-
       const generatedFileUrl = await BookEngine.loadInitialHtml(
         paths,
         currentBlocks,

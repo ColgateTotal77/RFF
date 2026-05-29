@@ -7,6 +7,7 @@ import { calculateBookProgress } from 'lib/utils';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { View } from 'react-native';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { DASH_REGEX_STRING } from 'lib/constants';
 
 export const useMessageHandler = (
   webViewRef: RefObject<WebView | null>,
@@ -23,6 +24,7 @@ export const useMessageHandler = (
   const { openSystemTranslator, addNewCard, updateWordTag } = useWordAction();
   const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
   const setIsWebViewReady = useWebViewStore((state) => state.setIsWebViewReady);
+  const updateCurrentBlocks = useBookStore((state) => state.updateCurrentBlocks);
 
   return useCallback(
     async (event: WebViewMessageEvent) => {
@@ -87,13 +89,20 @@ export const useMessageHandler = (
             break;
 
           case 'DOUBLE_TAP':
-            await openSystemTranslator(parsedData.text.replace(/[^\w\s]|_/g, ''));
+            await openSystemTranslator(
+              parsedData.text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '')
+            );
             closeMenu();
             break;
 
           case 'TRIPLE_TAP':
+            console.log('TRIPLE_TAP: ', JSON.stringify(parsedData, null, 2));
+
             if (parsedData.noteIds) {
-              updateWordTag({ noteIds: parsedData.noteIds, colorCode: parsedData.colorCode || 0 });
+              updateWordTag({
+                noteIds: parsedData.noteIds,
+                colorCode: String(Number(parsedData.colorCode!) + 1),
+              });
             } else {
               addNewCard(parsedData.text);
             }
@@ -105,6 +114,10 @@ export const useMessageHandler = (
             const chapterId = parseInt(url.hostname);
             const fragmentId = url.hash.replace('#', '');
             processBookLinks(chapterId, fragmentId);
+            break;
+
+          case 'UPDATE_BLOCK_WINDOW':
+            updateCurrentBlocks(parsedData.newWindow);
             break;
         }
       } catch (error) {
