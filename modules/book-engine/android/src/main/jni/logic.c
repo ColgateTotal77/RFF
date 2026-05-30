@@ -189,41 +189,6 @@ char* extract_block_html_from_file(const char* path_from) {
     return result;
 }
 
-bool extract_block_html_to_file(const char* path_from, const char* path_to) {
-    char* html = extract_block_html_from_file(path_from);
-    if (html == NULL) {
-        return false;
-    }
-
-    FILE* out_file = fopen(path_to, "wb");
-    if (!out_file) {
-        free(html);
-        return false;
-    }
-
-    size_t len = strlen(html);
-    bool success = fwrite(html, 1, len, out_file) == len;
-    fclose(out_file);
-    free(html);
-
-    return success;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_reader_bookengine_BookEngineModule_extractBlockToFile(
-    JNIEnv* env, jobject thiz, jstring filePath, jstring outputPath) {
-
-    const char* path_from = (*env)->GetStringUTFChars(env, filePath, 0);
-    const char* path_to = (*env)->GetStringUTFChars(env, outputPath, 0);
-
-    bool success = extract_block_html_to_file(path_from, path_to);
-
-    (*env)->ReleaseStringUTFChars(env, filePath, path_from);
-    (*env)->ReleaseStringUTFChars(env, outputPath, path_to);
-
-    return success ? JNI_TRUE : JNI_FALSE;
-}
-
 JNIEXPORT jstring JNICALL
 Java_com_reader_bookengine_BookEngineModule_extractBlockHtml(
     JNIEnv* env, jobject thiz, jstring filePath) {

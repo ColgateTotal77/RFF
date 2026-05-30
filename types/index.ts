@@ -23,8 +23,6 @@ export interface Block {
 
 export interface Chapter {
   id: number;
-  href: string;
-  fullPath: string;
   charCount: number;
   charOffset: number;
   blockIds: number[];
@@ -34,10 +32,28 @@ export interface Chapter {
 export interface TocItem {
   id: string;
   title: string;
-  href: string;
   chapterId: number;
   level: number;
   parentId?: string;
+}
+
+export interface Mapping {
+  chapterById: Record<number, Chapter>;
+  tocByChapterId: Record<number, TocItem[]>;
+  tocById: Record<string, TocItem>;
+  firstBlockByChapterId: Record<number, number>;
+  blockIndex: Record<
+    number,
+    {
+      chapterId: number;
+      chapterTitle: string;
+      firstBlockId: number;
+      chapterCharOffset: number;
+      chapterCharCount: number;
+      blockCharOffset: number;
+      blockCharCount: number;
+    }
+  >;
 }
 
 export interface Book {
@@ -54,6 +70,7 @@ export interface Book {
   settings: BookSettings;
   misc: Misc;
   bookmarks: Bookmark[];
+  mapping: Mapping;
 }
 
 export type Bookmark = {

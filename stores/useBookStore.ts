@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import { Book, BookSettings, CurrentCTree, DeepPartial, Settings, Misc } from 'types';
-import { deepMerge } from 'lib/utils';
+import { buildBookMapping, deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
 import { useAnkiStore } from './useAnkiStore';
@@ -75,6 +75,7 @@ export const useBookStore = create<Store>()(
 
         try {
           const book = await parseBook(uri, get().settings.targetLang);
+          book.mapping = buildBookMapping(book);
 
           set((state) => ({
             currentBook: book,
@@ -86,7 +87,7 @@ export const useBookStore = create<Store>()(
         }
       },
 
-      openBook: async (basePath: string) => {
+      openBook: (basePath: string) => {
         get().closeBook();
 
         const { books, settings, currentCTree } = get();
@@ -116,13 +117,15 @@ export const useBookStore = create<Store>()(
               bookToOpen.settings.mirroredFieldMapping || {}
             );
 
-            await BookEngine.loadAnkiDictionary(
+            BookEngine.loadAnkiDictionary(
               bookToOpen.settings.bookLang,
               deckId,
               mapping,
               mirroredMapping
             );
           }
+
+          bookToOpen.mapping = buildBookMapping(bookToOpen);
 
           set((state) => ({
             currentBook: bookToOpen,
@@ -275,18 +278,10 @@ export const useBookStore = create<Store>()(
           const bookmarks = state.currentBook.bookmarks || [];
           const lastBookmarkId = bookmarks.length > 0 ? bookmarks[bookmarks.length - 1].id : 0;
 
-          const chapter = state.currentBook.toc.find(
-            (item) =>
-              item.chapterId ===
-              state.currentBook!.blocks.find(
-                (block) => block.id === state.currentBook!.currentBlock
-              )?.chapterId
-          );
-
           const bookmark = {
             id: lastBookmarkId + 1,
             blockId: state.currentBook.currentBlock,
-            title: `${chapter?.title} - ${lastBookmarkId + 1}`,
+            title: `${state.currentBook.mapping.blockIndex[state.currentBook.currentBlock].chapterTitle} - ${lastBookmarkId + 1}`,
             scrollPercent: state.currentBook.misc.currentBlockScrollPercent,
             createdAt: Date.now(),
           };
@@ -320,7 +315,10 @@ export const useBookStore = create<Store>()(
     {
       name: 'book-storage',
       storage: createJSONStorage(() => zustandStorage),
-      partialize: (state) => ({ settings: state.settings, books: state.books }),
+      partialize: (state) => ({
+        settings: state.settings,
+        books: state.books.map(({ mapping, ...rest }) => rest),
+      }),
     }
   )
 );

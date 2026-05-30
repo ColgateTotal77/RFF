@@ -34,7 +34,7 @@ export const MenuBookmarks = ({ onClose }: Props) => {
       loadWindow(bookmark.blockId, 0);
     }
     updateMisc({
-      percent: calculateBookProgress(currentBook, bookmark.scrollPercent),
+      percent: calculateBookProgress(currentBook, bookmark.scrollPercent, bookmark.blockId),
     });
     onClose();
   };

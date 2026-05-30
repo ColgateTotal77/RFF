@@ -13,16 +13,8 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
-
-  const { currentChapterId, currentChapter } = useMemo(() => {
-    const chapterId = currentBook.blocks.find(
-      (block) => block.id === currentBook.currentBlock
-    )?.chapterId;
-
-    const chapter = currentBook.toc.find((item) => item.chapterId === chapterId);
-
-    return { currentChapterId: chapterId, currentChapter: chapter };
-  }, [currentBook.currentBlock, currentBook.toc]);
+  const chapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;
+  const currentChapter = currentBook.mapping.tocByChapterId[chapterId]?.[0] ?? null;
 
   const parentIdsSet = useMemo(() => {
     const ids = new Set<string>();
@@ -46,18 +38,14 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
 
     while (currentParent) {
       parentsToExpand.push(currentParent);
-      const parentChapter = currentBook.toc.find((item) => item.id === currentParent);
-      currentParent = parentChapter?.parentId;
+      currentParent = currentBook.mapping.tocById[currentParent].parentId;
     }
 
     setExpandedParents(parentsToExpand);
-  }, [currentChapterId, currentBook.toc]);
+  }, [currentChapter]);
 
   const onPress = (tocItem: TocItem) => {
-    const firstBlockId = currentBook.blocks.find(
-      (block) => block.chapterId === tocItem.chapterId
-    )?.id;
-    if (!firstBlockId && firstBlockId !== 0) return;
+    const firstBlockId = currentBook.mapping.firstBlockByChapterId[tocItem.chapterId];
 
     if (currentBook.currentBlocks.includes(firstBlockId)) {
       setCurrentBlock(firstBlockId);
@@ -67,7 +55,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, 0),
+      percent: calculateBookProgress(currentBook, 0, firstBlockId),
     });
     onClose();
   };
@@ -80,7 +68,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
 
   const renderChapter = ({ item }: { item: TocItem }) => {
     const hasChildren = parentIdsSet.has(item.id);
-    const isCurrentChapter = item.chapterId === currentChapterId;
+    const isCurrentChapter = item.chapterId === chapterId;
 
     return (
       <ChapterCard

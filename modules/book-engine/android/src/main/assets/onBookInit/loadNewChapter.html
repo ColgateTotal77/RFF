@@ -21,17 +21,8 @@
 
       var maxBlocks = 3;
 
-      if (position === 'top') {
-        var oldScrollY = window.scrollY;
-        var oldScrollHeight = document.documentElement.scrollHeight;
-
-        document.body.insertBefore(blockElement, document.body.firstChild);
-
-        var scrollDelta = document.documentElement.scrollHeight - oldScrollHeight;
-        window.scrollBy(0, scrollDelta);
-      } else {
-        document.body.appendChild(blockElement);
-      }
+      if (position === 'top') document.body.insertBefore(blockElement, document.body.firstChild);
+      else document.body.appendChild(blockElement);
 
       var currentBlocksElements = Array.from(document.querySelectorAll('[id^="block-"]'));
       var maxBlocks = 3;

@@ -1,100 +1,94 @@
 <script>
   window.updateTag = function (words, noteIdsString, colorCode) {
-    const DASH_CHARS = '-‐‑‒–—−';
-    const escapeForClass = (value) => value.replace(/[-\\\]]/g, '\\$&');
-    const WORD_CHAR_REGEX = new RegExp('[\\w' + escapeForClass(DASH_CHARS) + ']');
-    const isBoundaryChar = (char) => !char || !WORD_CHAR_REGEX.test(char);
+    window.log(`updateTag: words=${words}, noteIds=${noteIdsString}, colorCode=${colorCode}`);
 
     const wordArray = Array.isArray(words) ? words : [words];
-
-    window.log(
-      'updateTag: words=' + words + ', noteIds=' + noteIdsString + ', colorCode=' + colorCode
+    const targetWords = new Set(
+      wordArray.map((w) => (w ? w.toLowerCase().trim() : '')).filter(Boolean)
     );
 
-    const cleanedWordArray = wordArray
-      .map((w) => (w ? w.toLowerCase().trim() : ''))
-      .filter((w) => w);
-
-    const targetWords = new Set(cleanedWordArray);
-
     if (colorCode === 'remove') {
-      const existingSpans = document.querySelectorAll('span.anki-word');
-      existingSpans.forEach(function (span) {
-        const spanText = span.textContent.trim().toLowerCase();
-        if (targetWords.has(spanText)) span.outerHTML = span.textContent;
+      document.querySelectorAll('span.anki-word').forEach((span) => {
+        if (targetWords.has(span.textContent.trim().toLowerCase())) {
+          span.replaceWith(...span.childNodes);
+        }
       });
       return;
     }
 
-    if (!words || (Array.isArray(words) && words.length === 0)) {
-      const existingSpans = document.querySelectorAll(
-        `span.anki-word[data-note-ids="${noteIdsString}"]`
-      );
-      existingSpans.forEach(function (span) {
-        span.setAttribute('data-flag', colorCode);
-      });
-      return;
-    }
-    const existingSpans = document.querySelectorAll('span.anki-word');
-    existingSpans.forEach(function (span) {
-      const spanText = span.textContent.trim().toLowerCase();
-      if (targetWords.has(spanText)) {
-        span.setAttribute('data-flag', colorCode);
-        if (noteIdsString) span.setAttribute('data-note-ids', noteIdsString);
-      }
+    const updateByNoteId = targetWords.size === 0 && noteIdsString;
+    document.querySelectorAll('span.anki-word').forEach((span) => {
+      const isMatch = updateByNoteId
+        ? span.dataset.noteIds === noteIdsString
+        : targetWords.has(span.textContent.trim().toLowerCase());
+
+      if (!isMatch) return;
+
+      span.dataset.flag = colorCode;
+      span.dataset.noteIds = noteIdsString;
     });
 
-    const escapedWords = cleanedWordArray.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (targetWords.size === 0) return;
 
-    if (escapedWords.length === 0) return;
+    const DASH_CHARS = '-‐‑‒–—−';
+    const escapedWords = Array.from(targetWords).map((w) =>
+      w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    const combinedRegex = new RegExp(
+      `(^|[^\\w${DASH_CHARS}])(${escapedWords.join('|')})(?=[^\\w${DASH_CHARS}]|$)`,
+      'gi'
+    );
 
-    const combinedRegex = new RegExp(escapedWords.join('|'), 'gi');
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        const parent = node.parentNode;
+        if (['SCRIPT', 'STYLE'].includes(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+        if (parent.classList && parent.classList.contains('anki-word')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
 
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     const textNodes = [];
     let node;
+    while ((node = walker.nextNode())) textNodes.push(node);
 
-    while ((node = walker.nextNode())) {
-      const parent = node.parentNode;
-      if (
-        node.nodeValue.trim() !== '' &&
-        !['SCRIPT', 'STYLE'].includes(parent.nodeName) &&
-        (!parent.classList || !parent.classList.contains('anki-word'))
-      ) {
-        textNodes.push(node);
+    textNodes.forEach((textNode) => {
+      const matches = [];
+      let match;
+      while ((match = combinedRegex.exec(textNode.nodeValue)) !== null) {
+        const start = match.index + match[1].length;
+        matches.push({ start, length: match[2].length });
       }
-    }
 
-    const nodesToProcess = textNodes.length;
-    if (nodesToProcess > 0)
-      window.log(
-        'updateTag: processing ' + nodesToProcess + ' nodes for ' + escapedWords.length + ' words'
-      );
-    else window.log('updateTag: no nodes to process', 'error');
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const { start, length } = matches[i];
 
-    textNodes.forEach(function (textNode) {
-      const safeText = textNode.nodeValue
-        .replace(/&/g, '&​amp;')
-        .replace(/</g, '&​lt;')
-        .replace(/>/g, '&​gt;');
+        const wordNode = textNode.splitText(start);
+        wordNode.splitText(length);
 
-      const newHtml = safeText.replace(combinedRegex, function (match, offset, input) {
-        const beforeChar = input[offset - 1];
-        const afterChar = input[offset + match.length];
-        if (!isBoundaryChar(beforeChar) || !isBoundaryChar(afterChar)) {
-          return match;
+        let nodeToWrap = wordNode;
+        const parent = wordNode.parentNode;
+
+        if (parent && parent.nodeName === 'MARK' && parent.classList.contains('search-highlight')) {
+          if (
+            parent.textContent.trim().toLowerCase() === wordNode.textContent.trim().toLowerCase()
+          ) {
+            nodeToWrap = parent;
+          }
         }
-        return `<span class="anki-word" data-note-ids='${noteIdsString}' data-flag="${colorCode}">${match}</span>`;
-      });
 
-      if (newHtml !== safeText) {
-        const wrapper = document.createElement('span');
-        wrapper.innerHTML = newHtml;
-        textNode.parentNode.replaceChild(wrapper, textNode);
+        const span = document.createElement('span');
+        span.className = 'anki-word';
+        span.dataset.flag = colorCode;
+        if (noteIdsString) span.dataset.noteIds = noteIdsString;
 
-        wrapper.outerHTML = wrapper.innerHTML;
+        nodeToWrap.parentNode.insertBefore(span, nodeToWrap);
+        span.appendChild(nodeToWrap);
       }
     });
+
     window.log('updateTag: completed');
   };
 </script>

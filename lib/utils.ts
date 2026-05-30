@@ -1,4 +1,4 @@
-import { Book } from 'types';
+import { Book, Mapping } from 'types';
 
 export const deepMerge = (target: any, source: any): any => {
   const result = { ...target };
@@ -14,20 +14,22 @@ export const deepMerge = (target: any, source: any): any => {
   return result;
 };
 
-export const calculateBookProgress = (currentBook: Book, currentBlockScrollPercent: number) => {
-  const currentChapter = currentBook.chapters.find((ch) =>
-    ch.blockIds.includes(currentBook.currentBlock)
-  );
+export const calculateBookProgress = (
+  currentBook: Book,
+  currentBlockScrollPercent: number,
+  blockId?: number
+) => {
+  const targetBlockId = typeof blockId === 'number' ? blockId : currentBook.currentBlock;
+  const blockIndex = currentBook.mapping.blockIndex[targetBlockId];
 
-  if (!currentChapter) return 0;
+  if (!blockIndex) return 0;
 
-  const block = currentBook.blocks[currentBook.currentBlock];
   const charsIntoChapter =
-    block.charOffset -
-    currentBook.blocks[currentChapter.blockIds[0]].charOffset +
-    block.charCount * currentBlockScrollPercent;
+    blockIndex.blockCharOffset -
+    blockIndex.chapterCharOffset +
+    blockIndex.blockCharCount * currentBlockScrollPercent;
 
-  return (currentChapter.charOffset + charsIntoChapter) / currentBook.misc.totalCharCount;
+  return (blockIndex.chapterCharOffset + charsIntoChapter) / currentBook.misc.totalCharCount;
 };
 
 export const resolvePath = (base: string, relative: string) => {
@@ -53,4 +55,49 @@ export const updateNestedMapping = <T extends Record<string, any>>(
       ...partialData,
     } as T,
   } as Record<string, T>;
+};
+
+export const buildBookMapping = (book: Book) => {
+  const mapping: Mapping = {
+    chapterById: {},
+    tocByChapterId: {},
+    tocById: {},
+    firstBlockByChapterId: {},
+    blockIndex: {},
+  };
+
+  for (const chapter of book.chapters) {
+    mapping.chapterById[chapter.id] = chapter;
+    const firstBlockId = chapter.blockIds[0];
+    if (typeof firstBlockId === 'number') {
+      mapping.firstBlockByChapterId[chapter.id] = firstBlockId;
+    }
+  }
+
+  for (const tocItem of book.toc) {
+    const items = mapping.tocByChapterId[tocItem.chapterId];
+    if (items) items.push(tocItem);
+    else mapping.tocByChapterId[tocItem.chapterId] = [tocItem];
+    mapping.tocById[tocItem.id] = tocItem;
+  }
+
+  let lastTitle = '';
+  for (const block of book.blocks) {
+    const chapter = mapping.chapterById[block.chapterId];
+
+    const title = mapping.tocByChapterId[block.chapterId]?.[0]?.title ?? lastTitle;
+    lastTitle = title;
+
+    mapping.blockIndex[block.id] = {
+      chapterId: block.chapterId,
+      chapterTitle: title,
+      firstBlockId: mapping.firstBlockByChapterId[block.chapterId],
+      chapterCharOffset: chapter.charOffset,
+      chapterCharCount: chapter.charCount,
+      blockCharOffset: block.charOffset,
+      blockCharCount: block.charCount,
+    };
+  }
+
+  return mapping;
 };

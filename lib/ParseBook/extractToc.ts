@@ -40,18 +40,18 @@ export const extractToc = async (props: Props): Promise<TocItem[]> => {
         const baseHref = chapterSrc.split('#')[0];
         const matchingChapterId = mapHrefChapterId[baseHref];
 
-        if (matchingChapterId) {
+        if (matchingChapterId !== undefined && matchingChapterId !== null) {
           toc.push({
             id: pointId,
             title: chapterTitle,
-            href: chapterSrc,
             chapterId: matchingChapterId,
             level: currentLevel,
             parentId: currentParentId,
           });
         }
 
-        if (Array.isArray(point?.navPoint)) parseNavPoints(point.navPoint, currentLevel + 1, pointId);
+        if (Array.isArray(point?.navPoint))
+          parseNavPoints(point.navPoint, currentLevel + 1, pointId);
       });
     };
 

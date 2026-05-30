@@ -59,7 +59,8 @@ export const useMessageHandler = (
 
             const percent = calculateBookProgress(
               currentBook,
-              parsedData.currentBlockScrollPercent
+              parsedData.currentBlockScrollPercent,
+              parsedData.currentBlock
             );
 
             updateMisc({

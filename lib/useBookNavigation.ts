@@ -148,7 +148,7 @@ export const useJumpToNextSearchResult = () => {
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, 0),
+      percent: calculateBookProgress(currentBook, 0, newSearchResult.blockId),
     });
 
     setCurrentSearchResult(newSearchResult);
@@ -190,7 +190,7 @@ export const useJumpToPrevSearchResult = () => {
     }
 
     updateMisc({
-      percent: calculateBookProgress(currentBook, 0),
+      percent: calculateBookProgress(currentBook, 0, newSearchResult.blockId),
     });
     setCurrentSearchResult(newSearchResult);
   };
@@ -203,9 +203,7 @@ export const useProcessBookLinks = () => {
   const currentBook = useCurrentBook();
 
   return (chapterId: number, fragmentId: string) => {
-    const chapter = currentBook.chapters.find((c) => c.id === chapterId);
-
-    if (!chapter) return;
+    const chapter = currentBook.mapping.chapterById[chapterId];
 
     if (!fragmentId) {
       const blockId = chapter.blockIds[0];

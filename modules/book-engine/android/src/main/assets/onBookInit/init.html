@@ -72,12 +72,14 @@
         let noteIds = null;
         let colorCode = null;
 
-        const highlightedElement =
+        const baseElement =
           commonAncestor.nodeType === Node.TEXT_NODE
             ? commonAncestor.parentElement
             : commonAncestor;
 
-        if (highlightedElement && highlightedElement.classList.contains('anki-word')) {
+        const highlightedElement = baseElement.closest('.anki-word');
+
+        if (highlightedElement) {
           noteIds = highlightedElement.getAttribute('data-note-ids');
           colorCode = highlightedElement.getAttribute('data-flag');
         }
@@ -114,79 +116,59 @@
   let tapTimer = null;
   let lastTapText = '';
   const TAP_DELAY = 230;
+
   document.addEventListener('touchend', (event) => {
-    const range = document.caretRangeFromPoint(
-      event.changedTouches[0].clientX,
-      event.changedTouches[0].clientY
-    );
-    let selectedText = '';
-    let noteIds = null;
-    let colorCode = null;
+    const touch = event.changedTouches[0];
+    const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
 
-    if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-      const text = range.startContainer.textContent;
-      const offset = range.startOffset;
+    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
 
-      const commonAncestor = range.commonAncestorContainer;
-      const highlightedElement =
-        commonAncestor.nodeType === Node.TEXT_NODE ? commonAncestor.parentElement : commonAncestor;
+    const textNode = range.startContainer;
+    const text = textNode.textContent;
+    const offset = range.startOffset;
 
-      if (highlightedElement && highlightedElement.classList.contains('anki-word')) {
-        noteIds = highlightedElement.getAttribute('data-note-ids');
-        colorCode = highlightedElement.getAttribute('data-flag');
-      }
-
-      const start = text.lastIndexOf(' ', offset - 1) + 1;
-      const end = text.indexOf(' ', offset);
-      selectedText = text.substring(start, end === -1 ? text.length : end).trim();
-    }
+    const start = text.lastIndexOf(' ', offset - 1) + 1;
+    const end = text.indexOf(' ', offset);
+    const selectedText = text.substring(start, end === -1 ? text.length : end).trim();
 
     if (!selectedText) return;
-    if (tapTimer) {
-      clearTimeout(tapTimer);
-    }
 
-    tapCount++;
+    const highlightedElement = textNode.parentElement.closest('.anki-word');
+    const noteIds = highlightedElement?.dataset.noteIds || null;
+    const colorCode = highlightedElement?.dataset.flag || null;
 
     if (selectedText !== lastTapText) {
-      tapCount = 1;
+      tapCount = 0;
       lastTapText = selectedText;
     }
 
-    window.log('TAP: word="' + selectedText + '", count=' + tapCount);
+    tapCount++;
+    clearTimeout(tapTimer);
 
-    if (tapCount === 1) {
-      tapTimer = setTimeout(() => {
-        if (tapCount === 1 && lastSelectionText) {
-          window.ReactNativeWebView.postMessage(
-            JSON.stringify({
-              type: 'SELECTION_CLEARED',
-            })
-          );
-          lastSelectionText = '';
-        }
-        tapCount = 0;
-      }, TAP_DELAY);
-    } else if (tapCount === 2) {
-      tapTimer = setTimeout(() => {
-        tapCount = 0;
-        window.ReactNativeWebView.postMessage(
-          JSON.stringify({
-            type: 'DOUBLE_TAP',
-            text: selectedText,
-          })
-        );
-      }, TAP_DELAY);
-    } else if (tapCount === 3) {
+    window.log(`TAP: word="${selectedText}", count=${tapCount}`);
+
+    if (tapCount === 3) {
       window.ReactNativeWebView.postMessage(
         JSON.stringify({
           type: 'TRIPLE_TAP',
           text: selectedText,
-          noteIds: noteIds,
-          colorCode: colorCode,
+          noteIds,
+          colorCode,
         })
       );
       tapCount = 0;
+    } else {
+      tapTimer = setTimeout(() => {
+        if (tapCount === 1 && lastSelectionText) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECTION_CLEARED' }));
+          lastSelectionText = '';
+        } else if (tapCount === 2) {
+          window.ReactNativeWebView.postMessage(
+            JSON.stringify({ type: 'DOUBLE_TAP', text: selectedText })
+          );
+        }
+        tapCount = 0;
+      }, TAP_DELAY);
     }
   });
 

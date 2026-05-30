@@ -153,8 +153,6 @@ class BookEngineModule : Module() {
 
     private external fun extractBlockHtml(filePath: String): String?
 
-    private external fun extractBlockToFile(filePath: String, outputPath: String): Boolean
-
     private external fun initAnkiDictionary(
         words: Array<String>,
         noteIds: Array<LongArray>,
@@ -404,22 +402,16 @@ class BookEngineModule : Module() {
 
                     fos.write("\n$loadedScripts\n".toByteArray())
 
-                    val tempFiles = runBlocking(Dispatchers.IO) {
-                        paths.mapIndexed { i, path ->
-                            async {
-                                val tempFile = File(cacheDir, "temp_init_$i.html")
-                                val success = extractBlockToFile(path, tempFile.absolutePath)
-                                i to if (success) tempFile else null
-                            }
-                        }.awaitAll().toMap().toSortedMap()
+                    val htmlBlocks = runBlocking(Dispatchers.IO) {
+                    paths.mapIndexed { i, path ->
+                        async {
+                        val html = extractBlockHtml(path)
+                        i to html
+                        }
+                    }.awaitAll().sortedBy { it.first }.joinToString("\n") { it.second ?: "" }
                     }
 
-                    tempFiles.forEach { (i, tempFile) ->
-                        val blockId = indices[i]
-                        tempFile?.inputStream()?.use { it.copyTo(fos) }
-                        tempFile?.delete()
-                    }
-
+                    fos.write(htmlBlocks.toByteArray())
                     fos.write(footer.toByteArray())
                 }
 

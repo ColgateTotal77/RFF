@@ -22,18 +22,14 @@ export const Footer = () => {
 
   const { percent = 0, currentBlockScrollPercent = 0, totalCharCount = 1 } = currentBook.misc;
   const bookProgress = Math.min(100, Math.max(0, Math.round(percent * 100)));
+  const blockIndex = currentBook.mapping.blockIndex[currentBook.currentBlock];
 
-  const currentBlock = currentBook.blocks[currentBook.currentBlock];
-  const currentChapter = currentBook.chapters[currentBlock.chapterId];
-  const chapterStartOffset = currentBook.blocks[currentChapter.blockIds[0]].charOffset;
+  const chapterStartOffset = blockIndex.chapterCharOffset;
   const currentChapterOffset =
-    currentBlock.charOffset -
+    blockIndex.blockCharOffset -
     chapterStartOffset +
-    currentBlock.charCount * currentBlockScrollPercent;
-  const chapterProgress = Math.min(
-    100,
-    Math.max(0, Math.round((currentChapterOffset / currentChapter.charCount) * 100))
-  );
+    blockIndex.blockCharCount * currentBlockScrollPercent;
+  const chapterProgress = Math.round((currentChapterOffset / blockIndex.chapterCharCount) * 100);
 
   const chapterMarkers = currentBook.chapters.map(
     (chapter) => (chapter.charOffset / totalCharCount) * 100

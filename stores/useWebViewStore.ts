@@ -58,8 +58,6 @@ export const useWebViewStore = create<Store>()((set, get) => ({
     if (targetBlockId !== -1) jumpToBlock(targetBlockId);
 
     try {
-      set({ webViewSource: null, isWebViewReady: false });
-
       const currentBook = useBookStore.getState().currentBook;
       if (!currentBook) return;
 
