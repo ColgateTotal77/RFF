@@ -61,7 +61,9 @@ export const useWebViewStore = create<Store>()((set, get) => ({
       const currentBook = useBookStore.getState().currentBook;
       if (!currentBook) return;
 
-      const font = currentBook.settings?.font || settings.font;
+      const fontFamily = currentBook.settings?.font?.fontFamily || settings.font.fontFamily;
+      const fontSize = currentBook.settings?.font?.fontSize || settings.font.fontSize;
+
       const { currentBlocks, blocks } = currentBook;
       const paths = currentBlocks.map((index) => blocks[index].fullPath);
 
@@ -90,8 +92,8 @@ export const useWebViewStore = create<Store>()((set, get) => ({
         currentBlocks,
         currentBook.cssPaths,
         {
-          fontSize: font.fontSize,
-          fontFamily: font.fontFamily,
+          fontSize: fontSize,
+          fontFamily: fontFamily,
           theme: settings.theme,
         }
       );

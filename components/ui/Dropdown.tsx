@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Text } from 'react-native-paper';
+import { Text, useTheme, Divider, Icon } from 'react-native-paper';
 import { View, Modal, TouchableOpacity, FlatList, StyleSheet, Dimensions } from 'react-native';
 import { Button } from 'components/ui/Button';
 
@@ -12,10 +12,13 @@ interface Props<T extends string> {
   label?: string;
   value: any | undefined;
   options: DropdownOption<T>[];
-  onSelect: (id: T) => void;
   isLoading?: boolean;
   placeholder?: string;
   isGrayed?: boolean;
+  closeOnSelect?: boolean;
+  onSelect: (id: T) => void;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
 export const Dropdown = <T extends string>(props: Props<T>) => {
@@ -23,12 +26,16 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
     label,
     value,
     options,
-    onSelect,
     isLoading = false,
     placeholder = 'Select an option',
     isGrayed,
+    closeOnSelect = true,
+    onSelect,
+    onOpen,
+    onClose,
   } = props;
 
+  const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownLayout, setDropdownLayout] = useState({
     x: 0,
@@ -46,14 +53,20 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
   const handleOpen = () => {
     buttonRef.current?.measureInWindow((x, y, width, height) => {
       const screenHeight = Dimensions.get('window').height;
-      const estimatedDropdownHeight = Math.min(options.length * 54, 400);
+      const estimatedDropdownHeight = Math.min(options.length * 52, 400);
       const spaceBelow = screenHeight - (y + height + 4);
       const shouldPositionAbove = spaceBelow < estimatedDropdownHeight;
       const dropdownHeight = shouldPositionAbove ? estimatedDropdownHeight : 0;
 
       setDropdownLayout({ x, y, width, height, shouldPositionAbove, dropdownHeight });
+      onOpen?.();
       setIsOpen(true);
     });
+  };
+
+  const handleClose = () => {
+    onClose?.();
+    setIsOpen(false);
   };
 
   return (
@@ -61,8 +74,8 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
       {label && (
         <Text
           variant="labelLarge"
-          className="mb-1 text-gray-600"
-          style={isGrayed ? { color: '#9ca3af' } : undefined}>
+          className="mb-1"
+          style={{ color: isGrayed ? theme.colors.outline : theme.colors.onSurfaceVariant }}>
           {label}
         </Text>
       )}
@@ -74,20 +87,16 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
           loading={isLoading}
           icon="chevron-down"
           contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }}
-          textColor={isGrayed ? '#9ca3af' : undefined}>
+          textColor={isGrayed ? theme.colors.outline : undefined}>
           {displayLabel}
         </Button>
       </View>
 
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="none"
-        onRequestClose={() => setIsOpen(false)}>
+      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={handleClose}>
         <TouchableOpacity
-          style={StyleSheet.absoluteFillObject}
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.25)' }]}
           activeOpacity={1}
-          onPress={() => setIsOpen(false)}
+          onPress={handleClose}
         />
 
         <View
@@ -98,8 +107,8 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
               : dropdownLayout.y + dropdownLayout.height + 4,
             left: dropdownLayout.x,
             width: dropdownLayout.width,
-            backgroundColor: '#1e1e2e',
-            borderRadius: 12,
+            backgroundColor: theme.colors.elevation.level3,
+            borderRadius: theme.roundness * 3,
             elevation: 8,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
@@ -111,25 +120,37 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
           <FlatList
             data={options}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  onSelect(item.id);
-                  setIsOpen(false);
-                }}
-                style={{
-                  paddingHorizontal: 20,
-                  paddingVertical: 18,
-                }}>
-                <Text
+            ItemSeparatorComponent={() => <Divider />}
+            renderItem={({ item }) => {
+              const isSelected = item.id === value;
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    if (item.id === value) return;
+                    onSelect(item.id);
+                    if (closeOnSelect) handleClose();
+                  }}
                   style={{
-                    color: item.id === value ? '#a78bfa' : '#ffffff',
-                    fontSize: 18,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isSelected ? theme.colors.secondaryContainer : 'transparent',
                   }}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            )}
+                  {isSelected && <Icon source="check" size={18} color={theme.colors.primary} />}
+                  <Text
+                    variant="bodyLarge"
+                    style={{
+                      color: isSelected
+                        ? theme.colors.onSecondaryContainer
+                        : theme.colors.onSurface,
+                      marginLeft: isSelected ? 12 : 30,
+                    }}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
           />
         </View>
       </Modal>

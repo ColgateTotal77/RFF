@@ -1,8 +1,8 @@
 import { Appbar, TextInput, useTheme } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
-import { useCurrentBook } from 'stores/useBookStore';
-import { useState } from 'react';
-import { View, Modal } from 'react-native';
+import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useEffect, useRef, useState } from 'react';
+import { View, Modal, Animated } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
 import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
@@ -45,6 +45,9 @@ export const BookHeader = () => {
   const setPostLoadQueue = useWebViewStore((state) => state.setPostLoadQueue);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
+  const openBook = useBookStore((state) => state.openBook);
+  const currentCTree = useBookStore((state) => state.currentCTree);
+  const closeBook = useBookStore((state) => state.closeBook);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   const onSearchSubmit = async (localQuery: string) => {
@@ -65,6 +68,33 @@ export const BookHeader = () => {
     const results = await BookEngine.searchInBook(cleanedQuery, currentBook.basePath);
     setSearchResults(results);
   };
+
+  const onBookSettingsClose = () => {
+    setIsBookSettingsOpen(false);
+    if (
+      currentCTree?.deckId !== currentBook.settings.ankiDeckId ||
+      currentCTree?.langCode !== currentBook.settings.bookLang
+    ) {
+      const basePath = currentBook.basePath;
+      closeBook();
+      setTimeout(() => {
+        openBook(basePath);
+      }, 0);
+    }
+  };
+
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const unsubscribe = useTempStore.subscribe((state) => {
+      Animated.timing(opacityAnim, {
+        toValue: state.isBookSettingsTransparent ? 0.7 : 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return unsubscribe;
+  }, [opacityAnim]);
 
   return (
     <>
@@ -107,14 +137,20 @@ export const BookHeader = () => {
       <Modal
         visible={isBookSettingsOpen}
         animationType="slide"
-        onRequestClose={() => setIsBookSettingsOpen(false)}>
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-          <Appbar.Header>
-            <AppbarAction icon="close" onPress={() => setIsBookSettingsOpen(false)} />
+        transparent={true}
+        onRequestClose={onBookSettingsClose}>
+        <Animated.View
+          style={{
+            flex: 1,
+            backgroundColor: theme.colors.background,
+            opacity: opacityAnim,
+          }}>
+          <Appbar.Header style={{ backgroundColor: 'transparent' }}>
+            <AppbarAction icon="close" onPress={onBookSettingsClose} />
             <Appbar.Content title={t('bookSettings')} />
           </Appbar.Header>
           <BookSettings />
-        </View>
+        </Animated.View>
       </Modal>
     </>
   );

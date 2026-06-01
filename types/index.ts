@@ -1,4 +1,5 @@
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { FontFamily } from 'lib/constants';
 import { LanguageCode } from 'lib/langHelper';
 export type RootStackParamList = {
   'Reading Now': undefined;
@@ -89,8 +90,8 @@ export interface Misc {
 }
 
 export interface Font {
+  fontFamily: FontFamily;
   fontSize: number;
-  fontFamily: string;
 }
 
 export const FIELD_MAPPING_KEYS = [

@@ -1,0 +1,42 @@
+<script>
+  (function () {
+    const fontDefinitions = [
+      { id: 'Atkinson Hyperlegible', prefix: 'AtkinsonHyperlegible', ext: 'ttf' },
+      { id: 'Inter', prefix: 'Inter', ext: 'ttf' },
+      { id: 'Literata', prefix: 'Literata', ext: 'ttf' },
+      { id: 'Lora', prefix: 'Lora', ext: 'ttf' },
+      { id: 'Merriweather', prefix: 'Merriweather', ext: 'ttf' },
+      { id: 'Nunito', prefix: 'Nunito', ext: 'ttf' },
+      { id: 'OpenDyslexic', prefix: 'OpenDyslexic', ext: 'otf' },
+      { id: 'Open Sans', prefix: 'OpenSans', ext: 'ttf' },
+      { id: 'PT Serif', prefix: 'PTSerif', ext: 'ttf' },
+    ];
+    const assetBase = 'file:///android_asset/fonts/';
+    const css = fontDefinitions
+      .map(
+        (font) => `
+      @font-face {
+        font-family: '${font.id}';
+        src: url('${assetBase}${font.prefix}-Regular.${font.ext}');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: '${font.id}';
+        src: url('${assetBase}${font.prefix}-Bold.${font.ext}');
+        font-weight: bold;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: '${font.id}';
+        src: url('${assetBase}${font.prefix}-Italic.${font.ext}');
+        font-weight: normal;
+        font-style: italic;
+      }`
+      )
+      .join('\n');
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+  })();
+</script>

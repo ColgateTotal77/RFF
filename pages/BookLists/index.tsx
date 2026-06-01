@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Book, RootDrawerNavigationProp } from 'types';
 import { useTempStore } from 'stores/useTempStore';
 import { BookCard } from 'pages/BookLists/BookCard';
+import { useTheme } from 'react-native-paper';
 
 interface BookListScreenProps {
   filterFn: (book: Book) => boolean;
@@ -14,6 +15,7 @@ export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) =
   const books = useBookStore((state) => state.books);
   const openBook = useBookStore((state) => state.openBook);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
+  const theme = useTheme();
 
   const navigation = useNavigation<RootDrawerNavigationProp>();
 
@@ -32,6 +34,7 @@ export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) =
   return (
     <FlatList
       data={filteredBooks}
+      style={{ backgroundColor: theme.colors.background }}
       keyExtractor={(book) => book.basePath}
       renderItem={renderBook}
       contentContainerClassName="p-4 gap-4"

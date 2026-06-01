@@ -1,5 +1,5 @@
 import { Directory } from 'expo-file-system';
-import { Chapter, Book, Block, TocItem, Mapping } from 'types';
+import { Chapter, Book, Block, TocItem } from 'types';
 import { BookEngine } from 'modules/book-engine';
 import { unzipEpubBook } from 'lib/ParseBook/unzipEpubBook';
 import { extractBookMeta } from 'lib/ParseBook/extractBookMeta';
@@ -132,6 +132,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       mapping: {
         chapterById: {},
         tocByChapterId: {},
+        tocById: {},
         firstBlockByChapterId: {},
         blockIndex: {},
       },

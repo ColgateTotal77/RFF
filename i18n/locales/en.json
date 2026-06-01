@@ -8,9 +8,18 @@
     "mirroredModelLabel": "Mirrored Model",
     "fieldMapping": "Field Mapping",
     "mirroredFieldMapping": "Mirrored Field Mapping",
-    "fieldMappingLabel": "App field \"{{fieldKey}}\" → Anki field:",
     "twoSidedTitle": "Two-sided deck",
-    "twoSidedDescription": "Create mirrored cards (front↔back)"
+    "twoSidedDescription": "Create mirrored cards (front↔back)",
+    "fieldMappingLabel": "Anki field \"{{ankiFieldName}}\" → App field:",
+    "none": "None",
+    "appFields": {
+      "word": "Word",
+      "translation": "Translation",
+      "examples": "Examples",
+      "zipf": "Zipf",
+      "synonyms": "Synonyms",
+      "audio": "Audio"
+    }
   },
   "miscTab": {
     "title": "Misc",
@@ -21,7 +30,8 @@
     "autoCardTitle": "Auto card update on double click",
     "autoCardDescription": "When you translate word on double click also update/create card",
     "themeTitle": "Theme",
-    "themeDescription": "Switch between light and dark mode"
+    "themeDescription": "Switch between light and dark mode",
+    "fontSizeLabel": "Font size {{fontSize}}px"
   },
   "reader": {
     "footer": {

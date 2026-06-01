@@ -113,15 +113,6 @@ Word: "bank", Source language: English, Target language: Russian
   "target_translations": ["банк", "берег", "наклонять"]
 }
 
-Word: "tapestry", Source language: English, Target language: Ukrainian
-{
-  "source_synonyms": ["wall hanging", "arras"],
-  "source_examples": [
-    "The tapestry hung above the fireplace in the old hall."
-  ],
-  "target_translations": ["гобелен"]
-}
-
 Word: "vol", Source language: French, Target language: German
 {
   "source_synonyms": ["larcin", "trajet"],
@@ -132,37 +123,26 @@ Word: "vol", Source language: French, Target language: German
   "target_translations": ["Flug", "Diebstahl"]
 }
 
-Word: "Kühlschrank", Source language: German, Target language: English
+Word: "muñeca", Source language: Spanish, Target language: Portuguese
+{
+  "source_synonyms": [],
+  "source_examples": [
+    "Me duele mucho la muñeca después de jugar al tenis.",
+    "La niña recibió una hermosa muñeca por su cumpleaños."
+  ],
+  "target_translations": ["pulso", "boneca"]
+}
+
+Word: "Kühlschrank", Source language: German, Target language: Turkish
 {
   "source_synonyms": ["Kühlgerät", "Eisschrank"],
   "source_examples": [
     "Vergiss nicht, die Milch sofort wieder in den Kühlschrank zu stellen."
   ],
-  "target_translations": ["refrigerator"]
+  "target_translations": ["buzdolabı"]
 }
 
-Word: "tomar", Source language: Spanish, Target language: English
-{
-  "source_synonyms": ["coger", "agarrar"],
-  "source_examples": [
-    "Voy a tomar el tren de las ocho mañana por la mañana.",
-    "¿Te gustaría tomar un café antes de la reunión?",
-    "Toma este libro, creo que te va a gustar mucho."
-  ],
-  "target_translations": ["to take", "to drink", "to grab"]
-}
-
-Word: "letter", Source language: English, Target language: Spanish
-{
-  "source_synonyms": ["message", "character", "note"],
-  "source_examples": [
-    "I wrote a long handwritten letter to my grandmother overseas.",
-    "The teacher asked the student to write every letter of the alphabet on the board."
-  ],
-  "target_translations": ["carta", "letra"]
-}
-
-Word: "piano", Source language: Italian, Target language: English
+Word: "piano", Source language: Italian, Target language: Dutch
 {
   "source_synonyms": ["progetto", "lentamente", "livello"],
   "source_examples": [
@@ -170,36 +150,74 @@ Word: "piano", Source language: Italian, Target language: English
     "Il mio ufficio si trova al terzo piano dell'edificio.",
     "Dobbiamo elaborare un nuovo piano per risolvere questo problema."
   ],
-  "target_translations": ["slowly / softly", "floor", "plan"]
+  "target_translations": ["zachtjes / langzaam", "verdieping", "plan"]
 }
 
-Word: "shack", Source language: English, Target language: Ukrainian
-{
-  "source_synonyms": ["hut", "cabin"],
-  "source_examples": [
-    "They lived in a small shack near the river."
-  ],
-  "target_translations": ["халупа"]
-}
-
-Word: "мир", Source language: Russian, Target language: English
+Word: "мир", Source language: Russian, Target language: Chinese (Simplified)
 {
   "source_synonyms": ["вселенная", "перемирие"],
   "source_examples": [
-    "Они мечтают отправиться в путешествие и увидеть весь мир.",
+    "Они мечтают отправиться в долгое путешествие и увидеть весь мир.",
     "После долгих переговоров две страны наконец-то заключили мир."
   ],
-  "target_translations": ["world", "peace"]
+  "target_translations": ["世界", "和平"]
 }
 
-Word: "голова", Source language: Ukrainian, Target language: German
+Word: "голова", Source language: Ukrainian, Target language: Polish
 {
-  "source_synonyms": ["керівник", "очільник", "шеф"],
+  "source_synonyms": ["керівник", "очільник"],
   "source_examples": [
     "Після вчорашньої довгої поїздки у мене дуже сильно болить голова.",
     "Голова сільської ради скликав термінове засідання для вирішення цього питання."
   ],
-  "target_translations": ["Kopf", "Leiter / Chef"]
+  "target_translations": ["głowa", "przewodniczący / szef"]
+}
+
+Word: "gift", Source language: Swedish, Target language: Spanish
+{
+  "source_synonyms": ["giftämne", "toxin"],
+  "source_examples": [
+    "Hon har varit gift med sin man i över tjugo år.",
+    "Den lilla grodan utsöndrar ett farligt gift från sin fuktiga hud."
+  ],
+  "target_translations": ["casado", "veneno"]
+}
+
+Word: "約束", Source language: Japanese, Target language: English
+{
+  "source_synonyms": ["契り", "誓い"],
+  "source_examples": [
+    "明日一緒に映画に行くという約束を絶対に忘れないでね。"
+  ],
+  "target_translations": ["promise / appointment"]
+}
+
+Word: "kuusi", Source language: Finnish, Target language: English
+{
+  "source_synonyms": [],
+  "source_examples": [
+    "Pihallamme kasvaa valtava kuusi, joka on yli sata vuotta vanha.",
+    "Lapsi oppi eilen laskemaan numeroon kuusi asti täysin itse."
+  ],
+  "target_translations": ["spruce / fir", "six"]
+}
+
+Word: "saudade", Source language: Portuguese, Target language: French
+{
+  "source_synonyms": [],
+  "source_examples": [
+    "Sinto muita saudade da minha terra natal e da minha avó."
+  ],
+  "target_translations": ["nostalgie / manque"]
+}
+
+Word: "fiets", Source language: Dutch, Target language: Italian
+{
+  "source_synonyms": ["rijwiel", "tweewieler"],
+  "source_examples": [
+    "Ik ga elke ochtend met de fiets naar mijn werk."
+  ],
+  "target_translations": ["bicicletta / bici"]
 }
 
 RULES

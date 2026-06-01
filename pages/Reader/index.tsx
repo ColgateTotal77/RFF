@@ -15,12 +15,8 @@ export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
   const registerWebViewAction = useWebViewStore((state) => state.registerWebViewAction);
   const webViewSource = useWebViewStore((state) => state.webViewSource);
-  const resetWebView = useWebViewStore((state) => state.resetWebView);
   const isWebViewReady = useWebViewStore((state) => state.isWebViewReady);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
-  const resetSearch = useTempStore((state) => state.resetSearch);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
-  const closeMenu = useTempStore((state) => state.closeSelectionMenu);
   const addBookmark = useBookStore((state) => state.addBookmark);
   const removeBookmark = useBookStore((state) => state.removeBookmark);
   const theme = useTheme();
@@ -40,20 +36,6 @@ export const ReaderScreen = () => {
     currentBook?.currentBlock,
     currentBook?.misc.currentBlockScrollPercent,
   ]);
-
-  useEffect(() => {
-    if (currentBook) {
-      console.log('loadWindow');
-      loadWindow(currentBook.currentBlock, currentBook.misc.currentBlockScrollPercent);
-    }
-
-    return () => {
-      resetWebView();
-      resetSearch();
-      closeMenu();
-      console.log('closeBook');
-    };
-  }, [currentBook?.basePath]);
 
   useEffect(() => {
     registerWebViewAction((script) => {
@@ -88,6 +70,7 @@ export const ReaderScreen = () => {
           scalesPageToFit={false}
           showsVerticalScrollIndicator={false}
           androidLayerType="hardware"
+          renderToHardwareTextureAndroid={true}
           overScrollMode="never"
           scrollEnabled={true}
           mixedContentMode="always"

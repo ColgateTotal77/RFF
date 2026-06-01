@@ -29,16 +29,16 @@ class AnkiModule : Module() {
         freqDatabase = database
     }
 
+    private val moduleContext get() = appContext.reactContext ?: throw Exception("React context is null")
+
     private external fun upsertWordToAnkiDictionary(word: String, noteIds: LongArray, colorCode: Int)
 
     override fun definition() = ModuleDefinition {
         Name("Anki")
 
         AsyncFunction("getDecks") { ->
-            val context = appContext.reactContext ?: throw Exception("React context is null")
-
             try {
-                val ankiApi = AddContentApi(context)
+                val ankiApi = AddContentApi(moduleContext)
                 val deckList = ankiApi.deckList ?: return@AsyncFunction emptyList<Map<String, String>>()
 
                 val formattedDecks = deckList.map {
@@ -53,10 +53,8 @@ class AnkiModule : Module() {
         }
 
         AsyncFunction("getModels") { ->
-            val context = appContext.reactContext ?: throw Exception("React context is null")
-
             try {
-                val ankiApi = AddContentApi(context)
+                val ankiApi = AddContentApi(moduleContext)
                 val modelList = ankiApi.modelList ?: return@AsyncFunction emptyList<Map<String, String>>()
 
                 val formattedModels = modelList.map {
@@ -71,11 +69,10 @@ class AnkiModule : Module() {
         }
 
         AsyncFunction("getFields") { modelIdString: String ->
-            val context = appContext.reactContext ?: throw Exception("React context is null")
             val modelId = modelIdString.toLong()
 
             try {
-                val ankiApi = AddContentApi(context)
+                val ankiApi = AddContentApi(moduleContext)
                 val fields = ankiApi.getFieldList(modelId) ?: emptyArray<String>()
 
                 return@AsyncFunction fields
@@ -90,7 +87,6 @@ class AnkiModule : Module() {
         }
 
         AsyncFunction("addNote") { deckIdString: String, fields: Map<String, String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?>, isTwoSided: Boolean ->
-            val context = appContext.reactContext ?: throw Exception("React context is null")
             val deckId = deckIdString.toLong()
 
             try {
@@ -100,7 +96,7 @@ class AnkiModule : Module() {
                 val word = fields["word"] ?: throw Exception("Word field is missing")
 
                 val modelId = mapping["modalId"] as String ?: throw Exception("modalId is missing")
-                val ankiApi = AddContentApi(context)
+                val ankiApi = AddContentApi(moduleContext)
 
                 val (wordTier, wordZipf) = runBlocking {
                     freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
@@ -117,11 +113,11 @@ class AnkiModule : Module() {
                 mutableFields["examples"] = finalExamples
 
                 val updatedNoteIds = mutableListOf<Long>()
-                val noteTagger = NoteTagger(context, freqDatabase)
+                val noteTagger = NoteTagger(moduleContext, freqDatabase)
 
                 fun updateOrCreateCardPair(targetWord: String, zipf: Double, tier: String) {
 
-                    val noteFinder = NoteFinder(context)
+                    val noteFinder = NoteFinder(moduleContext)
                     val note = noteFinder.findByModelId(modelId.toLong(), targetWord)
 
                     if (note != null) {
@@ -153,7 +149,7 @@ class AnkiModule : Module() {
 
                         val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
 
-                        val mapper = FieldArrayMapper(context, AnkiAudioHelper(context))
+                        val mapper = FieldArrayMapper(moduleContext, AnkiAudioHelper(moduleContext))
 
                         val mainFieldsArray = runBlocking { mapper.convertFieldsToArray(mutableFields, mapping) }
                         val mainNoteId = ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)
@@ -188,9 +184,7 @@ class AnkiModule : Module() {
         AsyncFunction("updateNoteTags") { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
             if (noteIds.isEmpty()) return@AsyncFunction
 
-            val context = appContext.reactContext ?: throw Exception("React context is null")
-
-            val noteTagger = NoteTagger(context, freqDatabase)
+            val noteTagger = NoteTagger(moduleContext, freqDatabase)
 
             val bestTier = noteTagger.getBestFrequencyTier(noteIds, mapping, mirroredMapping)
 
@@ -202,14 +196,12 @@ class AnkiModule : Module() {
         }
 
         AsyncFunction("deleteNote") { noteIds: LongArray ->
-            val context = appContext.reactContext ?: throw Exception("React context is null")
-
             try {
                 val baseUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
 
                 for (noteId in noteIds) {
                     val noteUri = Uri.withAppendedPath(baseUri, noteId.toString())
-                    val deletedRows = context.contentResolver.delete(noteUri, null, null)
+                    val deletedRows = moduleContext.contentResolver.delete(noteUri, null, null)
                 }
             } catch (e: Exception) {
                 android.util.Log.e("BookEngine", "Failed to delete Anki notes", e)

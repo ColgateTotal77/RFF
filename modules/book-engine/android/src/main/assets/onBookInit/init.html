@@ -10,16 +10,24 @@
       );
   };
 
+  window.resolveFontFamily = (family) => {
+    if (family.includes(',')) return family;
+    if (family.includes(' ')) return `"${family}"`;
+    return family;
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     window.isFetching = false;
     const config = window.BookConfig || {};
 
-    const currentFont = config.fontFamily || 'sans-serif';
+    const currentFont = window.resolveFontFamily(config.fontFamily || 'Georgia, serif');
     const currentFontSize = config.fontSize || 16;
     const currentTheme = config.theme || 'light';
 
     document.documentElement.style.setProperty('--book-font-family', currentFont);
     document.documentElement.style.setProperty('--book-font-size', `${currentFontSize}px`);
+
+    document.documentElement.setAttribute('data-font', config.fontFamily);
     window.setTheme(currentTheme);
 
     window.log(
@@ -38,15 +46,6 @@
   document.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });
-
-  window.setFontSize = (size) => {
-    window.log('setFontSize: ' + size);
-    document.body.style.fontSize = size + 'px';
-  };
-  window.setFontFamily = (family) => {
-    window.log('setFontFamily: ' + family);
-    document.body.style.fontFamily = family;
-  };
 
   let selectionRafId = null;
   let lastSelectionText = '';
@@ -197,5 +196,16 @@
   window.setTheme = (theme) => {
     window.log('setTheme: ' + theme);
     document.documentElement.setAttribute('data-theme', theme);
+  };
+
+  window.setFontSize = (size) => {
+    window.log('setFontSize: ' + size);
+    document.documentElement.style.setProperty('--book-font-size', `${size}px`, 'important');
+  };
+  window.setFontFamily = (family) => {
+    const resolved = window.resolveFontFamily(family);
+    document.documentElement.setAttribute('data-font', family);
+    document.documentElement.style.setProperty('--book-font-family', resolved, 'important');
+    window.log('setFontFamily: ' + resolved);
   };
 </script>

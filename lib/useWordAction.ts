@@ -18,14 +18,18 @@ export const useWordAction = () => {
 
   const addNewCard = async (text: string) => {
     const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
-    const targetLang = currentBook.settings.targetLang || settings.targetLang;
-    const cleanedText = text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '');
+    const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
+    if (!deckId || !modelId) {
+      console.error('Missing Anki configuration');
+      return;
+    }
 
     try {
-      if (!deckId) {
-        console.error('Missing Anki configuration');
-        return;
-      }
+      const targetLang = currentBook.settings.targetLang || settings.targetLang;
+      const cleanedText = text.replace(
+        new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'),
+        ''
+      );
 
       executeImmediateAction({
         type: 'updateTag',
@@ -41,7 +45,6 @@ export const useWordAction = () => {
       );
 
       const isTwoSided = currentBook.settings.isTwoSided || settings.isTwoSided;
-      const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
       const mirroredModelId =
         currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
       const key = `${deckId}:${modelId}`;

@@ -16,6 +16,9 @@ type Store = {
 
   setSelectionMenu: (menu: Partial<SelectionMenu>) => void;
   closeSelectionMenu: () => void;
+
+  isBookSettingsTransparent: boolean;
+  setIsBookSettingsTransparent: (isSliding: boolean) => void;
 };
 
 export const useTempStore = create<Store>()((set) => ({
@@ -36,6 +39,7 @@ export const useTempStore = create<Store>()((set) => ({
     top: 0,
     left: 0,
   },
+  isBookSettingsTransparent: false,
 
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
@@ -59,4 +63,5 @@ export const useTempStore = create<Store>()((set) => ({
     set((state) => ({ selectionMenu: { ...state.selectionMenu, ...menu } })),
   closeSelectionMenu: () =>
     set((state) => ({ selectionMenu: { ...state.selectionMenu, visible: false } })),
+  setIsBookSettingsTransparent: (isSliding) => set({ isBookSettingsTransparent: isSliding }),
 }));

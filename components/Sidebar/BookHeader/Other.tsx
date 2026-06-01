@@ -1,7 +1,6 @@
 import { Divider, Menu } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { useTranslation } from 'react-i18next';
-import { useWebViewStore } from 'stores/useWebViewStore';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { useAppStore } from 'stores/useAppStore';
 
@@ -36,7 +35,13 @@ export const Other = (props: Props) => {
         title={t('addBookmark')}
       />
       <Divider />
-      <Menu.Item onPress={() => onBookSettingsOpen()} title={t('settings')} />
+      <Menu.Item
+        onPress={() => {
+          onBookSettingsOpen();
+          onClose();
+        }}
+        title={t('settings')}
+      />
     </Menu>
   );
 };

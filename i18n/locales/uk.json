@@ -8,9 +8,18 @@
     "mirroredModelLabel": "Дзеркальна модель",
     "fieldMapping": "Співставлення полів",
     "mirroredFieldMapping": "Співставлення дзеркальних полів",
-    "fieldMappingLabel": "Поле застосунку \"{{fieldKey}}\" → Поле Anki:",
     "twoSidedTitle": "Двостороння колода",
-    "twoSidedDescription": "Створювати дзеркальні картки (лицьова↔зворотна)"
+    "twoSidedDescription": "Створювати дзеркальні картки (лицьова↔зворотна)",
+    "fieldMappingLabel": "Anki поле \"{{ankiFieldName}}\" → поле застосунку:",
+    "none": "Ні",
+    "appFields": {
+      "word": "Слово",
+      "translation": "Переклад",
+      "examples": "Приклади",
+      "zipf": "Zipf",
+      "synonyms": "Синоніми",
+      "audio": "Аудіо"
+    }
   },
   "miscTab": {
     "title": "Різне",
@@ -21,7 +30,8 @@
     "autoCardTitle": "Автоматичне оновлення картки подвійним кліком",
     "autoCardDescription": "При перекладі слова подвійним кліком також оновлювати/створювати картку",
     "themeTitle": "Тема",
-    "themeDescription": "Перемкнути між світлою та темною темою"
+    "themeDescription": "Перемкнути між світлою та темною темою",
+    "fontSizeLabel": "Розмір шрифту {{fontSize}}px"
   },
   "reader": {
     "footer": {

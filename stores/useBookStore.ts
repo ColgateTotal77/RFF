@@ -9,6 +9,8 @@ import { useAnkiStore } from './useAnkiStore';
 import { useWebViewStore } from './useWebViewStore';
 import i18n from 'i18n';
 import { LanguageCode } from 'lib/langHelper';
+import { DEFAULT_FONT_FAMILY } from 'lib/constants';
+import { useTempStore } from './useTempStore';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -66,7 +68,7 @@ export const useBookStore = create<Store>()(
         isTwoSided: false,
         autoCardOnDoubleTap: false,
         targetLang: i18n.language as LanguageCode,
-        font: { fontSize: 30, fontFamily: 'Georgia, serif' },
+        font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
         theme: 'light',
       },
 
@@ -88,9 +90,8 @@ export const useBookStore = create<Store>()(
       },
 
       openBook: (basePath: string) => {
-        get().closeBook();
+        const { currentBook, books, settings, currentCTree } = get();
 
-        const { books, settings, currentCTree } = get();
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
 
@@ -99,12 +100,12 @@ export const useBookStore = create<Store>()(
         const mirroredModelId =
           bookToOpen?.settings?.mirroredAnkiModelId || settings.mirroredAnkiModelId;
 
-        const { loadFieldsInto } = useAnkiStore.getState();
-        loadFieldsInto(modelId, 'bookFields');
-        loadFieldsInto(mirroredModelId, 'bookMirroredFields');
-
         try {
-          if (currentCTree?.deckId !== deckId) {
+          if (
+            currentCTree?.deckId !== deckId ||
+            currentCTree?.langCode !== bookToOpen.settings.bookLang
+          ) {
+            console.log('Loading Anki dictionary for book');
             const key = `${deckId}:${modelId}`;
             const mirroredKey = `${deckId}:${mirroredModelId}`;
 
@@ -123,15 +124,35 @@ export const useBookStore = create<Store>()(
               mapping,
               mirroredMapping
             );
+
+            set(() => ({
+              currentCTree: { langCode: bookToOpen.settings.bookLang, deckId },
+            }));
           }
 
-          bookToOpen.mapping = buildBookMapping(bookToOpen);
+          if (
+            currentBook?.basePath !== bookToOpen.basePath ||
+            currentCTree?.deckId !== deckId ||
+            currentCTree?.langCode !== bookToOpen.settings.bookLang
+          ) {
+            get().closeBook();
+            console.log('Opening book');
 
-          set((state) => ({
-            currentBook: bookToOpen,
-            lastFragmentId: '',
-            books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
-          }));
+            const { loadFieldsInto } = useAnkiStore.getState();
+            loadFieldsInto(modelId, 'bookFields');
+            loadFieldsInto(mirroredModelId, 'bookMirroredFields');
+
+            bookToOpen.mapping = buildBookMapping(bookToOpen);
+
+            set((state) => ({
+              currentBook: bookToOpen,
+              books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
+            }));
+
+            useWebViewStore
+              .getState()
+              .loadWindow(bookToOpen.currentBlock, bookToOpen.misc.currentBlockScrollPercent);
+          }
         } catch (e) {
           console.error('❌ Failed to load book:', e);
         }
@@ -147,10 +168,16 @@ export const useBookStore = create<Store>()(
         const { currentBook } = get();
         if (!currentBook) return;
 
+        console.log('Closing book');
+
         try {
           set(() => ({
             currentBook: null,
+            lastFragmentId: '',
           }));
+          useWebViewStore.getState().resetWebView();
+          useTempStore.getState().resetSearch();
+          useTempStore.getState().closeSelectionMenu();
         } catch (e) {
           console.error('❌ Failed to unload book:', e);
         }
