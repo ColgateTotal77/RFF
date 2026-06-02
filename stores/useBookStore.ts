@@ -37,7 +37,7 @@ type Store = {
   currentCTree: CurrentCTree | null;
 
   loadBook: (uri: string) => Promise<void>;
-  openBook: (basePath: string) => void;
+  openBook: (basePath: string) => Promise<void>;
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
   setCurrentBlock: (currentBlock: number) => void;
@@ -89,7 +89,7 @@ export const useBookStore = create<Store>()(
         }
       },
 
-      openBook: (basePath: string) => {
+      openBook: async (basePath: string) => {
         const { currentBook, books, settings, currentCTree } = get();
 
         const bookToOpen = books.find((book) => book.basePath === basePath);
@@ -105,6 +105,8 @@ export const useBookStore = create<Store>()(
             currentCTree?.deckId !== deckId ||
             currentCTree?.langCode !== bookToOpen.settings.bookLang
           ) {
+            get().closeBook();
+
             console.log('Loading Anki dictionary for book');
             const key = `${deckId}:${modelId}`;
             const mirroredKey = `${deckId}:${mirroredModelId}`;
@@ -118,7 +120,7 @@ export const useBookStore = create<Store>()(
               bookToOpen.settings.mirroredFieldMapping || {}
             );
 
-            BookEngine.loadAnkiDictionary(
+            await BookEngine.loadAnkiDictionary(
               bookToOpen.settings.bookLang,
               deckId,
               mapping,

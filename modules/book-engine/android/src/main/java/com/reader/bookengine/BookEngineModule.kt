@@ -301,7 +301,7 @@ class BookEngineModule : Module() {
         }
 
         AsyncFunction("loadAnkiDictionary") { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-            runBlocking {
+            runBlocking(Dispatchers.IO) {
                 val myAppDatabase = AppDependencies.getDatabase(moduleContext)
                 val success = loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
                 if (!success) throw Exception("Failed to load Anki dictionary")
@@ -309,7 +309,7 @@ class BookEngineModule : Module() {
         }
 
         AsyncFunction("unloadAnkiDictionary") {
-            runBlocking {
+            runBlocking(Dispatchers.IO) {
                 freeAnkiDictionary()
             }
         }

@@ -50,7 +50,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
   setPostLoadQueue: (postLoadQueue) => set({ postLoadQueue }),
   addToPostLoadQueue: (step) => set((state) => ({ postLoadQueue: [...state.postLoadQueue, step] })),
 
-  resetWebView: () => set({ webViewSource: null, isWebViewReady: false }),
+  resetWebView: () => set({ webViewSource: null, isWebViewReady: false, postLoadQueue: [] }),
 
   loadWindow: async (targetBlockId: number, blockScrollPercent: number) => {
     const { settings, jumpToBlock } = useBookStore.getState();

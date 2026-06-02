@@ -100,7 +100,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
 
     let detectedLanguage = await detectLanguage(blockPath);
 
-    await BookEngine.loadBookInSQL(
+    BookEngine.loadBookInSQL(
       basePath,
       blockPath,
       blocks.map((block) => block.id),
