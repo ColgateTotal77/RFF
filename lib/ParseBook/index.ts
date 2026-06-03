@@ -48,14 +48,13 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
 
       const blockContents = splitHtmlIntoBlocks(processedHtml, globalBlockId);
 
-      const { newBlocks, chapterBlockIds, chapterAnchors, chapterCharCount } = processChapterBlocks(
-        {
+      const { newBlocks, chapterBlockIds, chapterAnchors, chapterCharCount } =
+        await processChapterBlocks({
           blockContents,
           chapterId: chapter.id,
           startingBlockId: globalBlockId,
           blocksDir,
-        }
-      );
+        });
 
       blocks.push(...newBlocks);
       totalCharCount += chapterCharCount;
@@ -73,17 +72,20 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
     let globalCharOffset = 0;
     const chapterCharCounts: number[] = new Array(chapters.length).fill(0);
 
-    chapters.forEach((chapter, chapterIndex) => {
+    let blockIndex = 0;
+    for (const chapter of chapters) {
       chapter.charOffset = globalCharOffset;
 
-      for (const block of blocks.filter((b) => b.chapterId === chapterIndex)) {
+      while (blockIndex < blocks.length && blocks[blockIndex].chapterId === chapter.id) {
+        const block = blocks[blockIndex];
         block.charOffset = globalCharOffset;
         globalCharOffset += block.charCount;
-        chapterCharCounts[chapterIndex] += block.charCount;
+        chapterCharCounts[chapter.id] += block.charCount;
+        blockIndex++;
       }
 
-      chapter.charCount = chapterCharCounts[chapterIndex];
-    });
+      chapter.charCount = chapterCharCounts[chapter.id];
+    }
 
     let toc: TocItem[] = [];
     if (manifestMap[tocId]) {
@@ -96,13 +98,13 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       });
     }
 
-    const blockPath = blocks.map((block) => block.fullPath);
+    const blockPaths = blocks.map((block) => block.fullPath);
 
-    let detectedLanguage = await detectLanguage(blockPath);
+    let detectedLanguage = await detectLanguage(blockPaths);
 
     BookEngine.loadBookInSQL(
       basePath,
-      blockPath,
+      blockPaths,
       blocks.map((block) => block.id),
       blocks.map((block) => toc.find((t) => t.chapterId === block.chapterId)?.title || '')
     );

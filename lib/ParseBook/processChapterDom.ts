@@ -18,6 +18,15 @@ export const processChapterDom = ({
   mapHrefChapterId,
   absoluteBasePath,
 }: Props): string => {
+  const hasRelativeRewrites =
+    /<(a|img|image)\b[^>]*(href|src|xlink:href)\s*=\s*["'](?![a-z0-9\-.]+:|#|\/\/)/i.test(
+      chapter.html
+    );
+
+  if (!hasRelativeRewrites) {
+    return chapter.html;
+  }
+
   const dom = parse(chapter.html);
 
   const links = dom.querySelectorAll('a[href]');

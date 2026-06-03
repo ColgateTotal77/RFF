@@ -15,13 +15,14 @@ interface Response {
   chapterCharCount: number;
 }
 
-export const processChapterBlocks = (props: Props): Response => {
+export const processChapterBlocks = async (props: Props): Promise<Response> => {
   const { blockContents, chapterId, startingBlockId, blocksDir } = props;
 
   const encoder = new TextEncoder();
   const newBlocks: Block[] = [];
   const chapterBlockIds: number[] = [];
   const chapterAnchors: Record<string, number> = {};
+  const writes: Promise<unknown>[] = [];
   let chapterCharCount = 0;
 
   for (let blockContent of blockContents.blocks) {
@@ -47,7 +48,6 @@ export const processChapterBlocks = (props: Props): Response => {
 
     const blockFileName = `block_${blockId}.html`;
     const blockFile = new File(blocksDir, blockFileName);
-    blockFile.write(encoder.encode(blockContent));
     const blockPath = blockFile.uri.replace('file://', '');
 
     const textOnly = blockContent
@@ -65,7 +65,10 @@ export const processChapterBlocks = (props: Props): Response => {
 
     chapterCharCount += textOnly.length;
     chapterBlockIds.push(blockId);
+    writes.push(Promise.resolve(blockFile.write(encoder.encode(blockContent))));
   }
+
+  await Promise.all(writes);
 
   return {
     newBlocks,

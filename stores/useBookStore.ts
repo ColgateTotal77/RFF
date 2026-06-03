@@ -80,10 +80,10 @@ export const useBookStore = create<Store>()(
           book.mapping = buildBookMapping(book);
 
           set((state) => ({
-            currentBook: book,
-            lastFragmentId: '',
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
+
+          get().openBook(book.basePath);
         } catch (e) {
           console.error('❌ Failed to load book:', e);
         }
@@ -120,16 +120,16 @@ export const useBookStore = create<Store>()(
               bookToOpen.settings.mirroredFieldMapping || {}
             );
 
+            set(() => ({
+              currentCTree: { langCode: bookToOpen.settings.bookLang, deckId },
+            }));
+
             await BookEngine.loadAnkiDictionary(
               bookToOpen.settings.bookLang,
               deckId,
               mapping,
               mirroredMapping
             );
-
-            set(() => ({
-              currentCTree: { langCode: bookToOpen.settings.bookLang, deckId },
-            }));
           }
 
           if (
