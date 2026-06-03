@@ -114,6 +114,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       author,
       cover: coverPath,
       basePath,
+      unzippedPath: unzippedPath,
       cssPaths,
       settings: {
         bookLang: detectedLanguage || bookLanguage || 'en',

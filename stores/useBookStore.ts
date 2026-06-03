@@ -11,6 +11,7 @@ import i18n from 'i18n';
 import { LanguageCode } from 'lib/langHelper';
 import { DEFAULT_FONT_FAMILY } from 'lib/constants';
 import { useTempStore } from './useTempStore';
+import { Directory } from 'expo-file-system';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -186,7 +187,16 @@ export const useBookStore = create<Store>()(
       },
 
       removeBook: async (basePath: string) => {
+        const book = get().books.find((b) => b.basePath === basePath);
+        if (!book) return;
+
+        if (basePath === get().currentBook?.basePath) get().closeBook();
+
+        const dir = new Directory(book.unzippedPath);
+        if (dir.exists) dir.delete();
+
         await BookEngine.deleteBookFromSQL(basePath);
+
         set((state) => ({
           currentBook: state.currentBook?.basePath === basePath ? null : state.currentBook,
           books: state.books.filter((book) => book.basePath !== basePath),

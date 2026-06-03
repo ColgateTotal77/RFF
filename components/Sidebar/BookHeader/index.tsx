@@ -72,7 +72,8 @@ export const BookHeader = () => {
   const onBookSettingsClose = () => {
     setIsBookSettingsOpen(false);
     if (
-      currentCTree?.deckId !== currentBook.settings.ankiDeckId ||
+      (currentBook.settings.ankiDeckId &&
+        currentCTree?.deckId !== currentBook.settings.ankiDeckId) ||
       currentCTree?.langCode !== currentBook.settings.bookLang
     ) {
       const basePath = currentBook.basePath;

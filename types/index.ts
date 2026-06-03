@@ -72,6 +72,7 @@ export interface Book {
   misc: Misc;
   bookmarks: Bookmark[];
   mapping: Mapping;
+  unzippedPath: string;
 }
 
 export type Bookmark = {
