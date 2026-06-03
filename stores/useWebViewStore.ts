@@ -26,6 +26,9 @@ type Store = {
   isWebViewReady: boolean;
   webViewSource: { uri: string } | null;
   postLoadQueue: QueueAction[];
+  reactTag: number | null;
+
+  setReactTag: (reactTag: number | null) => void;
 
   setIsWebViewReady: (isWebViewReady: boolean) => void;
   setPostLoadQueue: (postLoadQueue: QueueAction[]) => void;
@@ -45,6 +48,9 @@ export const useWebViewStore = create<Store>()((set, get) => ({
   isWebViewReady: false,
   webViewSource: null,
   postLoadQueue: [],
+  reactTag: null,
+
+  setReactTag: (reactTag) => set({ reactTag }),
 
   setIsWebViewReady: (isWebViewReady) => set({ isWebViewReady }),
   setPostLoadQueue: (postLoadQueue) => set({ postLoadQueue }),
@@ -98,9 +104,29 @@ export const useWebViewStore = create<Store>()((set, get) => ({
         }
       );
 
-      if (typeof generatedFileUrl === 'string') {
+      const reactTag = await new Promise((resolve) => {
+        const currentTag = useWebViewStore.getState().reactTag;
+        if (currentTag !== null) {
+          return resolve(currentTag);
+        }
+
+        const unsubscribe = useWebViewStore.subscribe((state) => {
+          if (state.reactTag !== null) {
+            unsubscribe();
+            resolve(state.reactTag);
+          }
+        });
+      });
+
+      setTimeout(async () => {
+        await BookEngine.setupBookBridge(
+          reactTag,
+          currentBook.blocks.map((b) => b.fullPath),
+          currentBook.currentBlocks
+        );
+
         set({ webViewSource: { uri: generatedFileUrl } });
-      }
+      }, 0);
     } catch (e) {
       console.error('Failed to prepare initial blocks:', e);
     }

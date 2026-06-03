@@ -1,20 +1,14 @@
-import { RefObject, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useWordAction } from 'lib/useWordAction';
-import { useEpubNextBlock, useEpubPrevBlock, useProcessBookLinks } from 'lib/useBookNavigation';
+import { useProcessBookLinks } from 'lib/useBookNavigation';
 import { calculateBookProgress } from 'lib/utils';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { View } from 'react-native';
+import { WebViewMessageEvent } from 'react-native-webview';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { DASH_REGEX_STRING } from 'lib/constants';
 
-export const useMessageHandler = (
-  webViewRef: RefObject<WebView | null>,
-  containerRef: RefObject<View | null>
-) => {
-  const loadNextBlock = useEpubNextBlock(webViewRef, containerRef);
-  const loadPrevBlock = useEpubPrevBlock(webViewRef, containerRef);
+export const useMessageHandler = () => {
   const processBookLinks = useProcessBookLinks();
   const currentBook = useBookStore((state) => state.currentBook);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
@@ -24,7 +18,6 @@ export const useMessageHandler = (
   const { openSystemTranslator, addNewCard, updateWordTag } = useWordAction();
   const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
   const setIsWebViewReady = useWebViewStore((state) => state.setIsWebViewReady);
-  const updateCurrentBlocks = useBookStore((state) => state.updateCurrentBlocks);
 
   return useCallback(
     async (event: WebViewMessageEvent) => {
@@ -81,14 +74,6 @@ export const useMessageHandler = (
             setIsWebViewReady(true);
             break;
 
-          case 'END_REACHED':
-            loadNextBlock();
-            break;
-
-          case 'TOP_REACHED':
-            loadPrevBlock();
-            break;
-
           case 'DOUBLE_TAP':
             await openSystemTranslator(
               parsedData.text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '')
@@ -116,18 +101,12 @@ export const useMessageHandler = (
             const fragmentId = url.hash.replace('#', '');
             processBookLinks(chapterId, fragmentId);
             break;
-
-          case 'UPDATE_BLOCK_WINDOW':
-            updateCurrentBlocks(parsedData.newWindow);
-            break;
         }
       } catch (error) {
         console.log('useMessageHandler error: ', error);
       }
     },
     [
-      loadNextBlock,
-      loadPrevBlock,
       processBookLinks,
       setSelectionMenu,
       closeMenu,

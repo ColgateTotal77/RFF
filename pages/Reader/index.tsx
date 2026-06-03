@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import { findNodeHandle, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
@@ -11,6 +11,10 @@ import { useMessageHandler } from './useMessageHandler';
 import { Loading } from 'components/ui/Loading';
 import { IconButton } from 'components/ui/IconButton';
 
+const TEST_WEBVIEW_SOURCE = {
+  html: '<!DOCTYPE html><html><head></head><body style="background-color: transparent;"></body></html>',
+};
+
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
   const registerWebViewAction = useWebViewStore((state) => state.registerWebViewAction);
@@ -19,10 +23,17 @@ export const ReaderScreen = () => {
   const selectionMenu = useTempStore((state) => state.selectionMenu);
   const addBookmark = useBookStore((state) => state.addBookmark);
   const removeBookmark = useBookStore((state) => state.removeBookmark);
+  const setReactTag = useWebViewStore((state) => state.setReactTag);
   const theme = useTheme();
 
   const webViewRef = useRef<WebView>(null);
-  const containerRef = useRef<View>(null);
+
+  const handleContainerRef = useCallback(
+    (node: View | null) => {
+      setReactTag(node !== null ? findNodeHandle(node) : null);
+    },
+    [setReactTag]
+  );
 
   const activeBookmark = useMemo(() => {
     if (!currentBook) return null;
@@ -43,39 +54,41 @@ export const ReaderScreen = () => {
     });
   }, [registerWebViewAction]);
 
-  const handleMessage = useMessageHandler(webViewRef, containerRef);
+  const handleMessage = useMessageHandler();
 
   const isLoading = !webViewSource || !currentBook || !isWebViewReady;
 
   return (
     <View
-      ref={containerRef}
+      ref={handleContainerRef}
       collapsable={false}
       style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {webViewSource && currentBook && (
-        <WebView
-          ref={webViewRef}
-          originWhitelist={['*']}
-          source={webViewSource}
-          className={`flex-1 ${!isLoading ? 'opacity-100' : 'opacity-0'}`}
-          onMessage={handleMessage}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          allowFileAccess={true}
-          allowFileAccessFromFileURLs={true}
-          allowUniversalAccessFromFileURLs={true}
-          textZoom={100}
-          setBuiltInZoomControls={false}
-          setDisplayZoomControls={false}
-          scalesPageToFit={false}
-          showsVerticalScrollIndicator={false}
-          androidLayerType="hardware"
-          renderToHardwareTextureAndroid={true}
-          overScrollMode="never"
-          scrollEnabled={true}
-          mixedContentMode="always"
-        />
-      )}
+      <WebView
+        ref={webViewRef}
+        originWhitelist={['*']}
+        source={webViewSource ?? TEST_WEBVIEW_SOURCE}
+        className="flex-1"
+        style={{
+          backgroundColor: 'transparent',
+          opacity: isLoading ? 0 : 1,
+        }}
+        onMessage={handleMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        allowFileAccess={true}
+        allowFileAccessFromFileURLs={true}
+        allowUniversalAccessFromFileURLs={true}
+        textZoom={100}
+        setBuiltInZoomControls={false}
+        setDisplayZoomControls={false}
+        scalesPageToFit={false}
+        showsVerticalScrollIndicator={false}
+        androidLayerType="hardware"
+        renderToHardwareTextureAndroid={true}
+        overScrollMode="never"
+        scrollEnabled={true}
+        mixedContentMode="always"
+      />
 
       {isLoading && (
         <View className="absolute inset-0 z-50 flex-1 items-center justify-center ">

@@ -89,12 +89,12 @@
             if (scrollY < firstBlockHeight * 0.45) {
               window.isFetching = true;
               window.log('scroll: TOP_REACHED triggered');
-              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TOP_REACHED' }));
+              window.BookBridge.onTopReached();
             }
             if (bottomY > documentHeight - lastBlockHeight * 0.45) {
               window.isFetching = true;
               window.log('scroll: END_REACHED triggered');
-              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'END_REACHED' }));
+              window.BookBridge.onEndReached();
             }
           }
 

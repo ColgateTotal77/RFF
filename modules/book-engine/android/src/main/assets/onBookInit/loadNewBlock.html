@@ -41,14 +41,14 @@
         return parseInt(el.id.replace('block-', ''));
       });
 
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(
-          JSON.stringify({
-            type: 'UPDATE_BLOCK_WINDOW',
-            newWindow: newWindow,
-          })
-        );
-      }
+      window.BookBridge.updateBlockWindow(JSON.stringify(newWindow));
+
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: 'UPDATE_BLOCK_WINDOW',
+          newWindow: newWindow,
+        })
+      );
 
       if (window.searchQuery) window.highlightAll(window.searchQuery);
     } catch (error) {
