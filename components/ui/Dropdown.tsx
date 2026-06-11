@@ -70,7 +70,7 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
   };
 
   return (
-    <View className="flex gap-2">
+    <View className="flex flex-1 gap-2">
       {label && (
         <Text
           variant="labelLarge"

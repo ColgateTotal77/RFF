@@ -29,7 +29,7 @@
   body p,
   body section,
   body article,
-  body span {
+  body span:not([class*='dropcap']) {
     text-align: justify !important;
     text-align-last: left !important;
     hyphens: auto !important;
@@ -67,8 +67,8 @@
   .anki-word[data-flag]::after {
     content: '';
     position: absolute;
-    top: -3px;
-    right: -3px;
+    top: 3px;
+    right: -6px;
     width: 6px;
     height: 6px;
     border-radius: 50%;

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Alert, PermissionsAndroid } from 'react-native';
 import { Anki } from 'modules/book-engine';
+import { updateNestedMapping } from 'lib/utils';
+import { useBookStore } from './useBookStore';
 
 const ANKI_PERMISSION = 'com.ichi2.anki.permission.READ_WRITE_DATABASE';
 
@@ -12,10 +14,13 @@ type Store = {
   requestPermission: () => Promise<void>;
   loadAnkiData: () => Promise<void>;
   loadFieldsInto: (modelId: string, slot: FieldsSlot) => Promise<number>;
+  applyDefaultModel: (deckId: string) => Promise<void>;
+  createDeck: (deckName: string) => Promise<string>;
   decks: { id: string; name: string }[];
   models: { id: string; name: string }[];
   fields: { id: number; name: string }[];
   mirroredFields: { id: number; name: string }[];
+  hasDeck: () => boolean;
 
   bookFields: { id: number; name: string }[];
   bookMirroredFields: { id: number; name: string }[];
@@ -53,19 +58,58 @@ export const useAnkiStore = create<Store>()((set, get) => ({
     return rawFields.length;
   },
 
+  applyDefaultModel: async (deckId) => {
+    const { settings, updateSettings } = useBookStore.getState();
+
+    if (get().decks.length > 1) return;
+
+    const sortedModels = [...get().models].sort((a, b) => Number(a.id) - Number(b.id)).slice(0, 1);
+
+    let modelId: string | null = null;
+    for (const model of sortedModels) {
+      const fieldCount = (await Anki.getFields(model.id)).length;
+      if (fieldCount === 3) {
+        modelId = model.id;
+        break;
+      }
+    }
+    if (!modelId) return;
+
+    const key = `${deckId}:${modelId}`;
+
+    await get().loadFieldsInto(modelId, 'fields');
+    updateSettings({
+      ankiModelId: modelId,
+      isTwoSided: false,
+      fieldMappings: updateNestedMapping(settings.fieldMappings, key, {
+        modalId: modelId,
+        fieldCount: 3,
+        word: 0,
+        translation: 1,
+      }),
+    });
+  },
+
   loadAnkiData: async () => {
-    const { useBookStore } = await import('./useBookStore');
     const {
-      settings: { ankiModelId, mirroredAnkiModelId },
+      settings: { ankiModelId, mirroredAnkiModelId, ankiDeckId },
+      updateSettings,
     } = useBookStore.getState();
-    const [decks, models, _fields, _mirroredFields] = await Promise.all([
+
+    const [decks, models, fields, mirroredFields] = await Promise.all([
       Anki.getDecks(),
       Anki.getModels(),
-      get().loadFieldsInto(ankiModelId, 'fields'),
-      get().loadFieldsInto(mirroredAnkiModelId, 'mirroredFields'),
+      ankiModelId ? get().loadFieldsInto(ankiModelId, 'fields') : Promise.resolve(0),
+      mirroredAnkiModelId
+        ? get().loadFieldsInto(mirroredAnkiModelId, 'mirroredFields')
+        : Promise.resolve(0),
     ]);
 
     set({ decks, models });
+
+    if (!ankiDeckId) return;
+    if (!fields) await get().applyDefaultModel(ankiDeckId);
+    if (!mirroredFields) updateSettings({ isTwoSided: false });
   },
 
   requestPermission: async () => {
@@ -86,5 +130,15 @@ export const useAnkiStore = create<Store>()((set, get) => ({
     } catch (err) {
       console.warn(err);
     }
+  },
+
+  createDeck: async (deckName: string) => {
+    const deckId = (await Anki.createDeck(deckName)).toString();
+    set({ decks: [...get().decks, { id: deckId, name: deckName }] });
+    return deckId.toString();
+  },
+
+  hasDeck: () => {
+    return get().decks.length > 0;
   },
 }));

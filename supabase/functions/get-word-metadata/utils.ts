@@ -48,5 +48,11 @@ export const langMap: Record<string, string> = {
   da: 'Danish',
   fi: 'Finnish',
   pl: 'Polish',
+  tr: 'Turkish',
+  ja: 'Japanese',
+  ko: 'Korean',
+  zh: 'Chinese',
+  ar: 'Arabic',
+  hi: 'Hindi',
   cs: 'Czech',
 };

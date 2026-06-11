@@ -7,6 +7,10 @@ import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { useAnkiStore } from 'stores/useAnkiStore';
 import { Button } from 'components/ui/Button';
+import { IconButtonWithBorder } from 'components/ui/IconButton';
+import { useState } from 'react';
+import { CreateDeckDialog } from 'pages/Settings/tabs/AnkiTab/CreateDeckDialog';
+import { RESET_FIELD_MAPPING } from 'lib/constants';
 
 const isInherited = (bookValue: unknown) => bookValue === undefined;
 
@@ -22,6 +26,10 @@ export const AnkiTab = () => {
   const mirroredFields = useAnkiStore((state) => state.bookMirroredFields);
   const loadFieldsInto = useAnkiStore((state) => state.loadFieldsInto);
   const { t } = useTranslation('translation', { keyPrefix: 'ankiTab' });
+  const createDeck = useAnkiStore((state) => state.createDeck);
+  const books = useBookStore((state) => state.books);
+
+  const [dialogVisible, setDialogVisible] = useState(false);
 
   const getInheritedValue = <T,>(bookValue: T | undefined, globalValue: T) => {
     return bookValue !== undefined ? bookValue : globalValue;
@@ -34,6 +42,15 @@ export const AnkiTab = () => {
     settings.mirroredAnkiModelId
   );
   const isTwoSided = getInheritedValue(currentBook.settings.isTwoSided, settings.isTwoSided);
+
+  const key = `${ankiDeckId}:${ankiModelId}`;
+  const mirroredKey = `${ankiDeckId}:${mirroredAnkiModelId}`;
+
+  const handleDeckCreated = async (deckName: string) => {
+    const newDeckId = await createDeck(deckName);
+    updateBookSettings({ ankiDeckId: newDeckId });
+    setDialogVisible(false);
+  };
 
   const updateMapping = (
     mappingName: 'fieldMapping' | 'mirroredFieldMapping',
@@ -50,6 +67,17 @@ export const AnkiTab = () => {
     updateMapping('mirroredFieldMapping', partialMapping);
   };
 
+  const findMappingFromOtherBooks = (
+    modelId: string,
+    mappingKey: 'fieldMapping' | 'mirroredFieldMapping'
+  ): FieldMapping | undefined => {
+    for (const book of books) {
+      const mapping = book.settings[mappingKey];
+      if (mapping && mapping.modalId === modelId) return mapping;
+    }
+    return undefined;
+  };
+
   return (
     <View className="gap-4 p-4">
       <Text variant="titleMedium" className="font-bold">
@@ -64,22 +92,35 @@ export const AnkiTab = () => {
         <>
           <Text className="text-green-700">{t('connected')}</Text>
 
-          <Dropdown
-            label={t('decksLabel')}
-            value={ankiDeckId}
-            options={decks}
-            onSelect={(value) => updateBookSettings({ ankiDeckId: value })}
-            isGrayed={isInherited(currentBook.settings.ankiDeckId)}
-          />
+          <View className="flex-row items-center gap-4">
+            <Dropdown
+              label={t('decksLabel')}
+              value={ankiDeckId}
+              options={decks}
+              onSelect={(value) => updateBookSettings({ ankiDeckId: value })}
+              isGrayed={isInherited(currentBook.settings.ankiDeckId)}
+            />
+            <IconButtonWithBorder
+              icon="plus"
+              style={{ marginTop: 36, height: 54, width: 54 }}
+              onPress={() => setDialogVisible(true)}
+            />
+          </View>
+
           <Dropdown
             label={t('modelLabel')}
             value={ankiModelId}
             options={models}
             onSelect={async (value) => {
               const fieldCount = await loadFieldsInto(value, 'bookFields');
+              const defaultMapping = settings.fieldMappings[`${ankiDeckId}:${value}`];
+              const mappingFromAnotherBook = findMappingFromOtherBooks(value, 'fieldMapping');
+
               updateBookSettings({
                 ankiModelId: value,
                 fieldMapping: {
+                  ...RESET_FIELD_MAPPING,
+                  ...(defaultMapping ? undefined : mappingFromAnotherBook),
                   modalId: value,
                   fieldCount,
                 },
@@ -92,9 +133,7 @@ export const AnkiTab = () => {
               <FieldMappingSection
                 title={t('fieldMapping')}
                 fieldMapping={currentBook.settings.fieldMapping}
-                defaultFieldMapping={
-                  settings.fieldMappings[`${settings.ankiDeckId}:${settings.ankiModelId}`]
-                }
+                defaultFieldMapping={settings.fieldMappings[key]}
                 fields={fields}
                 onUpdate={updateFieldMapping}
               />
@@ -128,9 +167,17 @@ export const AnkiTab = () => {
                 options={models}
                 onSelect={async (value) => {
                   const fieldCount = await loadFieldsInto(value, 'bookMirroredFields');
+                  const defaultMapping = settings.mirroredFieldMappings[`${ankiDeckId}:${value}`];
+                  const mappingFromAnotherBook = findMappingFromOtherBooks(
+                    value,
+                    'mirroredFieldMapping'
+                  );
+
                   updateBookSettings({
                     mirroredAnkiModelId: value,
                     mirroredFieldMapping: {
+                      ...RESET_FIELD_MAPPING,
+                      ...(defaultMapping ? undefined : mappingFromAnotherBook),
                       modalId: value,
                       fieldCount,
                     },
@@ -141,11 +188,7 @@ export const AnkiTab = () => {
               <FieldMappingSection
                 title={t('mirroredFieldMapping')}
                 fieldMapping={currentBook.settings.mirroredFieldMapping}
-                defaultFieldMapping={
-                  settings.mirroredFieldMappings[
-                    `${settings.ankiDeckId}:${settings.mirroredAnkiModelId}`
-                  ]
-                }
+                defaultFieldMapping={settings.mirroredFieldMappings[mirroredKey]}
                 fields={mirroredFields}
                 onUpdate={updateMirroredFieldMapping}
               />
@@ -153,6 +196,11 @@ export const AnkiTab = () => {
           )}
         </>
       )}
+      <CreateDeckDialog
+        isOpen={dialogVisible}
+        onConfirm={handleDeckCreated}
+        onClose={() => setDialogVisible(false)}
+      />
     </View>
   );
 };

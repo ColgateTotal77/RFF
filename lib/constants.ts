@@ -1,3 +1,5 @@
+import { FIELD_MAPPING_KEYS } from 'types';
+
 const DASHES = ['-', '‐', '‑', '‒', '–', '—', '−'];
 export const DASH_REGEX_STRING = DASHES.map((dash) => (dash === '-' ? '\\-' : dash)).join('');
 
@@ -20,3 +22,7 @@ export const FONT_FAMILY_OPTIONS = [
 ];
 export type FontFamily = (typeof FONT_FAMILY_OPTIONS)[number]['id'];
 export const DEFAULT_FONT_FAMILY: FontFamily = 'Georgia, serif';
+
+export const RESET_FIELD_MAPPING = Object.fromEntries(
+  FIELD_MAPPING_KEYS.map((k) => [k, undefined])
+);

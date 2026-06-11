@@ -85,7 +85,8 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
       }}>
       <IconButton
         icon="translate"
-        onPress={async () => await openSystemTranslator(selectionMenu.text)}></IconButton>
+        onPress={async () => await openSystemTranslator(selectionMenu.text)}
+      />
 
       <View
         style={{
@@ -96,7 +97,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         }}
       />
 
-      <IconButton icon="content-copy" onPress={onCopy}></IconButton>
+      <IconButton icon="content-copy" onPress={onCopy} />
 
       <View
         style={{
@@ -116,7 +117,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
           +F
         </Button>
       ) : (
-        <IconButton icon="plus-circle" onPress={onAddNewCardPress}></IconButton>
+        <IconButton icon="plus-circle" onPress={onAddNewCardPress} />
       )}
 
       <View

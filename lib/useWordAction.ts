@@ -24,12 +24,10 @@ export const useWordAction = () => {
       return;
     }
 
+    const cleanedText = text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '');
+
     try {
       const targetLang = currentBook.settings.targetLang || settings.targetLang;
-      const cleanedText = text.replace(
-        new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'),
-        ''
-      );
 
       executeImmediateAction({
         type: 'updateTag',

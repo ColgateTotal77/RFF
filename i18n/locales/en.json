@@ -12,6 +12,14 @@
     "twoSidedDescription": "Create mirrored cards (front↔back)",
     "fieldMappingLabel": "Anki field \"{{ankiFieldName}}\" → App field:",
     "none": "None",
+    "createDeck": {
+      "title": "New Deck",
+      "label": "Deck name",
+      "cancel": "Cancel",
+      "confirm": "Create",
+      "errorEmpty": "Deck name cannot be empty",
+      "errorDuplicate": "A deck with this name already exists"
+    },
     "appFields": {
       "word": "Word",
       "translation": "Translation",
@@ -31,7 +39,8 @@
     "autoCardDescription": "When you translate word on double click also update/create card",
     "themeTitle": "Theme",
     "themeDescription": "Switch between light and dark mode",
-    "fontSizeLabel": "Font size {{fontSize}}px"
+    "fontSizeLabel": "Font size {{fontSize}}px",
+    "fontFamilyLabel": "Font family"
   },
   "reader": {
     "footer": {
@@ -64,5 +73,9 @@
     "readingNow": "Reading Now",
     "haveRead": "Have Read",
     "settings": "Settings"
+  },
+  "bookLists": {
+    "setupAnki": "Create your first set up Anki.",
+    "goToSettings": "Go to Settings"
   }
 }

@@ -100,7 +100,6 @@ export const ReaderScreen = () => {
         <IconButton
           icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
           size={28}
-          iconColor={theme.colors.primary}
           style={{
             position: 'absolute',
             top: 16,

@@ -12,6 +12,14 @@
     "twoSidedDescription": "Создавать зеркальные карточки (лицо↔оборот)",
     "fieldMappingLabel": "Anki поле \"{{ankiFieldName}}\" → поле застосунку:",
     "none": "Ні",
+    "createDeck": {
+      "title": "Новая колода",
+      "label": "Название колоды",
+      "cancel": "Отмена",
+      "confirm": "Создать",
+      "errorEmpty": "Название не может быть пустым",
+      "errorDuplicate": "Колода с таким названием уже существует"
+    },
     "appFields": {
       "word": "Слово",
       "translation": "Переклад",
@@ -31,7 +39,8 @@
     "autoCardDescription": "При переводе слова двойным кликом также обновлять/создавать карточку",
     "themeTitle": "Тема",
     "themeDescription": "Переключить между светлой и тёмной темой",
-    "fontSizeLabel": "Размер шрифта {{fontSize}}px"
+    "fontSizeLabel": "Размер шрифта {{fontSize}}px",
+    "fontFamilyLabel": "Шрифт"
   },
   "reader": {
     "footer": {
@@ -64,5 +73,9 @@
     "readingNow": "Читаю сейчас",
     "haveRead": "Прочитано",
     "settings": "Настройки"
+  },
+  "bookLists": {
+    "setupAnki": "Создайте свою первую колоду в Anki.",
+    "goToSettings": "Перейти в настройки"
   }
 }

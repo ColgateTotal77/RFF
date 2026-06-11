@@ -8,7 +8,7 @@ import { parseBook } from 'lib/ParseBook';
 import { useAnkiStore } from './useAnkiStore';
 import { useWebViewStore } from './useWebViewStore';
 import i18n from 'i18n';
-import { LanguageCode } from 'lib/langHelper';
+import { LanguageCode, BOOK_LANGUAGE_OPTIONS, FALLBACK_LANGUAGE } from 'lib/langHelper';
 import { DEFAULT_FONT_FAMILY } from 'lib/constants';
 import { useTempStore } from './useTempStore';
 import { Directory } from 'expo-file-system';
@@ -68,7 +68,10 @@ export const useBookStore = create<Store>()(
         mirroredFieldMappings: {},
         isTwoSided: false,
         autoCardOnDoubleTap: false,
-        targetLang: i18n.language as LanguageCode,
+        targetLang:
+          i18n.language in BOOK_LANGUAGE_OPTIONS
+            ? (i18n.language as LanguageCode)
+            : FALLBACK_LANGUAGE,
         font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
         theme: 'light',
       },

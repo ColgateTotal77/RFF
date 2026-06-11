@@ -55,6 +55,21 @@ class AnkiModule : Module() {
             }
         }
 
+        AsyncFunction("createDeck") { deckName: String ->
+            runBlocking(Dispatchers.IO) {
+                try {
+                    val ankiApi = AddContentApi(moduleContext)
+                    val deckId = ankiApi.addNewDeck(deckName)
+                        ?: throw Exception("Failed to create deck: $deckName")
+
+                    deckId
+                } catch (e: Exception) {
+                    android.util.Log.e("BookEngine", "Failed to create Anki deck", e)
+                    throw Exception("Failed to create Anki deck: ${e.message}")
+                }
+            }
+        }
+
         AsyncFunction("getModels") { ->
             runBlocking(Dispatchers.IO) {
                 try {

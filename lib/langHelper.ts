@@ -24,7 +24,6 @@ export const BOOK_LANGUAGE = {
   zh: '中文',
   ar: 'العربية',
   hi: 'हिन्दी',
-  uk: 'Українська',
   sv: 'Svenska',
   da: 'Dansk',
   no: 'Norsk',
@@ -74,3 +73,5 @@ export const normalizeLanguageCode = (lang: string): LanguageCode | null => {
 
   return null;
 };
+
+export const FALLBACK_LANGUAGE: AppLanguageCode = 'en';

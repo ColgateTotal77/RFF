@@ -6,6 +6,7 @@ import type { ParamListBase } from '@react-navigation/native';
 import { useBookStore } from 'stores/useBookStore';
 import * as DocumentPicker from 'expo-document-picker';
 import { AppbarAction } from 'components/ui/AppbarAction';
+import { useAnkiStore } from 'stores/useAnkiStore';
 
 interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -15,6 +16,7 @@ interface Props {
 export const Header = ({ navigation, title }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { loadBook } = useBookStore();
+  const hasDeck = useAnkiStore((state) => state.hasDeck);
 
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -33,7 +35,7 @@ export const Header = ({ navigation, title }: Props) => {
       <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
       <Appbar.Content title={title} />
       <AppbarAction icon="magnify" onPress={() => {}} />
-      <AppbarAction icon="plus" onPress={pickDocument} />
+      <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} />
       <Other
         isOpen={isMenuOpen}
         onOpen={() => setIsMenuOpen(true)}

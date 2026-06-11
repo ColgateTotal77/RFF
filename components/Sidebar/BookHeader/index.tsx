@@ -1,4 +1,4 @@
-import { Appbar, TextInput, useTheme } from 'react-native-paper';
+import { Appbar, PaperProvider, TextInput, useTheme } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { useEffect, useRef, useState } from 'react';
@@ -140,18 +140,20 @@ export const BookHeader = () => {
         animationType="slide"
         transparent={true}
         onRequestClose={onBookSettingsClose}>
-        <Animated.View
-          style={{
-            flex: 1,
-            backgroundColor: theme.colors.background,
-            opacity: opacityAnim,
-          }}>
-          <Appbar.Header style={{ backgroundColor: 'transparent' }}>
-            <AppbarAction icon="close" onPress={onBookSettingsClose} />
-            <Appbar.Content title={t('bookSettings')} />
-          </Appbar.Header>
-          <BookSettings />
-        </Animated.View>
+        <PaperProvider theme={theme}>
+          <Animated.View
+            style={{
+              flex: 1,
+              backgroundColor: theme.colors.background,
+              opacity: opacityAnim,
+            }}>
+            <Appbar.Header style={{ backgroundColor: 'transparent' }}>
+              <AppbarAction icon="close" onPress={onBookSettingsClose} />
+              <Appbar.Content title={t('bookSettings')} />
+            </Appbar.Header>
+            <BookSettings />
+          </Animated.View>
+        </PaperProvider>
       </Modal>
     </>
   );
