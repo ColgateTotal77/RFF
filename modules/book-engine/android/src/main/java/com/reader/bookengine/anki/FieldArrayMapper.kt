@@ -3,9 +3,14 @@ package com.reader.bookengine.anki
 import android.content.Context
 import java.io.File
 
-class FieldArrayMapper(private val context: Context, private val audio: AnkiAudioHelper) {
-
-    suspend fun convertFieldsToArray(fields: Map<String, String>, mapping: Map<String, Any?>): Array<String> {
+class FieldArrayMapper(
+    private val context: Context,
+    private val audio: AnkiAudioHelper,
+) {
+    suspend fun convertFieldsToArray(
+        fields: Map<String, String>,
+        mapping: Map<String, Any?>,
+    ): Array<String> {
         val fieldCount = (mapping["fieldCount"] as? Number)?.toInt() ?: 0
         val result = Array(fieldCount) { "" }
 

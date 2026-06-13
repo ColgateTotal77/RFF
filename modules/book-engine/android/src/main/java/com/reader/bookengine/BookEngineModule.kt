@@ -1,32 +1,35 @@
 package com.reader.bookengine
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
-import expo.modules.kotlin.modules.Module
-import expo.modules.kotlin.modules.ModuleDefinition
-import org.json.JSONObject
-import android.content.Intent
-import android.content.ActivityNotFoundException
-import java.io.File
-import kotlinx.coroutines.*
-import android.app.Activity
-import org.jsoup.Jsoup
+import com.reader.bookengine.anki.AllAnkiWordsFetcher
 import com.reader.bookengine.database.AppDatabase
 import com.reader.bookengine.database.AppDependencies
-import com.reader.bookengine.database.syncWordFormsFromSupabase
-import com.reader.bookengine.database.WordFormEntity
-import com.reader.bookengine.database.FrequencyDatabase
 import com.reader.bookengine.database.BlockEntity
-import com.reader.bookengine.database.FullBlockMatch
-import com.reader.bookengine.anki.AllAnkiWordsFetcher
+import com.reader.bookengine.database.FrequencyDatabase
+import com.reader.bookengine.database.WordFormEntity
+import com.reader.bookengine.database.syncWordFormsFromSupabase
+import expo.modules.kotlin.modules.Module
+import expo.modules.kotlin.modules.ModuleDefinition
+import kotlinx.coroutines.*
+import org.json.JSONObject
+import org.jsoup.Jsoup
+import java.io.File
 
-class BookBridge(private val module: BookEngineModule) {
+class BookBridge(
+    private val module: BookEngineModule,
+) {
     var webView: WebView? = null
     private var blockPaths: List<String> = emptyList()
     private var currentBlocks: MutableList<Int> = mutableListOf()
 
-    fun setup(allBlockPaths: List<String>, initialBlocks: List<Int>) {
+    fun setup(
+        allBlockPaths: List<String>,
+        initialBlocks: List<Int>,
+    ) {
         blockPaths = allBlockPaths
         currentBlocks = initialBlocks.toMutableList()
     }
@@ -67,7 +70,10 @@ class BookBridge(private val module: BookEngineModule) {
         }
     }
 
-    private fun injectBlock(fetchIndex: Int, position: String) {
+    private fun injectBlock(
+        fetchIndex: Int,
+        position: String,
+    ) {
         val path = blockPaths.getOrNull(fetchIndex)
         if (path == null) {
             runOnWebView("window.isFetching = false; true;")
@@ -101,6 +107,7 @@ class BookEngineModule : Module() {
             System.loadLibrary("book_engine_native")
         }
     }
+
     private val ankiModule = AnkiModule()
     private var freqDatabase: FrequencyDatabase? = null
     private var currentLangCode: String = ""
@@ -116,7 +123,7 @@ class BookEngineModule : Module() {
         deckId: String,
         appDatabase: AppDatabase,
         mapping: Map<String, Any?>,
-        mirroredMapping: Map<String, Any?>
+        mirroredMapping: Map<String, Any?>,
     ): Boolean {
         try {
             val t1 = System.currentTimeMillis()
@@ -143,13 +150,15 @@ class BookEngineModule : Module() {
                 val chunkedLemmas = uniqueLemmas.chunked(900)
 
                 coroutineScope {
-                    chunkedLemmas.map { chunk ->
-                        async {
-                            appDatabase.wordFormDao().getFormsForLemmas(langCode, chunk)
+                    chunkedLemmas
+                        .map { chunk ->
+                            async {
+                                appDatabase.wordFormDao().getFormsForLemmas(langCode, chunk)
+                            }
+                        }.awaitAll()
+                        .forEach { formsChunk ->
+                            expandedForms.addAll(formsChunk)
                         }
-                    }.awaitAll().forEach { formsChunk ->
-                        expandedForms.addAll(formsChunk)
-                    }
                 }
 
                 android.util.Log.d("BookEngine", "Found ${expandedForms.size} expanded forms in Room DB for lang: $langCode")
@@ -184,7 +193,7 @@ class BookEngineModule : Module() {
                 initAnkiDictionary(
                     finalWords.toTypedArray(),
                     finalNoteIds.toTypedArray(),
-                    finalColors.toIntArray()
+                    finalColors.toIntArray(),
                 )
 
                 val t3 = System.currentTimeMillis()
@@ -227,282 +236,310 @@ class BookEngineModule : Module() {
     }
 
     private external fun extractBlockHtml(filePath: String): String?
-    private external fun initAnkiDictionary(words: Array<String>, noteIds: Array<LongArray>, colorCodes: IntArray)
+
+    private external fun initAnkiDictionary(
+        words: Array<String>,
+        noteIds: Array<LongArray>,
+        colorCodes: IntArray,
+    )
+
     private external fun freeAnkiDictionary()
 
-    override fun definition() = ModuleDefinition {
-        Name("BookEngine")
+    override fun definition() =
+        ModuleDefinition {
+            Name("BookEngine")
 
-        AsyncFunction("onAppInit") {
-            runBlocking(Dispatchers.IO) {
-                android.util.Log.d("BookEngine", "onAppInit called")
-                try {
-                    val myAppDatabase = AppDependencies.getDatabase(moduleContext)
-                    val mySupabaseClient = AppDependencies.supabaseClient
+            AsyncFunction("onAppInit") {
+                runBlocking(Dispatchers.IO) {
+                    android.util.Log.d("BookEngine", "onAppInit called")
+                    try {
+                        val myAppDatabase = AppDependencies.getDatabase(moduleContext)
+                        val mySupabaseClient = AppDependencies.supabaseClient
 
-                    android.util.Log.d("BookEngine", "About to call syncWordFormsFromSupabase...")
-                    syncWordFormsFromSupabase(mySupabaseClient, myAppDatabase, moduleContext)
-                    android.util.Log.d("BookEngine", "syncWordFormsFromSupabase completed")
+                        android.util.Log.d("BookEngine", "About to call syncWordFormsFromSupabase...")
+                        syncWordFormsFromSupabase(mySupabaseClient, myAppDatabase, moduleContext)
+                        android.util.Log.d("BookEngine", "syncWordFormsFromSupabase completed")
 
-                    android.util.Log.d("BookEngine", "onAppInit completed successfully")
-                } catch (e: Exception) {
-                    android.util.Log.e("BookEngine", "Exception in onAppInit: ${e.message}", e)
-                    throw e
+                        android.util.Log.d("BookEngine", "onAppInit completed successfully")
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookEngine", "Exception in onAppInit: ${e.message}", e)
+                        throw e
+                    }
                 }
             }
-        }
 
-        AsyncFunction("openSystemTranslator") { text: String ->
-            val activity = appContext.activityProvider?.currentActivity
-                ?: throw Exception("No current activity found")
+            AsyncFunction("openSystemTranslator") { text: String ->
+                val activity =
+                    appContext.activityProvider?.currentActivity
+                        ?: throw Exception("No current activity found")
 
-            android.util.Log.d("BookEngine", "Opening system translator for text: $text")
+                android.util.Log.d("BookEngine", "Opening system translator for text: $text")
 
-            val translateIntent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
-                putExtra(Intent.EXTRA_PROCESS_TEXT, text)
-                type = "text/plain"
-                setPackage("com.google.android.apps.translate")
-            }
-
-            try {
-                activity.startActivity(translateIntent)
-                true
-            } catch (e: ActivityNotFoundException) {
-                android.util.Log.w("BookEngine", "Google Translate not found, falling back to system chooser.")
-
-                val fallbackIntent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
-                    putExtra(Intent.EXTRA_PROCESS_TEXT, text)
-                    type = "text/plain"
-                }
+                val translateIntent =
+                    Intent(Intent.ACTION_PROCESS_TEXT).apply {
+                        putExtra(Intent.EXTRA_PROCESS_TEXT, text)
+                        type = "text/plain"
+                        setPackage("com.google.android.apps.translate")
+                    }
 
                 try {
-                    activity.startActivity(fallbackIntent)
+                    activity.startActivity(translateIntent)
                     true
-                } catch (e2: Exception) {
-                    android.util.Log.e("BookEngine", "Failed to open any translator", e2)
-                    throw Exception("No translation app is installed.")
-                }
-            }
-        }
+                } catch (e: ActivityNotFoundException) {
+                    android.util.Log.w("BookEngine", "Google Translate not found, falling back to system chooser.")
 
-        AsyncFunction("loadBookInSQL") { bookBasePath: String, blockPaths: List<String>, blockIds: List<Int>, chapterTitles: List<String> ->
-            runBlocking(Dispatchers.IO) {
-                val t1 = System.currentTimeMillis()
-                val db = AppDependencies.getDatabase(moduleContext)
+                    val fallbackIntent =
+                        Intent(Intent.ACTION_PROCESS_TEXT).apply {
+                            putExtra(Intent.EXTRA_PROCESS_TEXT, text)
+                            type = "text/plain"
+                        }
 
-                val blocks = blockPaths.mapIndexed { i, path ->
-                    val file = File(path)
-                    val rawHtml = file.readText()
-                    val plainText = Jsoup.parse(rawHtml).text()
-
-                    BlockEntity(
-                        bookBasePath = bookBasePath,
-                        blockId = blockIds[i],
-                        content = plainText,
-                        title = chapterTitles[i]
-                    )
-                }
-
-                db.blockDao().insertAll(blocks)
-
-                val t2 = System.currentTimeMillis()
-                android.util.Log.d("BookEngine", "Loaded ${blocks.size} blocks in Room in ${t2 - t1} ms")
-                blocks.size
-            }
-        }
-
-        AsyncFunction("deleteBookFromSQL") { bookBasePath: String ->
-            runBlocking(Dispatchers.IO) {
-                val db = AppDependencies.getDatabase(moduleContext)
-                db.blockDao().delete(bookBasePath)
-                android.util.Log.d("BookEngine", "Delete book from SQL: $bookBasePath")
-            }
-        }
-
-        AsyncFunction("searchInBook") { query: String, bookBasePath: String ->
-            runBlocking(Dispatchers.IO) {
-                val t1 = System.currentTimeMillis()
-                val db = AppDependencies.getDatabase(moduleContext)
-
-                val matchedBlocks = db.blockDao().searchAllMatches(query.trim(), bookBasePath)
-                val results = mutableListOf<Map<String, Any>>()
-                var globalIndex = 0
-
-                for (block in matchedBlocks) {
-                    val text = block.content
-                    var charIndex = text.indexOf(query, ignoreCase = true)
-                    var matchIndex = 0
-
-                    while (charIndex >= 0) {
-                        val startSnippet = maxOf(0, charIndex - 30)
-                        val endSnippet = minOf(text.length, charIndex + query.length + 30)
-
-                        var rawSnippet = text.substring(startSnippet, endSnippet)
-                        rawSnippet = rawSnippet.replace("\n", " ").replace("\r", " ")
-
-                        val customSnippet = "...${rawSnippet.trim()}..."
-
-                        val matchData = mapOf(
-                            "id" to globalIndex,
-                            "blockId" to block.blockId,
-                            "title" to block.title,
-                            "occurrenceIndex" to matchIndex,
-                            "snippet" to customSnippet,
-                            "query" to query
-                        )
-
-                        results.add(matchData)
-
-                        globalIndex++
-                        matchIndex++
-                        charIndex = text.indexOf(query, charIndex + query.length, ignoreCase = true)
+                    try {
+                        activity.startActivity(fallbackIntent)
+                        true
+                    } catch (e2: Exception) {
+                        android.util.Log.e("BookEngine", "Failed to open any translator", e2)
+                        throw Exception("No translation app is installed.")
                     }
                 }
-
-                val t2 = System.currentTimeMillis()
-                android.util.Log.d("BookEngine", "Search for '$query' in SearchInBook found ${results.size} matches in ${t2 - t1} ms")
-                results
             }
-        }
 
-        AsyncFunction("loadAnkiDictionary") { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-            runBlocking(Dispatchers.IO) {
-                val myAppDatabase = AppDependencies.getDatabase(moduleContext)
-                val success = loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
-                if (!success) throw Exception("Failed to load Anki dictionary")
-            }
-        }
-
-        AsyncFunction("unloadAnkiDictionary") {
-            runBlocking(Dispatchers.IO) {
-                freeAnkiDictionary()
-            }
-        }
-
-        AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, cssPaths: List<String>, options: Map<String, Any> ->
-            runBlocking(Dispatchers.IO) {
-                try {
+            AsyncFunction(
+                "loadBookInSQL",
+            ) { bookBasePath: String, blockPaths: List<String>, blockIds: List<Int>, chapterTitles: List<String> ->
+                runBlocking(Dispatchers.IO) {
                     val t1 = System.currentTimeMillis()
+                    val db = AppDependencies.getDatabase(moduleContext)
 
-                    if (paths.isEmpty()) return@runBlocking ""
+                    val blocks =
+                        blockPaths.mapIndexed { i, path ->
+                            val file = File(path)
+                            val rawHtml = file.readText()
+                            val plainText = Jsoup.parse(rawHtml).text()
 
-                    val firstFile = File(paths[0])
-                    if (!firstFile.exists()) return@runBlocking ""
-
-                    val firstHtml = firstFile.readText()
-
-                    val bodyStartIdx = firstHtml.indexOf("<body", ignoreCase = true)
-                    val bodyStartEndIdx = if (bodyStartIdx != -1) firstHtml.indexOf(">", bodyStartIdx) else -1
-                    val bodyEndIdx = firstHtml.lastIndexOf("</body>", ignoreCase = true)
-
-                    var header = if (bodyStartEndIdx != -1) {
-                        firstHtml.substring(0, bodyStartEndIdx + 1)
-                    } else "<html><head></head><body>"
-
-                    val headEndIdx = header.indexOf("</head>", ignoreCase = true)
-                    if (headEndIdx != -1) {
-                        val cssLinks = cssPaths.joinToString("\n") { path ->
-                            """<link rel="stylesheet" href="$path">"""
+                            BlockEntity(
+                                bookBasePath = bookBasePath,
+                                blockId = blockIds[i],
+                                content = plainText,
+                                title = chapterTitles[i],
+                            )
                         }
 
-                        header = header.substring(0, headEndIdx) +
-                            """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">""" +
-                            (if (cssLinks.isNotEmpty()) "\n$cssLinks" else "") +
-                            header.substring(headEndIdx)
-                    }
-
-                    val baseUrlString = "file://${firstFile.parentFile?.absolutePath}/"
-                    val headIdx = header.indexOf("<head", ignoreCase = true)
-                    if (headIdx != -1) {
-                        val headEndIdx = header.indexOf(">", headIdx)
-                        if (headEndIdx != -1) {
-                            header = header.substring(0, headEndIdx + 1) + "\n<base href=\"$baseUrlString\">\n" + header.substring(headEndIdx + 1)
-                        }
-                    } else {
-                        header = header.replaceFirst("<html>", "<html><head><base href=\"$baseUrlString\"></head>", ignoreCase = true)
-                    }
-
-                    val footer = if (bodyEndIdx != -1) {
-                        firstHtml.substring(bodyEndIdx)
-                    } else "</body></html>"
-
-                    val cacheDir = moduleContext.cacheDir ?: throw Exception("No cache dir")
-
-                    cacheDir.listFiles { _, name -> name.startsWith("initial_book_") }?.forEach { it.delete() }
-
-                    val timestamp = System.currentTimeMillis()
-                    val initialFile = File(cacheDir, "initial_book_$timestamp.html")
-
-                    val htmlBlocksDeferred = coroutineScope {
-                        paths.map { path ->
-                            async { extractBlockHtml(path) }
-                        }
-                    }
-
-                    java.io.FileOutputStream(initialFile).use { fos ->
-                        fos.write(header.toByteArray())
-
-                        val configJson = org.json.JSONObject(options).toString()
-                        val configScript = "\n<script>\nwindow.BookConfig = $configJson;\n</script>\n"
-                        fos.write(configScript.toByteArray())
-
-                        val loadedScripts = try {
-                            moduleContext.assets?.list("onBookInit")
-                                ?.filter { it.endsWith(".html") }
-                                ?.mapNotNull { fileName ->
-                                    moduleContext.assets?.open("onBookInit/$fileName")?.bufferedReader().use {
-                                        it?.readText()
-                                    }
-                                }?.joinToString("\n") ?: ""
-                        } catch (e: Exception) {
-                            android.util.Log.e("BookEngine", "Failed to load HTML files", e)
-                            ""
-                        }
-
-                        fos.write("\n$loadedScripts\n".toByteArray())
-
-                        val htmlBlocks = htmlBlocksDeferred.awaitAll().joinToString("\n") { it ?: "" }
-
-                        fos.write(htmlBlocks.toByteArray())
-                        fos.write(footer.toByteArray())
-                    }
-
-                    val fileUrl = "file://${initialFile.absolutePath}"
+                    db.blockDao().insertAll(blocks)
 
                     val t2 = System.currentTimeMillis()
-                    android.util.Log.d("BookEngine", "Kotlin loadInitialHtml in: ${t2 - t1} ms")
-
-                    fileUrl
-
-                } catch (e: Exception) {
-                    android.util.Log.e("BookEngine", "Failed to build initial HTML", e)
-                    ""
+                    android.util.Log.d("BookEngine", "Loaded ${blocks.size} blocks in Room in ${t2 - t1} ms")
+                    blocks.size
                 }
             }
-        }
 
-        AsyncFunction("setupBookBridge") { viewTag: Int, allBlockPaths: List<String>, initialBlocks: List<Int> ->
-            runBlocking(Dispatchers.Main) {
-                bookBridge.setup(allBlockPaths, initialBlocks)
-                val activity = appContext.activityProvider?.currentActivity
-                if (activity == null) {
-                    android.util.Log.e("BookEngine", "setupBookBridge: no activity")
-                    return@runBlocking
+            AsyncFunction("deleteBookFromSQL") { bookBasePath: String ->
+                runBlocking(Dispatchers.IO) {
+                    val db = AppDependencies.getDatabase(moduleContext)
+                    db.blockDao().delete(bookBasePath)
+                    android.util.Log.d("BookEngine", "Delete book from SQL: $bookBasePath")
                 }
-                val rootView = activity.findViewById<View>(viewTag)
-                val webView = findWebView(rootView)
-                if (webView != null) {
+            }
+
+            AsyncFunction("searchInBook") { query: String, bookBasePath: String ->
+                runBlocking(Dispatchers.IO) {
+                    val t1 = System.currentTimeMillis()
+                    val db = AppDependencies.getDatabase(moduleContext)
+
+                    val matchedBlocks = db.blockDao().searchAllMatches(query.trim(), bookBasePath)
+                    val results = mutableListOf<Map<String, Any>>()
+                    var globalIndex = 0
+
+                    for (block in matchedBlocks) {
+                        val text = block.content
+                        var charIndex = text.indexOf(query, ignoreCase = true)
+                        var matchIndex = 0
+
+                        while (charIndex >= 0) {
+                            val startSnippet = maxOf(0, charIndex - 30)
+                            val endSnippet = minOf(text.length, charIndex + query.length + 30)
+
+                            var rawSnippet = text.substring(startSnippet, endSnippet)
+                            rawSnippet = rawSnippet.replace("\n", " ").replace("\r", " ")
+
+                            val customSnippet = "...${rawSnippet.trim()}..."
+
+                            val matchData =
+                                mapOf(
+                                    "id" to globalIndex,
+                                    "blockId" to block.blockId,
+                                    "title" to block.title,
+                                    "occurrenceIndex" to matchIndex,
+                                    "snippet" to customSnippet,
+                                    "query" to query,
+                                )
+
+                            results.add(matchData)
+
+                            globalIndex++
+                            matchIndex++
+                            charIndex = text.indexOf(query, charIndex + query.length, ignoreCase = true)
+                        }
+                    }
+
+                    val t2 = System.currentTimeMillis()
+                    android.util.Log.d("BookEngine", "Search for '$query' in SearchInBook found ${results.size} matches in ${t2 - t1} ms")
+                    results
+                }
+            }
+
+            AsyncFunction(
+                "loadAnkiDictionary",
+            ) { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
+                runBlocking(Dispatchers.IO) {
+                    val myAppDatabase = AppDependencies.getDatabase(moduleContext)
+                    val success = loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
+                    if (!success) throw Exception("Failed to load Anki dictionary")
+                }
+            }
+
+            AsyncFunction("unloadAnkiDictionary") {
+                runBlocking(Dispatchers.IO) {
+                    freeAnkiDictionary()
+                }
+            }
+
+            AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, cssPaths: List<String>, options: Map<String, Any> ->
+                runBlocking(Dispatchers.IO) {
                     try {
-                        webView.removeJavascriptInterface("BookBridge")
-                    } catch (_: Exception) {}
-                    webView.addJavascriptInterface(bookBridge, "BookBridge")
-                    bookBridge.webView = webView
-                    android.util.Log.d("BookEngine", "BookBridge attached to WebView")
-                } else {
-                    android.util.Log.e("BookEngine", "setupBookBridge: No WebView found for viewTag=$viewTag")
-                    throw Exception("No WebView found for viewTag=$viewTag")
+                        val t1 = System.currentTimeMillis()
+
+                        if (paths.isEmpty()) return@runBlocking ""
+
+                        val firstFile = File(paths[0])
+                        if (!firstFile.exists()) return@runBlocking ""
+
+                        val firstHtml = firstFile.readText()
+
+                        val bodyStartIdx = firstHtml.indexOf("<body", ignoreCase = true)
+                        val bodyStartEndIdx = if (bodyStartIdx != -1) firstHtml.indexOf(">", bodyStartIdx) else -1
+                        val bodyEndIdx = firstHtml.lastIndexOf("</body>", ignoreCase = true)
+
+                        var header =
+                            if (bodyStartEndIdx != -1) {
+                                firstHtml.substring(0, bodyStartEndIdx + 1)
+                            } else {
+                                "<html><head></head><body>"
+                            }
+
+                        val headEndIdx = header.indexOf("</head>", ignoreCase = true)
+                        if (headEndIdx != -1) {
+                            val cssLinks =
+                                cssPaths.joinToString("\n") { path ->
+                                    """<link rel="stylesheet" href="$path">"""
+                                }
+
+                            header = header.substring(0, headEndIdx) +
+                                """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">""" +
+                                (if (cssLinks.isNotEmpty()) "\n$cssLinks" else "") +
+                                header.substring(headEndIdx)
+                        }
+
+                        val baseUrlString = "file://${firstFile.parentFile?.absolutePath}/"
+                        val headIdx = header.indexOf("<head", ignoreCase = true)
+                        if (headIdx != -1) {
+                            val headEndIdx = header.indexOf(">", headIdx)
+                            if (headEndIdx != -1) {
+                                header =
+                                    header.substring(0, headEndIdx + 1) + "\n<base href=\"$baseUrlString\">\n" +
+                                    header.substring(headEndIdx + 1)
+                            }
+                        } else {
+                            header = header.replaceFirst("<html>", "<html><head><base href=\"$baseUrlString\"></head>", ignoreCase = true)
+                        }
+
+                        val footer =
+                            if (bodyEndIdx != -1) {
+                                firstHtml.substring(bodyEndIdx)
+                            } else {
+                                "</body></html>"
+                            }
+
+                        val cacheDir = moduleContext.cacheDir ?: throw Exception("No cache dir")
+
+                        cacheDir.listFiles { _, name -> name.startsWith("initial_book_") }?.forEach { it.delete() }
+
+                        val timestamp = System.currentTimeMillis()
+                        val initialFile = File(cacheDir, "initial_book_$timestamp.html")
+
+                        val htmlBlocksDeferred =
+                            coroutineScope {
+                                paths.map { path ->
+                                    async { extractBlockHtml(path) }
+                                }
+                            }
+
+                        java.io.FileOutputStream(initialFile).use { fos ->
+                            fos.write(header.toByteArray())
+
+                            val configJson = org.json.JSONObject(options).toString()
+                            val configScript = "\n<script>\nwindow.BookConfig = $configJson;\n</script>\n"
+                            fos.write(configScript.toByteArray())
+
+                            val loadedScripts =
+                                try {
+                                    moduleContext.assets
+                                        ?.list("onBookInit")
+                                        ?.filter { it.endsWith(".html") }
+                                        ?.mapNotNull { fileName ->
+                                            moduleContext.assets?.open("onBookInit/$fileName")?.bufferedReader().use {
+                                                it?.readText()
+                                            }
+                                        }?.joinToString("\n") ?: ""
+                                } catch (e: Exception) {
+                                    android.util.Log.e("BookEngine", "Failed to load HTML files", e)
+                                    ""
+                                }
+
+                            fos.write("\n$loadedScripts\n".toByteArray())
+
+                            val htmlBlocks = htmlBlocksDeferred.awaitAll().joinToString("\n") { it ?: "" }
+
+                            fos.write(htmlBlocks.toByteArray())
+                            fos.write(footer.toByteArray())
+                        }
+
+                        val fileUrl = "file://${initialFile.absolutePath}"
+
+                        val t2 = System.currentTimeMillis()
+                        android.util.Log.d("BookEngine", "Kotlin loadInitialHtml in: ${t2 - t1} ms")
+
+                        fileUrl
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookEngine", "Failed to build initial HTML", e)
+                        ""
+                    }
+                }
+            }
+
+            AsyncFunction("setupBookBridge") { viewTag: Int, allBlockPaths: List<String>, initialBlocks: List<Int> ->
+                runBlocking(Dispatchers.Main) {
+                    bookBridge.setup(allBlockPaths, initialBlocks)
+                    val activity = appContext.activityProvider?.currentActivity
+                    if (activity == null) {
+                        android.util.Log.e("BookEngine", "setupBookBridge: no activity")
+                        return@runBlocking
+                    }
+                    val rootView = activity.findViewById<View>(viewTag)
+                    val webView = findWebView(rootView)
+                    if (webView != null) {
+                        try {
+                            webView.removeJavascriptInterface("BookBridge")
+                        } catch (_: Exception) {
+                        }
+                        webView.addJavascriptInterface(bookBridge, "BookBridge")
+                        bookBridge.webView = webView
+                        android.util.Log.d("BookEngine", "BookBridge attached to WebView")
+                    } else {
+                        android.util.Log.e("BookEngine", "setupBookBridge: No WebView found for viewTag=$viewTag")
+                        throw Exception("No WebView found for viewTag=$viewTag")
+                    }
                 }
             }
         }
-    }
 }

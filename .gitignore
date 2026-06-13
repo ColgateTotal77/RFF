@@ -23,7 +23,9 @@ ios
 modules/book-engine/android/.cxx/
 modules/book-engine/android/build/
 modules/book-engine/android/cmake-build-debug/
-/android/
+/android/*
+!/android/build.gradle
+!/android/settings.gradle
 /modules/book-engine/android/.gradle/
 /scripts/
 .history/

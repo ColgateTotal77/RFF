@@ -10,13 +10,12 @@ class NoteTagger(
     private val context: Context,
     private val freqDatabase: FrequencyDatabase? = null,
 ) {
-
     fun updateNoteTags(
         noteId: Long,
         newTags: Array<String>,
         mapping: Map<String, Any?>,
         mirroredMapping: Map<String, Any?>,
-        bestTier: String
+        bestTier: String,
     ): Pair<String, Int> {
         val resolver = context.contentResolver
 
@@ -39,10 +38,12 @@ class NoteTagger(
             cursor.close()
         }
 
-        val existingTags = currentTagsStr.trim()
-            .split("\\s+".toRegex())
-            .filter { it.isNotEmpty() }
-            .toMutableSet()
+        val existingTags =
+            currentTagsStr
+                .trim()
+                .split("\\s+".toRegex())
+                .filter { it.isNotEmpty() }
+                .toMutableSet()
 
         for (newTag in newTags) {
             if (newTag.startsWith("Lookups_")) {
@@ -56,8 +57,12 @@ class NoteTagger(
         existingTags.removeAll { it.startsWith("Top_") }
         existingTags.add(bestTier)
 
-        val tagsWithTierStr = if (existingTags.isEmpty()) ""
-        else " ${existingTags.joinToString(" ")} "
+        val tagsWithTierStr =
+            if (existingTags.isEmpty()) {
+                ""
+            } else {
+                " ${existingTags.joinToString(" ")} "
+            }
 
         val values = ContentValues()
         values.put("tags", tagsWithTierStr)
@@ -75,7 +80,7 @@ class NoteTagger(
     fun getBestFrequencyTier(
         noteIds: LongArray,
         mapping: Map<String, Any?>,
-        mirroredMapping: Map<String, Any?>
+        mirroredMapping: Map<String, Any?>,
     ): String {
         val resolver = context.contentResolver
 
@@ -95,9 +100,10 @@ class NoteTagger(
                     val word = AnkiUtils.extractWord(flds, activeMapping)
 
                     if (word.isNotEmpty()) {
-                        val (tier, zipf) = runBlocking {
-                            freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
-                        }
+                        val (tier, zipf) =
+                            runBlocking {
+                                freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
+                            }
 
                         if (zipf > bestZipf) {
                             bestZipf = zipf

@@ -4,8 +4,14 @@ import android.content.Context
 import android.net.Uri
 import com.reader.bookengine.AnkiWordsData
 
-class AllAnkiWordsFetcher(private val context: Context) {
-    fun getAllAnkiWords(deckIdString: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?>): AnkiWordsData {
+class AllAnkiWordsFetcher(
+    private val context: Context,
+) {
+    fun getAllAnkiWords(
+        deckIdString: String,
+        mapping: Map<String, Any?>,
+        mirroredMapping: Map<String, Any?>,
+    ): AnkiWordsData {
         val resolver = context.contentResolver
 
         val tempWords = mutableListOf<String>()
@@ -18,15 +24,21 @@ class AllAnkiWordsFetcher(private val context: Context) {
 
             val ankiSearchQuery = "did:$deckIdString"
 
-            val noteCursor = resolver.query(
-                notesUri,
-                arrayOf("_id", "flds", "tags"),
-                ankiSearchQuery,
-                null,
-                null
-            )
+            val noteCursor =
+                resolver.query(
+                    notesUri,
+                    arrayOf("_id", "flds", "tags"),
+                    ankiSearchQuery,
+                    null,
+                    null,
+                )
 
-            data class ParsedNote(val id: Long, val front: String, val back: String, val colorCode: Int)
+            data class ParsedNote(
+                val id: Long,
+                val front: String,
+                val back: String,
+                val colorCode: Int,
+            )
             val parsedNotes = mutableListOf<ParsedNote>()
             val frontLookup = mutableMapOf<String, Long>()
             val backLookup = mutableMapOf<String, Long>()
@@ -62,19 +74,20 @@ class AllAnkiWordsFetcher(private val context: Context) {
 
             for (note in parsedNotes) {
                 var mirroredId = frontLookup[note.back.lowercase()] ?: -1L
-                if(mirroredId == -1L) {
+                if (mirroredId == -1L) {
                     mirroredId = backLookup[note.front.lowercase()] ?: -1L
                 }
 
-                val noteIds = if (mirroredId != -1L) {
-                    if (note.id != mirroredId) {
-                        longArrayOf(note.id, mirroredId)
+                val noteIds =
+                    if (mirroredId != -1L) {
+                        if (note.id != mirroredId) {
+                            longArrayOf(note.id, mirroredId)
+                        } else {
+                            longArrayOf(note.id)
+                        }
                     } else {
                         longArrayOf(note.id)
                     }
-                } else {
-                    longArrayOf(note.id)
-                }
 
                 tempWords.add(note.front.lowercase())
                 tempNoteIds.add(noteIds)
@@ -86,7 +99,7 @@ class AllAnkiWordsFetcher(private val context: Context) {
             return AnkiWordsData(
                 tempWords.toTypedArray(),
                 tempNoteIds.toTypedArray(),
-                tempColorCodes.toIntArray()
+                tempColorCodes.toIntArray(),
             )
         } catch (e: Exception) {
             android.util.Log.e("BookEngine", "Failed to fetch Anki words", e)

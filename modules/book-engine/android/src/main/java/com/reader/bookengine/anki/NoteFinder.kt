@@ -4,10 +4,18 @@ import android.content.Context
 import android.net.Uri
 import com.ichi2.anki.api.AddContentApi
 
-data class NoteInfo(val id: Long, val tags: String)
+data class NoteInfo(
+    val id: Long,
+    val tags: String,
+)
 
-class NoteFinder(private val context: Context) {
-    fun findByModelId(modelId: Long, fieldText: String): NoteInfo? {
+class NoteFinder(
+    private val context: Context,
+) {
+    fun findByModelId(
+        modelId: Long,
+        fieldText: String,
+    ): NoteInfo? {
         try {
             val ankiApi = AddContentApi(context)
             val duplicates = ankiApi.findDuplicateNotes(modelId, fieldText)
@@ -20,13 +28,14 @@ class NoteFinder(private val context: Context) {
 
             val resolver = context.contentResolver
             val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-            val cursor = resolver.query(
-                noteUri,
-                arrayOf("tags"),
-                null,
-                null,
-                null
-            )
+            val cursor =
+                resolver.query(
+                    noteUri,
+                    arrayOf("tags"),
+                    null,
+                    null,
+                    null,
+                )
 
             var tags = ""
             if (cursor != null) {
@@ -53,13 +62,14 @@ class NoteFinder(private val context: Context) {
             val notesUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
             val ankiSearchQuery = "did:$deckId"
 
-            val noteCursor = resolver.query(
-                notesUri,
-                arrayOf("_id", "flds"),
-                ankiSearchQuery,
-                null,
-                null
-            )
+            val noteCursor =
+                resolver.query(
+                    notesUri,
+                    arrayOf("_id", "flds"),
+                    ankiSearchQuery,
+                    null,
+                    null,
+                )
 
             val configuredFrontIndex = (mapping["word"] as? Number)?.toInt() ?: 0
             val configuredBackIndex = (mirroredMapping["translation"] as? Number)?.toInt() ?: 0
