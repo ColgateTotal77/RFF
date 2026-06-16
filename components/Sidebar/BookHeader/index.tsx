@@ -8,7 +8,6 @@ import { BookEngine } from 'modules/book-engine';
 import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
 import BookHeaderNavigation from 'components/Sidebar/BookHeader/BookHeaderNavigation';
 import { MenuSearch } from 'components/Sidebar/BookHeader/Search';
-import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
 
@@ -42,27 +41,18 @@ export const BookHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
   const [isBookHeaderNavigationOpen, setIsBookHeaderNavigationOpen] = useState(false);
-  const setPostLoadQueue = useWebViewStore((state) => state.setPostLoadQueue);
-  const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
-  const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
   const openBook = useBookStore((state) => state.openBook);
   const currentCTree = useBookStore((state) => state.currentCTree);
   const closeBook = useBookStore((state) => state.closeBook);
+  const resetSearch = useTempStore((state) => state.resetSearch);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   const onSearchSubmit = async (localQuery: string) => {
     const cleanedQuery = localQuery.trim();
 
-    setPostLoadQueue([{ type: 'clearSearch' }]);
-    if (cleanedQuery) {
-      addToPostLoadQueue({
-        type: 'highlightAll',
-        query: cleanedQuery,
-      });
-    }
-    executeQueueActions();
-
     if (!cleanedQuery) return;
+
+    resetSearch();
 
     setSearchQuery(cleanedQuery);
     const results = await BookEngine.searchInBook(cleanedQuery, currentBook.basePath);

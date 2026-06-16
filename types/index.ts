@@ -104,6 +104,8 @@ export const FIELD_MAPPING_KEYS = [
   'audio',
 ] as const;
 
+export type AppFieldKey = (typeof FIELD_MAPPING_KEYS)[number];
+
 export interface FieldMapping {
   word?: number;
   translation?: number;

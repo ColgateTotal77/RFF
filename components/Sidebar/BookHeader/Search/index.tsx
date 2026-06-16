@@ -3,7 +3,7 @@ import { FlatList } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { SearchResult } from 'types';
 import { SearchCard } from './SearchCard';
-import { useWebViewStore } from 'stores/useWebViewStore';
+import { ImmediateAction, useWebViewStore } from 'stores/useWebViewStore';
 
 interface Props {
   onClose: () => void;
@@ -17,12 +17,16 @@ export const MenuSearch = ({ onClose }: Props) => {
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
 
   const onPress = (searchResult: SearchResult) => {
-    setCurrentSearchResult(searchResult);
-
     if (!currentBook.currentBlocks.includes(searchResult.blockId)) {
+      if (!currentSearchResult.query) {
+        addToPostLoadQueue({
+          type: 'highlightAll',
+          query: searchResult.query,
+        });
+      }
       addToPostLoadQueue({
         type: 'jumpToSearch',
         blockId: searchResult.blockId,
@@ -31,13 +35,22 @@ export const MenuSearch = ({ onClose }: Props) => {
       loadWindow(searchResult.blockId, 0);
     } else {
       setCurrentBlock(searchResult.blockId);
-      executeImmediateAction({
+      const toExecute: ImmediateAction[] = [];
+      if (!currentSearchResult.query) {
+        toExecute.push({
+          type: 'highlightAll',
+          query: searchResult.query,
+        });
+      }
+      toExecute.push({
         type: 'jumpToSearch',
         blockId: searchResult.blockId,
         occurrenceIndex: searchResult.occurrenceIndex,
       });
+      executeImmediateActions(toExecute);
     }
 
+    setCurrentSearchResult(searchResult);
     onClose();
   };
 

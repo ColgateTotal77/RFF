@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, BookSettings, CurrentCTree, DeepPartial, Settings, Misc } from 'types';
+import { Book, BookSettings, CurrentCTree, DeepPartial, FieldMapping, Settings, Misc } from 'types';
 import { buildBookMapping, deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
@@ -51,7 +51,12 @@ type Store = {
 
   updateSettings: (toUpdate: DeepPartial<Settings>) => void;
   updateBookSettings: (toUpdate: DeepPartial<BookSettings>) => void;
+  setBookFieldMapping: (
+    mappingName: 'fieldMapping' | 'mirroredFieldMapping',
+    mapping: FieldMapping | undefined
+  ) => void;
   updateMisc: (misc: Partial<Misc>) => void;
+  getBookSettings: (book?: Book) => BookSettings;
 };
 
 export const useBookStore = create<Store>()(
@@ -94,59 +99,49 @@ export const useBookStore = create<Store>()(
       },
 
       openBook: async (basePath: string) => {
-        const { currentBook, books, settings, currentCTree } = get();
+        const { currentBook, books, currentCTree } = get();
 
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
 
-        const deckId = bookToOpen?.settings?.ankiDeckId || settings.ankiDeckId;
-        const modelId = bookToOpen?.settings?.ankiModelId || settings.ankiModelId;
-        const mirroredModelId =
-          bookToOpen?.settings?.mirroredAnkiModelId || settings.mirroredAnkiModelId;
+        const bookSettings = get().getBookSettings(bookToOpen);
 
         try {
           if (
-            currentCTree?.deckId !== deckId ||
-            currentCTree?.langCode !== bookToOpen.settings.bookLang
+            (currentCTree?.deckId !== bookSettings.ankiDeckId ||
+              currentCTree?.langCode !== bookSettings.bookLang) &&
+            bookSettings.ankiDeckId
           ) {
             get().closeBook();
 
             console.log('Loading Anki dictionary for book');
-            const key = `${deckId}:${modelId}`;
-            const mirroredKey = `${deckId}:${mirroredModelId}`;
-
-            const mapping = deepMerge(
-              settings.fieldMappings?.[key] || {},
-              bookToOpen.settings.fieldMapping || {}
-            );
-            const mirroredMapping = deepMerge(
-              settings.mirroredFieldMappings?.[mirroredKey] || {},
-              bookToOpen.settings.mirroredFieldMapping || {}
-            );
 
             set(() => ({
-              currentCTree: { langCode: bookToOpen.settings.bookLang, deckId },
+              currentCTree: {
+                langCode: bookSettings.bookLang,
+                deckId: bookSettings.ankiDeckId!,
+              },
             }));
 
             await BookEngine.loadAnkiDictionary(
-              bookToOpen.settings.bookLang,
-              deckId,
-              mapping,
-              mirroredMapping
+              bookSettings.bookLang,
+              bookSettings.ankiDeckId,
+              bookSettings.fieldMapping,
+              bookSettings.mirroredFieldMapping
             );
           }
 
           if (
             currentBook?.basePath !== bookToOpen.basePath ||
-            currentCTree?.deckId !== deckId ||
-            currentCTree?.langCode !== bookToOpen.settings.bookLang
+            currentCTree?.deckId !== bookSettings.ankiDeckId ||
+            currentCTree?.langCode !== bookSettings.bookLang
           ) {
             get().closeBook();
             console.log('Opening book');
 
             const { loadFieldsInto } = useAnkiStore.getState();
-            loadFieldsInto(modelId, 'bookFields');
-            loadFieldsInto(mirroredModelId, 'bookMirroredFields');
+            loadFieldsInto(bookSettings.ankiModelId!, 'bookFields');
+            loadFieldsInto(bookSettings.mirroredAnkiModelId!, 'bookMirroredFields');
 
             bookToOpen.mapping = buildBookMapping(bookToOpen);
 
@@ -266,6 +261,21 @@ export const useBookStore = create<Store>()(
           };
         }),
 
+      setBookFieldMapping: (mappingName, mapping) =>
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const updatedBook = {
+            ...state.currentBook,
+            settings: { ...state.currentBook.settings, [mappingName]: mapping },
+          };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
+
       updateMisc: (misc) =>
         set((state) => {
           if (!state.currentBook) return state;
@@ -353,6 +363,32 @@ export const useBookStore = create<Store>()(
             books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
           };
         }),
+
+      getBookSettings: (book) => {
+        const currentBookSettings = (book ?? get().currentBook)?.settings ?? ({} as BookSettings);
+        const settings = get().settings;
+
+        const ankiDeckId = currentBookSettings.ankiDeckId || settings.ankiDeckId;
+        const ankiModelId = currentBookSettings.ankiModelId || settings.ankiModelId;
+        const mirroredAnkiModelId =
+          currentBookSettings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
+
+        return {
+          ...currentBookSettings,
+          ankiDeckId,
+          ankiModelId,
+          mirroredAnkiModelId,
+          isTwoSided: currentBookSettings.isTwoSided || settings.isTwoSided,
+          fieldMapping: deepMerge(
+            settings.fieldMappings?.[`${ankiDeckId}:${ankiModelId}`] || {},
+            currentBookSettings.fieldMapping || {}
+          ),
+          mirroredFieldMapping: deepMerge(
+            settings.mirroredFieldMappings?.[`${ankiDeckId}:${mirroredAnkiModelId}`] || {},
+            currentBookSettings.mirroredFieldMapping || {}
+          ),
+        };
+      },
     }),
     {
       name: 'book-storage',

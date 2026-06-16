@@ -1,9 +1,8 @@
 <script>
-  window.executeImmediateAction = async (action) => {
+  window.executeImmediateActions = async (action) => {
     switch (action.type) {
       case 'scrollToBlock':
         return window.scrollToBlock(action.blockId, action.scrollPercent);
-        return;
       case 'scrollToFragment':
         window.scrollToFragment(action.fragmentId);
         return;
@@ -25,17 +24,13 @@
       case 'clearSearch':
         return window.clearSearch();
       default:
-        window.log('executeImmediateAction: unknown type ' + action.type, 'error');
+        window.log('executeImmediateActions: unknown type ' + action.type, 'error');
     }
   };
 
   window.executeQueueAction = async function (actions) {
-    if (actions.length === 1) {
-      await window.executeImmediateAction(actions[0]);
-    } else {
-      for (const action of actions) {
-        await window.executeImmediateAction(action);
-      }
+    for (const action of actions) {
+      await window.executeImmediateActions(action);
     }
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'QUEUE_ACTIONS_COMPLETE' }));
   };

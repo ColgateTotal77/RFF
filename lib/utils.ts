@@ -1,4 +1,4 @@
-import { Book, Mapping } from 'types';
+import { Book, FieldMapping, Mapping } from 'types';
 
 export const deepMerge = (target: any, source: any): any => {
   const result = { ...target };
@@ -41,6 +41,14 @@ export const resolvePath = (base: string, relative: string) => {
     else stack.push(part);
   }
   return stack.join('/');
+};
+
+export const findBestMapping = (
+  mappings: Record<string, FieldMapping>,
+  deckId: string,
+  modelId: string
+): FieldMapping | undefined => {
+  return mappings[`${deckId}:${modelId}`] ?? Object.values(mappings).find((m) => m.modalId === modelId);
 };
 
 export const updateNestedMapping = <T extends Record<string, any>>(

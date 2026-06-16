@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { SelectionMenu, SearchResult } from 'types';
+import { useWebViewStore } from 'stores/useWebViewStore';
 
 type Store = {
   searchQuery: string;
@@ -46,7 +47,9 @@ export const useTempStore = create<Store>()((set) => ({
   toggleIsSearchModuleOpen: () =>
     set((state) => ({ isSearchModuleOpen: !state.isSearchModuleOpen })),
   setCurrentSearchResult: (searchResult) => set({ currentSearchResult: searchResult }),
-  resetSearch: () =>
+  resetSearch: () => {
+    useWebViewStore.getState().executeImmediateActions([{ type: 'clearSearch' }]);
+
     set({
       currentSearchResult: {
         id: -1,
@@ -58,7 +61,8 @@ export const useTempStore = create<Store>()((set) => ({
       },
       searchQuery: '',
       searchResults: [],
-    }),
+    });
+  },
   setSelectionMenu: (menu) =>
     set((state) => ({ selectionMenu: { ...state.selectionMenu, ...menu } })),
   closeSelectionMenu: () =>

@@ -9,7 +9,7 @@ import { useWebViewStore } from 'stores/useWebViewStore';
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const currentBook = useCurrentBook();
   const updateMisc = useBookStore((state) => state.updateMisc);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
@@ -49,7 +49,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
 
     if (currentBook.currentBlocks.includes(firstBlockId)) {
       setCurrentBlock(firstBlockId);
-      executeImmediateAction({ type: 'scrollToBlock', blockId: firstBlockId });
+      executeImmediateActions([{ type: 'scrollToBlock', blockId: firstBlockId }]);
     } else {
       loadWindow(firstBlockId, 0);
     }

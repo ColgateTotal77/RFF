@@ -17,7 +17,7 @@ export const MiscTab = () => {
   const { settings } = useBookStore();
   const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
   const { updateBookSettings } = useBookStore();
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const setIsBookSettingsTransparent = useTempStore((state) => state.setIsBookSettingsTransparent);
   const [localFontSize, setLocalFontSize] = useState(bookFont?.fontSize || settings.font.fontSize);
 
@@ -64,7 +64,7 @@ export const MiscTab = () => {
         onValueChange={(value) => {
           const now = Date.now();
           if (now - lastUpdateRef.current >= 100) {
-            executeImmediateAction({ type: 'updateFont', fontSize: value });
+            executeImmediateActions([{ type: 'updateFont', fontSize: value }]);
             setLocalFontSize(value);
             lastUpdateRef.current = now;
           }
@@ -75,7 +75,7 @@ export const MiscTab = () => {
             font: { ...settings.font, fontSize: value },
           });
           setLocalFontSize(value);
-          executeImmediateAction({ type: 'updateFont', fontSize: value });
+          executeImmediateActions([{ type: 'updateFont', fontSize: value }]);
           setIsBookSettingsTransparent(false);
         }}
       />
@@ -86,7 +86,7 @@ export const MiscTab = () => {
         options={FONT_FAMILY_OPTIONS}
         onSelect={(value) => {
           updateBookSettings({ font: { ...settings.font, fontFamily: value } });
-          executeImmediateAction({ type: 'updateFont', fontFamily: value });
+          executeImmediateActions([{ type: 'updateFont', fontFamily: value }]);
         }}
         onOpen={() => setIsBookSettingsTransparent(true)}
         onClose={() => setIsBookSettingsTransparent(false)}

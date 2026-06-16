@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useJumpToNextSearchResult, useJumpToPrevSearchResult } from 'lib/useBookNavigation';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
-import { useWebViewStore } from 'stores/useWebViewStore';
 import { Button } from 'components/ui/Button';
 
 export const Footer = () => {
@@ -14,7 +13,6 @@ export const Footer = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const resetSearch = useTempStore((state) => state.resetSearch);
   const currentBook = useBookStore((state) => state.currentBook);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
   const jumpToNext = useJumpToNextSearchResult();
   const jumpToPrev = useJumpToPrevSearchResult();
 
@@ -51,7 +49,6 @@ export const Footer = () => {
             mode="contained"
             icon="close"
             onPress={() => {
-              executeImmediateAction({ type: 'clearSearch' });
               resetSearch();
             }}
             buttonColor={colors.errorContainer}

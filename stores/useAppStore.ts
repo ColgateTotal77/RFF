@@ -11,6 +11,6 @@ export const useAppStore = create<Store>()((set) => ({
     const currentTheme = useBookStore.getState().settings.theme;
     const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
     useBookStore.getState().updateSettings({ theme: nextTheme });
-    useWebViewStore.getState().executeImmediateAction({ type: 'setTheme', theme: nextTheme });
+    useWebViewStore.getState().executeImmediateActions([{ type: 'setTheme', theme: nextTheme }]);
   },
 }));

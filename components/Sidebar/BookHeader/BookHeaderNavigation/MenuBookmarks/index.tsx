@@ -12,7 +12,7 @@ interface Props {
 export const MenuBookmarks = ({ onClose }: Props) => {
   const currentBook = useCurrentBook();
   const updateMisc = useBookStore((state) => state.updateMisc);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
@@ -20,11 +20,13 @@ export const MenuBookmarks = ({ onClose }: Props) => {
   const onPress = (bookmark: Bookmark) => {
     if (currentBook.currentBlocks.includes(bookmark.blockId)) {
       setCurrentBlock(bookmark.blockId);
-      executeImmediateAction({
-        type: 'scrollToBlock',
-        blockId: bookmark.blockId,
-        scrollPercent: bookmark.scrollPercent,
-      });
+      executeImmediateActions([
+        {
+          type: 'scrollToBlock',
+          blockId: bookmark.blockId,
+          scrollPercent: bookmark.scrollPercent,
+        },
+      ]);
     } else {
       addToPostLoadQueue({
         type: 'scrollToBlock',

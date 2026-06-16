@@ -4,10 +4,9 @@ import { Dropdown } from 'components/ui/Dropdown';
 import { Text, Switch, List } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useBookStore } from 'stores/useBookStore';
-import { FieldMapping } from 'types';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { CreateDeckDialog } from 'pages/Settings/tabs/AnkiTab/CreateDeckDialog';
-import { updateNestedMapping } from 'lib/utils';
+import { findBestMapping, updateNestedMapping } from 'lib/utils';
 import { useAnkiStore } from 'stores/useAnkiStore';
 import { Button } from 'components/ui/Button';
 import { IconButtonWithBorder } from 'components/ui/IconButton';
@@ -40,34 +39,34 @@ export const AnkiTab = () => {
   const key = `${ankiDeckId}:${ankiModelId}`;
   const mirroredKey = `${ankiDeckId}:${mirroredAnkiModelId}`;
 
+  const handleDeckChange = (newDeckId: string) => {
+    const update: Parameters<typeof updateSettings>[0] = { ankiDeckId: newDeckId };
+    if (ankiModelId) {
+      update.fieldMappings = updateNestedMapping(fieldMappings, `${newDeckId}:${ankiModelId}`, {
+        ...findBestMapping(fieldMappings, newDeckId, ankiModelId),
+        modalId: ankiModelId,
+        fieldCount: fields.length,
+      });
+    }
+    if (mirroredAnkiModelId) {
+      update.mirroredFieldMappings = updateNestedMapping(
+        mirroredFieldMappings,
+        `${newDeckId}:${mirroredAnkiModelId}`,
+        {
+          ...findBestMapping(mirroredFieldMappings, newDeckId, mirroredAnkiModelId),
+          modalId: mirroredAnkiModelId,
+          fieldCount: mirroredFields.length,
+        }
+      );
+    }
+    updateSettings(update);
+  };
+
   const handleDeckCreated = async (deckName: string) => {
     const newDeckId = await createDeck(deckName);
     if (newDeckId && !ankiModelId) await applyDefaultModel(newDeckId);
-    updateSettings({ ankiDeckId: newDeckId });
+    handleDeckChange(newDeckId);
     setDialogVisible(false);
-  };
-
-  const updateFieldMapping = (partialMapping: Partial<FieldMapping>) => {
-    updateSettings({
-      fieldMappings: updateNestedMapping(fieldMappings, key, partialMapping),
-    });
-  };
-
-  const updateMirroredFieldMapping = (partialMapping: Partial<FieldMapping>) => {
-    updateSettings({
-      mirroredFieldMappings: updateNestedMapping(
-        mirroredFieldMappings,
-        mirroredKey,
-        partialMapping
-      ),
-    });
-  };
-
-  const findMappingByModelId = (
-    mappings: Record<string, FieldMapping>,
-    modelId: string
-  ): FieldMapping | undefined => {
-    return Object.values(mappings).find((m) => m.modalId === modelId);
   };
 
   return (
@@ -89,9 +88,7 @@ export const AnkiTab = () => {
               label={t('decksLabel')}
               value={ankiDeckId}
               options={decks}
-              onSelect={(value) => {
-                updateSettings({ ankiDeckId: value });
-              }}
+              onSelect={handleDeckChange}
             />
             <IconButtonWithBorder
               icon="plus"
@@ -106,13 +103,12 @@ export const AnkiTab = () => {
             options={models}
             onSelect={async (value) => {
               const fieldCount = await loadFieldsInto(value, 'fields');
-              const mappingFromAnotherDeck = findMappingByModelId(fieldMappings, value);
-              const existingMapping = fieldMappings[`${ankiDeckId}:${value}`];
+              const bestMapping = findBestMapping(fieldMappings, ankiDeckId, value);
 
               updateSettings({
                 ankiModelId: value,
                 fieldMappings: updateNestedMapping(fieldMappings, `${ankiDeckId}:${value}`, {
-                  ...(existingMapping ? undefined : mappingFromAnotherDeck),
+                  ...bestMapping,
                   modalId: value,
                   fieldCount,
                 }),
@@ -127,7 +123,11 @@ export const AnkiTab = () => {
           title={t('fieldMapping')}
           fieldMapping={fieldMappings[key]}
           fields={fields}
-          onUpdate={updateFieldMapping}
+          onUpdate={(partialMapping) =>
+            updateSettings({
+              fieldMappings: updateNestedMapping(fieldMappings, key, partialMapping),
+            })
+          }
         />
       )}
 
@@ -144,7 +144,7 @@ export const AnkiTab = () => {
         />
       )}
 
-      {mirroredFields.length > 0 && isTwoSided && (
+      {isTwoSided && (
         <>
           <Dropdown
             label={t('mirroredModelLabel')}
@@ -152,8 +152,7 @@ export const AnkiTab = () => {
             options={models}
             onSelect={async (value) => {
               const fieldCount = await loadFieldsInto(value, 'mirroredFields');
-              const mappingFromAnotherDeck = findMappingByModelId(mirroredFieldMappings, value);
-              const existingMapping = mirroredFieldMappings[`${ankiDeckId}:${value}`];
+              const bestMapping = findBestMapping(mirroredFieldMappings, ankiDeckId, value);
 
               updateSettings({
                 mirroredAnkiModelId: value,
@@ -161,7 +160,7 @@ export const AnkiTab = () => {
                   mirroredFieldMappings,
                   `${ankiDeckId}:${value}`,
                   {
-                    ...(existingMapping ? undefined : mappingFromAnotherDeck),
+                    ...bestMapping,
                     modalId: value,
                     fieldCount,
                   }
@@ -173,7 +172,15 @@ export const AnkiTab = () => {
             title={t('mirroredFieldMapping')}
             fieldMapping={mirroredFieldMappings[mirroredKey]}
             fields={mirroredFields}
-            onUpdate={updateMirroredFieldMapping}
+            onUpdate={(partialMapping) =>
+              updateSettings({
+                mirroredFieldMappings: updateNestedMapping(
+                  mirroredFieldMappings,
+                  mirroredKey,
+                  partialMapping
+                ),
+              })
+            }
           />
         </>
       )}

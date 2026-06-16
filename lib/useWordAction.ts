@@ -1,8 +1,7 @@
 import { fetchWordMetadata } from 'lib/supabaseRequests';
 import { Anki, BookEngine } from 'modules/book-engine';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { deepMerge } from 'lib/utils';
+import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { DASH_REGEX_STRING } from './constants';
 
@@ -12,14 +11,13 @@ interface UpdateWordTag {
 }
 
 export const useWordAction = () => {
-  const currentBook = useCurrentBook();
-  const settings = useBookStore((state) => state.settings);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
+  const getBookSettings = useBookStore((state) => state.getBookSettings);
 
   const addNewCard = async (text: string) => {
-    const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
-    const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
-    if (!deckId || !modelId) {
+    const bookSettings = getBookSettings();
+
+    if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
       console.error('Missing Anki configuration');
       return;
     }
@@ -27,35 +25,22 @@ export const useWordAction = () => {
     const cleanedText = text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '');
 
     try {
-      const targetLang = currentBook.settings.targetLang || settings.targetLang;
-
-      executeImmediateAction({
-        type: 'updateTag',
-        word: cleanedText,
-        noteIds: '',
-        colorCode: '-1',
-      });
+      executeImmediateActions([
+        {
+          type: 'updateTag',
+          word: cleanedText,
+          noteIds: '',
+          colorCode: '-1',
+        },
+      ]);
 
       const metadata = await fetchWordMetadata(
         cleanedText,
-        currentBook.settings.bookLang,
-        targetLang
+        bookSettings.bookLang,
+        bookSettings.targetLang
       );
 
-      const isTwoSided = currentBook.settings.isTwoSided || settings.isTwoSided;
-      const mirroredModelId =
-        currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
-      const key = `${deckId}:${modelId}`;
-      const mirroredKey = `${deckId}:${mirroredModelId}`;
-
-      const mapping = deepMerge(
-        settings.fieldMappings?.[key] || {},
-        currentBook.settings.fieldMapping || {}
-      );
-      const mirroredMapping = deepMerge(
-        settings.mirroredFieldMappings?.[mirroredKey] || {},
-        currentBook.settings.mirroredFieldMapping || {}
-      );
+      const isTwoSided = bookSettings.isTwoSided;
 
       const fields = {
         originalWord: cleanedText.toLowerCase(),
@@ -66,68 +51,64 @@ export const useWordAction = () => {
         examples: formatExamples(metadata?.examples ?? []),
       };
 
-      const noteIdsArray = await Anki.addNote(deckId, fields, mapping, mirroredMapping, isTwoSided);
+      const noteIdsArray = await Anki.addNote(
+        bookSettings.ankiDeckId,
+        fields,
+        bookSettings.fieldMapping,
+        bookSettings.mirroredFieldMapping,
+        isTwoSided
+      );
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);
-        executeImmediateAction({
-          type: 'updateTag',
-          word: metadata?.wordForms || cleanedText,
-          noteIds: noteIdsString,
-          colorCode: '1',
-        });
+        executeImmediateActions([
+          {
+            type: 'updateTag',
+            word: metadata?.wordForms || cleanedText,
+            noteIds: noteIdsString,
+            colorCode: '1',
+          },
+        ]);
       }
     } catch (error) {
       console.error('Anki error:', error);
-      executeImmediateAction({
-        type: 'updateTag',
-        word: cleanedText,
-        noteIds: '',
-        colorCode: 'remove',
-      });
+      executeImmediateActions([
+        {
+          type: 'updateTag',
+          word: cleanedText,
+          noteIds: '',
+          colorCode: 'remove',
+        },
+      ]);
     }
   };
 
   const updateWordTag = async ({ colorCode, noteIds }: UpdateWordTag) => {
-    const deckId = currentBook.settings.ankiDeckId || settings.ankiDeckId;
-    const modelId = currentBook.settings.ankiModelId || settings.ankiModelId;
-    const mirroredModelId =
-      currentBook.settings.mirroredAnkiModelId || settings.mirroredAnkiModelId;
-    const key = `${deckId}:${modelId}`;
-    const mirroredKey = `${deckId}:${mirroredModelId}`;
+    const bookSettings = getBookSettings();
 
-    const mapping = deepMerge(
-      settings.fieldMappings?.[key] || {},
-      currentBook.settings.fieldMapping || {}
-    );
-    const mirroredMapping = deepMerge(
-      settings.mirroredFieldMappings?.[mirroredKey] || {},
-      currentBook.settings.mirroredFieldMapping || {}
-    );
+    if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
+      console.error('Missing Anki configuration');
+      return;
+    }
 
     if (Number(colorCode) > 8) return;
     try {
       const idsArray = JSON.parse(noteIds);
 
-      Anki.updateNoteTags(idsArray, [`Lookups_${colorCode}`, 'New'], mapping, mirroredMapping);
-      console.log(
-        'updateWordTag: ',
-        JSON.stringify(
-          {
-            word: null,
-            noteIds: noteIds,
-            colorCode: colorCode,
-          },
-          null,
-          2
-        )
+      Anki.updateNoteTags(
+        idsArray,
+        [`Lookups_${colorCode}`, 'New'],
+        bookSettings.fieldMapping,
+        bookSettings.mirroredFieldMapping
       );
-      executeImmediateAction({
-        type: 'updateTag',
-        word: null,
-        noteIds: noteIds,
-        colorCode: colorCode,
-      });
+      executeImmediateActions([
+        {
+          type: 'updateTag',
+          word: null,
+          noteIds: noteIds,
+          colorCode: colorCode,
+        },
+      ]);
     } catch (error) {
       console.error('Anki error:', error);
     }
@@ -149,12 +130,14 @@ export const useWordAction = () => {
     const idsArray = JSON.parse(noteIds);
     try {
       await Anki.deleteNote(idsArray);
-      executeImmediateAction({
-        type: 'updateTag',
-        word,
-        noteIds: noteIds,
-        colorCode: 'remove',
-      });
+      executeImmediateActions([
+        {
+          type: 'updateTag',
+          word,
+          noteIds: noteIds,
+          colorCode: 'remove',
+        },
+      ]);
     } catch (error) {
       console.error('Anki error:', error);
     }

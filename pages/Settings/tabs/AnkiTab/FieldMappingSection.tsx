@@ -1,8 +1,8 @@
 import { View } from 'react-native';
 import { Dropdown } from 'components/ui/Dropdown';
-import { Text } from 'react-native-paper';
+import { Text, IconButton } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { FIELD_MAPPING_KEYS, FieldMapping } from 'types';
+import { AppFieldKey, FIELD_MAPPING_KEYS, FieldMapping } from 'types';
 
 interface FieldMappingSectionProps {
   title: string;
@@ -10,10 +10,11 @@ interface FieldMappingSectionProps {
   defaultFieldMapping?: FieldMapping | undefined;
   fields: { id: number; name: string }[];
   onUpdate: (partialMapping: Partial<FieldMapping>) => void;
+  onReset?: (appKey: AppFieldKey) => void;
 }
 
 export const FieldMappingSection = (props: FieldMappingSectionProps) => {
-  const { title, fieldMapping, defaultFieldMapping, fields, onUpdate } = props;
+  const { title, fieldMapping, defaultFieldMapping, fields, onUpdate, onReset } = props;
   const defaults: Partial<FieldMapping> = defaultFieldMapping ?? {};
   const { t } = useTranslation('translation', { keyPrefix: 'ankiTab' });
 
@@ -40,6 +41,16 @@ export const FieldMappingSection = (props: FieldMappingSectionProps) => {
           <Dropdown
             key={ankiIndex}
             label={t('fieldMappingLabel', { ankiFieldName: ankiField.name })}
+            labelRight={
+              onReset && !inherited && selectedAppKey !== '' ? (
+                <IconButton
+                  icon="undo"
+                  size={14}
+                  style={{ margin: 0 }}
+                  onPress={() => onReset(selectedAppKey)}
+                />
+              ) : undefined
+            }
             value={selectedAppKey}
             options={appFieldOptions}
             onSelect={(appKeyId) => {
@@ -56,14 +67,12 @@ export const FieldMappingSection = (props: FieldMappingSectionProps) => {
 
 const isInherited = (bookValue: unknown) => bookValue === undefined;
 
-type AppFieldKey = (typeof FIELD_MAPPING_KEYS)[number];
-
 const getAnkiIndex = (
   appKey: AppFieldKey,
   mapping: Partial<FieldMapping> | undefined,
   defaults: Partial<FieldMapping>
 ): number | null | undefined => {
-  if (mapping?.[appKey] !== undefined) return mapping[appKey];
+  if (mapping && appKey in mapping) return mapping[appKey];
   return defaults[appKey];
 };
 

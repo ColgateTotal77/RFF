@@ -7,7 +7,7 @@ export const useJumpToNextSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
   const searchResults = useTempStore((state) => state.searchResults);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
@@ -30,11 +30,13 @@ export const useJumpToNextSearchResult = () => {
       loadWindow(newSearchResult.blockId, 0);
     } else {
       setCurrentBlock(newSearchResult.blockId);
-      executeImmediateAction({
-        type: 'jumpToSearch',
-        blockId: newSearchResult.blockId,
-        occurrenceIndex: newSearchResult.occurrenceIndex,
-      });
+      executeImmediateActions([
+        {
+          type: 'jumpToSearch',
+          blockId: newSearchResult.blockId,
+          occurrenceIndex: newSearchResult.occurrenceIndex,
+        },
+      ]);
     }
 
     updateMisc({
@@ -49,7 +51,7 @@ export const useJumpToPrevSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
   const setCurrentSearchResult = useTempStore((state) => state.setCurrentSearchResult);
   const searchResults = useTempStore((state) => state.searchResults);
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const currentBook = useCurrentBook();
@@ -72,11 +74,13 @@ export const useJumpToPrevSearchResult = () => {
       loadWindow(newSearchResult.blockId, 0);
     } else {
       setCurrentBlock(newSearchResult.blockId);
-      executeImmediateAction({
-        type: 'jumpToSearch',
-        blockId: newSearchResult.blockId,
-        occurrenceIndex: newSearchResult.occurrenceIndex,
-      });
+      executeImmediateActions([
+        {
+          type: 'jumpToSearch',
+          blockId: newSearchResult.blockId,
+          occurrenceIndex: newSearchResult.occurrenceIndex,
+        },
+      ]);
     }
 
     updateMisc({
@@ -87,7 +91,7 @@ export const useJumpToPrevSearchResult = () => {
 };
 
 export const useProcessBookLinks = () => {
-  const executeImmediateAction = useWebViewStore((state) => state.executeImmediateAction);
+  const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const currentBook = useCurrentBook();
@@ -100,7 +104,7 @@ export const useProcessBookLinks = () => {
       if (!currentBook.currentBlocks.includes(blockId)) {
         loadWindow(blockId, 0);
       } else {
-        executeImmediateAction({ type: 'scrollToBlock', blockId, scrollPercent: 0 });
+        executeImmediateActions([{ type: 'scrollToBlock', blockId, scrollPercent: 0 }]);
       }
     }
 
@@ -111,7 +115,7 @@ export const useProcessBookLinks = () => {
       addToPostLoadQueue({ type: 'scrollToFragment', fragmentId });
       loadWindow(blockId, 0);
     } else {
-      executeImmediateAction({ type: 'scrollToFragment', fragmentId });
+      executeImmediateActions([{ type: 'scrollToFragment', fragmentId }]);
     }
   };
 };

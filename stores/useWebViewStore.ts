@@ -40,7 +40,7 @@ type Store = {
   registerWebViewAction: (injectScript: (script: string) => void) => void;
   runScript: (script: string) => void;
 
-  executeImmediateAction: (action: ImmediateAction) => void;
+  executeImmediateActions: (actions: ImmediateAction[]) => void;
   executeQueueActions: () => void;
 };
 
@@ -138,8 +138,8 @@ export const useWebViewStore = create<Store>()((set, get) => ({
     get().injectScript?.(script);
   },
 
-  executeImmediateAction: (action: ImmediateAction) => {
-    get().runScript?.('window.executeImmediateAction(' + JSON.stringify(action) + ');');
+  executeImmediateActions: (actions) => {
+    get().runScript?.('window.executeQueueAction(' + JSON.stringify(actions) + ');');
   },
 
   executeQueueActions: () => {

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, ReactNode } from 'react';
 import { Text, useTheme, Divider, Icon } from 'react-native-paper';
 import { View, Modal, TouchableOpacity, FlatList, StyleSheet, Dimensions } from 'react-native';
 import { Button } from 'components/ui/Button';
@@ -15,6 +15,7 @@ interface Props<T extends string> {
   isLoading?: boolean;
   placeholder?: string;
   isGrayed?: boolean;
+  labelRight?: ReactNode;
   closeOnSelect?: boolean;
   onSelect: (id: T) => void;
   onOpen?: () => void;
@@ -29,6 +30,7 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
     isLoading = false,
     placeholder = 'Select an option',
     isGrayed,
+    labelRight,
     closeOnSelect = true,
     onSelect,
     onOpen,
@@ -72,12 +74,14 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
   return (
     <View className="flex flex-1 gap-2">
       {label && (
-        <Text
-          variant="labelLarge"
-          className="mb-1"
-          style={{ color: isGrayed ? theme.colors.outline : theme.colors.onSurfaceVariant }}>
-          {label}
-        </Text>
+        <View className="mb-1 flex-row items-center justify-between">
+          <Text
+            variant="labelLarge"
+            style={{ color: isGrayed ? theme.colors.outline : theme.colors.onSurfaceVariant }}>
+            {label}
+          </Text>
+          {labelRight}
+        </View>
       )}
 
       <View ref={buttonRef} collapsable={false} className="w-full">
