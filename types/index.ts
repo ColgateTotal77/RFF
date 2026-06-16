@@ -162,6 +162,7 @@ export interface CurrentCTree {
 export type SelectionMenu = {
   visible: boolean;
   text: string;
+  sentence: string;
   top: number;
   left: number;
   noteIds?: string;

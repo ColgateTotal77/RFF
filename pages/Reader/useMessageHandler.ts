@@ -36,6 +36,7 @@ export const useMessageHandler = () => {
             setSelectionMenu({
               visible: true,
               text: parsedData.text,
+              sentence: parsedData.sentence,
               top: parsedData.top,
               left: parsedData.left,
               noteIds: parsedData.noteIds,
@@ -90,7 +91,7 @@ export const useMessageHandler = () => {
                 colorCode: String(Number(parsedData.colorCode!) + 1),
               });
             } else {
-              addNewCard(parsedData.text);
+              addNewCard(parsedData.text, parsedData.sentence);
             }
             closeMenu();
             break;

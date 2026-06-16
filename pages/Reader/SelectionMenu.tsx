@@ -41,7 +41,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
   const theme = useTheme();
 
   const onAddNewCardPress = () => {
-    addNewCard(selectionMenu.text);
+    addNewCard(selectionMenu.text, selectionMenu.sentence);
     closeMenu();
   };
 

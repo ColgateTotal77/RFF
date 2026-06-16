@@ -39,7 +39,7 @@ class AnkiModule : Module() {
         ModuleDefinition {
             Name("Anki")
 
-            AsyncFunction("getDecks") {  runBlocking(Dispatchers.IO) {
+            AsyncFunction("getDecks") {  runBlocking {
                 try {
                     val ankiApi = AddContentApi(moduleContext)
                     val deckList = ankiApi.deckList ?: return@runBlocking emptyList<Map<String, String>>()
@@ -58,7 +58,7 @@ class AnkiModule : Module() {
             }
 
             AsyncFunction("createDeck") { deckName: String ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     try {
                         val ankiApi = AddContentApi(moduleContext)
                         val deckId =
@@ -73,7 +73,7 @@ class AnkiModule : Module() {
                 }
             }
 
-            AsyncFunction("getModels") {  runBlocking(Dispatchers.IO) {
+            AsyncFunction("getModels") {  runBlocking {
                 try {
                     val ankiApi = AddContentApi(moduleContext)
                     val modelList = ankiApi.modelList ?: return@runBlocking emptyList<Map<String, String>>()
@@ -92,7 +92,7 @@ class AnkiModule : Module() {
             }
 
             AsyncFunction("getFields") { modelIdString: String ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     val modelId = modelIdString.toLong()
 
                     try {
@@ -118,7 +118,7 @@ class AnkiModule : Module() {
                 mirroredMapping: Map<String, Any?>,
                 isTwoSided: Boolean,
                 ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     val deckId = deckIdString.toLong()
 
                     try {
@@ -228,7 +228,7 @@ class AnkiModule : Module() {
             AsyncFunction(
                 "updateNoteTags",
             ) { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     if (noteIds.isEmpty()) return@runBlocking
 
                     val noteTagger = NoteTagger(moduleContext, freqDatabase)
@@ -243,7 +243,7 @@ class AnkiModule : Module() {
             }
 
             AsyncFunction("deleteNote") { noteIds: LongArray ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     try {
                         val baseUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
 

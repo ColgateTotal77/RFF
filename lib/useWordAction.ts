@@ -14,7 +14,7 @@ export const useWordAction = () => {
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const getBookSettings = useBookStore((state) => state.getBookSettings);
 
-  const addNewCard = async (text: string) => {
+  const addNewCard = async (text: string, sentence: string) => {
     const bookSettings = getBookSettings();
 
     if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
@@ -36,6 +36,7 @@ export const useWordAction = () => {
 
       const metadata = await fetchWordMetadata(
         cleanedText,
+        sentence === text ? '' : sentence,
         bookSettings.bookLang,
         bookSettings.targetLang
       );

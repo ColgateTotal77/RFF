@@ -3,5 +3,5 @@ export type ApiResponse = {
   translations: string;
   examples: string[];
   synonyms: string[];
-  generatedFrom: 'reverso' | 'gemini' | 'groq' | 'gpt';
+  generatedFrom: 'reverso' | 'gemini' | 'groq' | 'gpt' | 'deepseek';
 };

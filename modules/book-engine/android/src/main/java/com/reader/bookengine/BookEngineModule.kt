@@ -250,7 +250,7 @@ class BookEngineModule : Module() {
             Name("BookEngine")
 
             AsyncFunction("onAppInit") {
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     android.util.Log.d("BookEngine", "onAppInit called")
                     try {
                         val myAppDatabase = AppDependencies.getDatabase(moduleContext)
@@ -307,7 +307,7 @@ class BookEngineModule : Module() {
             AsyncFunction(
                 "loadBookInSQL",
             ) { bookBasePath: String, blockPaths: List<String>, blockIds: List<Int>, chapterTitles: List<String> ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     val t1 = System.currentTimeMillis()
                     val db = AppDependencies.getDatabase(moduleContext)
 
@@ -334,7 +334,7 @@ class BookEngineModule : Module() {
             }
 
             AsyncFunction("deleteBookFromSQL") { bookBasePath: String ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     val db = AppDependencies.getDatabase(moduleContext)
                     db.blockDao().delete(bookBasePath)
                     android.util.Log.d("BookEngine", "Delete book from SQL: $bookBasePath")
@@ -342,7 +342,7 @@ class BookEngineModule : Module() {
             }
 
             AsyncFunction("searchInBook") { query: String, bookBasePath: String ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     val t1 = System.currentTimeMillis()
                     val db = AppDependencies.getDatabase(moduleContext)
 
@@ -391,7 +391,7 @@ class BookEngineModule : Module() {
             AsyncFunction(
                 "loadAnkiDictionary",
             ) { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking<Unit> {
                     val myAppDatabase = AppDependencies.getDatabase(moduleContext)
                     val success = loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
                     if (!success) throw Exception("Failed to load Anki dictionary")
@@ -399,13 +399,13 @@ class BookEngineModule : Module() {
             }
 
             AsyncFunction("unloadAnkiDictionary") {
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     freeAnkiDictionary()
                 }
             }
 
             AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, cssPaths: List<String>, options: Map<String, Any> ->
-                runBlocking(Dispatchers.IO) {
+                runBlocking {
                     try {
                         val t1 = System.currentTimeMillis()
 

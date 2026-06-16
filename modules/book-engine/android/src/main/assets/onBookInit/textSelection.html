@@ -1,0 +1,196 @@
+<script>
+
+  const SENTENCE_END_REGEX = /[.!?。！？।॥؟።]/;
+  const MAX_SENTENCE_LENGTH = 200;
+  const SENTENCE_CONTAINER_SELECTOR =
+    'p, div, h1, h2, h3, h4, h5, h6, li, blockquote, article, section, td';
+
+  const getTextOffset = (ancestor, node, offset) => {
+    const walker = document.createTreeWalker(ancestor, NodeFilter.SHOW_TEXT);
+    let total = 0;
+    let current = walker.nextNode();
+    while (current) {
+      if (current === node) return total + offset;
+      total += current.textContent.length;
+      current = walker.nextNode();
+    }
+    return total;
+  };
+
+  const extractSentence = (container, start, end) => {
+    const text = container.textContent;
+    const length = text.length;
+
+    let sentenceStart = 0;
+    for (let i = start - 1; i >= 0; i--) {
+      if (SENTENCE_END_REGEX.test(text[i])) {
+        sentenceStart = i + 1;
+        break;
+      }
+    }
+
+    let sentenceEnd = length;
+    for (let i = end; i < length; i++) {
+      if (SENTENCE_END_REGEX.test(text[i])) {
+        sentenceEnd = i + 1;
+        break;
+      }
+    }
+
+    let windowStart = sentenceStart;
+    let windowEnd = sentenceEnd;
+
+    if (sentenceEnd - sentenceStart > MAX_SENTENCE_LENGTH) {
+      const padding = Math.floor((MAX_SENTENCE_LENGTH - (end - start)) / 2);
+      windowStart = Math.max(sentenceStart, start - padding);
+      windowEnd = Math.min(sentenceEnd, end + padding);
+    }
+
+    const snippet = text.slice(windowStart, windowEnd).replace(/\s+/g, ' ').trim();
+    const prefix = windowStart > sentenceStart ? '…' : '';
+    const suffix = windowEnd < sentenceEnd ? '…' : '';
+
+    return `${prefix}${snippet}${suffix}`;
+  };
+
+  document.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+  });
+
+  let selectionRafId = null;
+  let lastSelectionText = '';
+  document.addEventListener('selectionchange', () => {
+    if (selectionRafId) cancelAnimationFrame(selectionRafId);
+
+    selectionRafId = requestAnimationFrame(() => {
+      selectionRafId = null;
+      const selection = window.getSelection();
+      const selectedText = selection.toString().trim();
+
+      if (selectedText === lastSelectionText) return;
+      lastSelectionText = selectedText;
+
+      if (selectedText.length > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const menuX = rect.left + rect.width / 2;
+        const menuY = rect.top;
+        const commonAncestor = range.commonAncestorContainer;
+
+        let noteIds = null;
+        let colorCode = null;
+
+        const baseElement =
+          commonAncestor.nodeType === Node.TEXT_NODE
+            ? commonAncestor.parentElement
+            : commonAncestor;
+
+        const highlightedElement = baseElement.closest('.anki-word');
+
+        if (highlightedElement) {
+          noteIds = highlightedElement.getAttribute('data-note-ids');
+          colorCode = highlightedElement.getAttribute('data-flag');
+        }
+
+        const sentenceContainer = baseElement.closest(SENTENCE_CONTAINER_SELECTOR) || baseElement;
+        const startOffset = getTextOffset(sentenceContainer, range.startContainer, range.startOffset);
+        const endOffset = getTextOffset(sentenceContainer, range.endContainer, range.endOffset);
+        const sentence = extractSentence(sentenceContainer, startOffset, endOffset);
+
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: 'TEXT_SELECTED',
+            text: selectedText,
+            sentence,
+            top: menuY,
+            left: menuX,
+            noteIds: noteIds ? noteIds : null,
+            colorCode: colorCode ? colorCode : null,
+          })
+        );
+
+        window.log(
+          'TEXT_SELECTED: "' +
+          selectedText.substring(0, 20) +
+          (selectedText.length > 20 ? '...' : '') +
+          '"'
+        );
+      } else {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: 'SELECTION_CLEARED',
+          })
+        );
+        lastSelectionText = '';
+      }
+    });
+  });
+
+  let tapCount = 0;
+  let tapTimer = null;
+  let lastTapText = '';
+  const TAP_DELAY = 230;
+
+  document.addEventListener('touchend', (event) => {
+    const touch = event.changedTouches[0];
+    const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+
+    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
+
+    const textNode = range.startContainer;
+    const text = textNode.textContent;
+    const offset = range.startOffset;
+
+    const start = text.lastIndexOf(' ', offset - 1) + 1;
+    const end = text.indexOf(' ', offset);
+    const selectedText = text.substring(start, end === -1 ? text.length : end).trim();
+
+    if (!selectedText) return;
+
+    const highlightedElement = textNode.parentElement.closest('.anki-word');
+    const noteIds = highlightedElement?.dataset.noteIds || null;
+    const colorCode = highlightedElement?.dataset.flag || null;
+
+    if (selectedText !== lastTapText) {
+      tapCount = 0;
+      lastTapText = selectedText;
+    }
+
+    tapCount++;
+    clearTimeout(tapTimer);
+
+    window.log(`TAP: word="${selectedText}", count=${tapCount}`);
+
+    if (tapCount === 3) {
+      const sentenceContainer =
+        textNode.parentElement.closest(SENTENCE_CONTAINER_SELECTOR) || textNode.parentElement;
+      const wordStart = getTextOffset(sentenceContainer, textNode, start);
+      const wordEnd = getTextOffset(sentenceContainer, textNode, end === -1 ? text.length : end);
+      const sentence = extractSentence(sentenceContainer, wordStart, wordEnd);
+
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: 'TRIPLE_TAP',
+          text: selectedText,
+          sentence,
+          noteIds,
+          colorCode,
+        })
+      );
+      tapCount = 0;
+    } else {
+      tapTimer = setTimeout(() => {
+        if (tapCount === 1 && lastSelectionText) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECTION_CLEARED' }));
+          lastSelectionText = '';
+        } else if (tapCount === 2) {
+          window.ReactNativeWebView.postMessage(
+            JSON.stringify({ type: 'DOUBLE_TAP', text: selectedText })
+          );
+        }
+        tapCount = 0;
+      }, TAP_DELAY);
+    }
+  });
+</script>

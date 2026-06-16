@@ -37,6 +37,7 @@ export const useTempStore = create<Store>()((set) => ({
   selectionMenu: {
     visible: false,
     text: '',
+    sentence: '',
     top: 0,
     left: 0,
   },

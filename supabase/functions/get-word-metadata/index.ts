@@ -3,14 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../../types.ts';
 import { corsHeaders } from '../../corsHeaders.ts';
 import { checkWordInDB } from './checkWordInDB.ts';
-import { getWiktionaryData } from './getWiktionaryData.ts';
-import { getLemma, getWordForms } from './utils.ts';
-import { getReversoData } from './getReversoData.ts';
+import { getWordForms, langMap } from './utils.ts';
 import { ApiResponse } from './sharedTypes.ts';
-import { getGeminiData } from './getGeminiData.ts';
-import { getGroqData } from './getGroqData.ts';
-import { getGPTData } from './getGPTData.ts';
+import { getCardData } from './getCardData.ts';
 import { saveCardInDB } from './saveCardInDB.ts';
+import { getDefinition } from './getDefinition.ts';
+import { getLemma } from './getLemma.ts';
 
 type WordForm = Database['public']['Tables']['word_forms']['Row'];
 
@@ -21,54 +19,41 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const groqApiKey = Deno.env.get('GROQ_API_KEY');
-  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-  const gptApiKey = Deno.env.get('OPENAI_API_KEY');
+  const deepseekKey = Deno.env.get('DEEPSEEK_KEY');
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  const { word, word_lang_code, translation_lang_code } = await req.json();
-  const inputWord = word.toLowerCase();
+  if (!deepseekKey) throw new Error('DEEPSEEK_KEY is not set');
 
-  let lemma = await getLemma(supabase, inputWord, word_lang_code);
+  const { word, sentence, word_lang_code, translation_lang_code } = await req.json();
+
+  console.log('word: ', word);
+  console.log('sentence: ', sentence);
+  console.log('word_lang_code: ', word_lang_code);
+  console.log('translation_lang_code: ', translation_lang_code);
+
+  const inputWord = word.toLowerCase();
 
   await checkWordInDB(supabase, word, word_lang_code, translation_lang_code);
 
-  const { lemma: wikiLemma, definition } = await getWiktionaryData(lemma, word_lang_code);
-  lemma = wikiLemma;
+  const fromLang = langMap[word_lang_code];
+  const toLang = langMap[translation_lang_code];
 
   let apiResponse: ApiResponse | null = null;
+  let definition;
 
   try {
-    apiResponse = await getGPTData(lemma, word_lang_code, translation_lang_code, gptApiKey);
+    const lemma = await getLemma(word, fromLang, sentence, deepseekKey);
+
+    [apiResponse, definition] = await Promise.all([
+      getCardData(lemma, fromLang, toLang, deepseekKey),
+      getDefinition(lemma, fromLang, deepseekKey),
+    ]);
   } catch (gptError) {
-    console.error('[Error] GPT failed, falling back to Reverso:', gptError);
-    try {
-      apiResponse = await getReversoData(lemma, word_lang_code, translation_lang_code);
-    } catch (reversoError) {
-      console.error('[Error] Reverso failed, calling Gemini:', reversoError);
-      try {
-        apiResponse = await getGeminiData(
-          lemma,
-          word_lang_code,
-          translation_lang_code,
-          geminiApiKey
-        );
-      } catch (geminiError) {
-        console.error('[Error] Gemini failed, falling back to Groq:', geminiError);
-        try {
-          apiResponse = await getGroqData(lemma, word_lang_code, translation_lang_code, groqApiKey);
-        } catch (groqError) {
-          console.error('[Error] All providers failed:', groqError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to process word via all AI providers' }),
-            {
-              status: 500,
-              headers: corsHeaders,
-            }
-          );
-        }
-      }
-    }
+    console.error('[Error] GPT failed:', gptError);
+    return new Response(JSON.stringify({ error: 'Failed to process word via all AI providers' }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 
   const newWord = await saveCardInDB(
