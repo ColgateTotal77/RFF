@@ -8,6 +8,7 @@ type Store = {
   isSearchModuleOpen: boolean;
   currentSearchResult: SearchResult;
   selectionMenu: SelectionMenu;
+  bookListQuery: string;
 
   setSearchQuery: (searchQuery: string) => void;
   setSearchResults: (result: SearchResult[]) => void;
@@ -20,6 +21,7 @@ type Store = {
 
   isBookSettingsTransparent: boolean;
   setIsBookSettingsTransparent: (isSliding: boolean) => void;
+  setBookListQuery: (bookListQuery: string) => void;
 };
 
 export const useTempStore = create<Store>()((set) => ({
@@ -42,6 +44,7 @@ export const useTempStore = create<Store>()((set) => ({
     left: 0,
   },
   isBookSettingsTransparent: false,
+  bookListQuery: '',
 
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
@@ -69,4 +72,5 @@ export const useTempStore = create<Store>()((set) => ({
   closeSelectionMenu: () =>
     set((state) => ({ selectionMenu: { ...state.selectionMenu, visible: false } })),
   setIsBookSettingsTransparent: (isSliding) => set({ isBookSettingsTransparent: isSliding }),
+  setBookListQuery: (bookListQuery) => set({ bookListQuery }),
 }));

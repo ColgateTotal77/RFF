@@ -9,17 +9,23 @@ import { BookHeader } from 'components/Sidebar/BookHeader';
 import { useBookStore } from 'stores/useBookStore';
 import { BookListScreen } from 'pages/BookLists';
 import { useTranslation } from 'react-i18next';
+import { useTempStore } from 'stores/useTempStore';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
-const ReadingNowScreen = () => {
+const ReadingScreen = (haveReade: boolean) => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
-  return <BookListScreen filterFn={(book) => !book.misc.haveRead} toggleLabel={t('readingNow')} />;
-};
+  const query = useTempStore((state) => state.bookListQuery).toLowerCase();
 
-const HaveReadScreen = () => {
-  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
-  return <BookListScreen filterFn={(book) => book.misc.haveRead} toggleLabel={t('haveRead')} />;
+  return (
+    <BookListScreen
+      filterFn={(book) =>
+        (haveReade ? book.misc.haveRead : !book.misc.haveRead) &&
+        book.title.toLowerCase().includes(query)
+      }
+      toggleLabel={t('readingNow')}
+    />
+  );
 };
 
 export const Sidebar = () => {
@@ -45,12 +51,12 @@ export const Sidebar = () => {
       }}>
       <Drawer.Screen
         name="Reading Now"
-        component={ReadingNowScreen}
+        component={() => ReadingScreen(false)}
         options={{ title: t('readingNow') }}
       />
       <Drawer.Screen
         name="Have Read"
-        component={HaveReadScreen}
+        component={() => ReadingScreen(true)}
         options={{ title: t('haveRead') }}
       />
       <Drawer.Screen

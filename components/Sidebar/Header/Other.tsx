@@ -6,11 +6,10 @@ interface Props {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
-  navigation: DrawerNavigationProp<ParamListBase>;
 }
 
 export const Other = (props: Props) => {
-  const { isOpen, onOpen, onClose, navigation } = props;
+  const { isOpen, onOpen, onClose } = props;
 
   return (
     <Menu

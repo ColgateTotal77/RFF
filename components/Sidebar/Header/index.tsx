@@ -7,6 +7,7 @@ import { useBookStore } from 'stores/useBookStore';
 import * as DocumentPicker from 'expo-document-picker';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { useAnkiStore } from 'stores/useAnkiStore';
+import { SearchAction } from 'components/Sidebar/Header/SearchAction';
 
 interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -31,19 +32,33 @@ export const Header = ({ navigation, title, routeName }: Props) => {
     }
   };
 
+  const isBookListRoute = routeName === 'Reading Now' || routeName === 'Have Read';
+
   return (
     <Appbar.Header>
-      <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
-      <Appbar.Content title={title} />
-      {(routeName === 'Reading Now' || routeName === 'Have Read') && (
+      {isBookListRoute ? (
+        <SearchAction
+          leftContent={
+            <>
+              <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
+              <Appbar.Content title={title} />
+            </>
+          }
+        />
+      ) : (
         <>
-          <AppbarAction icon="magnify" onPress={() => {}} />
+          <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
+          <Appbar.Content title={title} />
+        </>
+      )}
+
+      {isBookListRoute && (
+        <>
           <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} />
           <Other
             isOpen={isMenuOpen}
             onOpen={() => setIsMenuOpen(true)}
             onClose={() => setIsMenuOpen(false)}
-            navigation={navigation}
           />
         </>
       )}

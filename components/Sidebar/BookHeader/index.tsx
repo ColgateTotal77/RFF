@@ -1,8 +1,7 @@
 import { Appbar, PaperProvider, TextInput, useTheme } from 'react-native-paper';
 import { Other } from 'components/Sidebar/BookHeader/Other';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { useEffect, useRef, useState } from 'react';
-import { View, Modal, Animated } from 'react-native';
+import { View, Modal, Animated, TextInput as NativeTextInput } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
 import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
@@ -10,8 +9,15 @@ import BookHeaderNavigation from 'components/Sidebar/BookHeader/BookHeaderNaviga
 import { MenuSearch } from 'components/Sidebar/BookHeader/Search';
 import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
+import { useEffect, useRef, useState } from 'react';
 
-const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
+const SearchInput = ({
+  onSubmit,
+  inputRef,
+}: {
+  onSubmit: (q: string) => void;
+  inputRef: React.Ref<NativeTextInput>;
+}) => {
   const theme = useTheme();
   const setSearchQuery = useTempStore((state) => state.setSearchQuery);
   const searchQuery = useTempStore((state) => state.searchQuery);
@@ -19,6 +25,7 @@ const SearchInput = ({ onSubmit }: { onSubmit: (q: string) => void }) => {
 
   return (
     <TextInput
+      ref={inputRef}
       placeholder={t('searchPlaceholder')}
       value={searchQuery}
       onChangeText={setSearchQuery}
@@ -37,14 +44,14 @@ export const BookHeader = () => {
   const toggleIsSearchModuleOpen = useTempStore((state) => state.toggleIsSearchModuleOpen);
   const setSearchResults = useTempStore((state) => state.setSearchResults);
   const isSearchModuleOpen = useTempStore((state) => state.isSearchModuleOpen);
-  const currentBook = useCurrentBook();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
-  const [isBookHeaderNavigationOpen, setIsBookHeaderNavigationOpen] = useState(false);
   const openBook = useBookStore((state) => state.openBook);
   const currentCTree = useBookStore((state) => state.currentCTree);
   const closeBook = useBookStore((state) => state.closeBook);
   const resetSearch = useTempStore((state) => state.resetSearch);
+  const currentBook = useCurrentBook();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
+  const [isBookHeaderNavigationOpen, setIsBookHeaderNavigationOpen] = useState(false);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   const onSearchSubmit = async (localQuery: string) => {
@@ -74,6 +81,7 @@ export const BookHeader = () => {
     }
   };
 
+  const searchInputRef = useRef<NativeTextInput>(null);
   const opacityAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     const unsubscribe = useTempStore.subscribe((state) => {
@@ -115,11 +123,15 @@ export const BookHeader = () => {
         visible={isSearchModuleOpen}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={toggleIsSearchModuleOpen}>
+        onRequestClose={toggleIsSearchModuleOpen}
+        onShow={() => {
+          if (!useTempStore.getState().searchQuery || !useTempStore.getState().searchResults.length)
+            searchInputRef.current?.focus();
+        }}>
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           <Appbar.Header>
             <AppbarAction icon="close" onPress={toggleIsSearchModuleOpen} />
-            <SearchInput onSubmit={onSearchSubmit} />
+            <SearchInput inputRef={searchInputRef} onSubmit={onSearchSubmit} />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
         </View>
