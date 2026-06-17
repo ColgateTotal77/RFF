@@ -7,10 +7,11 @@ import com.reader.bookengine.anki.FieldArrayMapper
 import com.reader.bookengine.anki.NoteFinder
 import com.reader.bookengine.anki.NoteTagger
 import com.reader.bookengine.database.FrequencyDatabase
+import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 data class AnkiWordsData(
     val words: Array<String>,
@@ -39,33 +40,25 @@ class AnkiModule : Module() {
         ModuleDefinition {
             Name("Anki")
 
-            AsyncFunction("getDecks") {  runBlocking {
-                try {
-                    val ankiApi = AddContentApi(moduleContext)
-                    val deckList = ankiApi.deckList ?: return@runBlocking emptyList<Map<String, String>>()
-
-                    val formattedDecks =
-                        deckList.map {
-                            mapOf("id" to it.key.toString(), "name" to it.value)
-                        }
-
-                    formattedDecks
-                } catch (e: Exception) {
-                    android.util.Log.e("BookEngine", "Failed to get Anki Decks", e)
-                    throw Exception("Failed to get Anki Decks: ${e.message}")
-                }
-            }
-            }
-
-            AsyncFunction("createDeck") { deckName: String ->
-                runBlocking {
+            AsyncFunction("getDecks") Coroutine { ->
+                withContext(Dispatchers.IO) {
                     try {
                         val ankiApi = AddContentApi(moduleContext)
-                        val deckId =
-                            ankiApi.addNewDeck(deckName)
-                                ?: throw Exception("Failed to create deck: $deckName")
+                        val deckList = ankiApi.deckList ?: return@withContext emptyList<Map<String, String>>()
 
-                        deckId
+                        deckList.map { mapOf("id" to it.key.toString(), "name" to it.value) }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookEngine", "Failed to get Anki Decks", e)
+                        throw Exception("Failed to get Anki Decks: ${e.message}")
+                    }
+                }
+            }
+
+            AsyncFunction("createDeck") Coroutine { deckName: String ->
+                withContext(Dispatchers.IO) {
+                    try {
+                        val ankiApi = AddContentApi(moduleContext)
+                        ankiApi.addNewDeck(deckName) ?: throw Exception("Failed to create deck: $deckName")
                     } catch (e: Exception) {
                         android.util.Log.e("BookEngine", "Failed to create Anki deck", e)
                         throw Exception("Failed to create Anki deck: ${e.message}")
@@ -73,52 +66,35 @@ class AnkiModule : Module() {
                 }
             }
 
-            AsyncFunction("getModels") {  runBlocking {
-                try {
-                    val ankiApi = AddContentApi(moduleContext)
-                    val modelList = ankiApi.modelList ?: return@runBlocking emptyList<Map<String, String>>()
+            AsyncFunction("getModels") Coroutine { ->
+                withContext(Dispatchers.IO) {
+                    try {
+                        val ankiApi = AddContentApi(moduleContext)
+                        val modelList = ankiApi.modelList ?: return@withContext emptyList<Map<String, String>>()
 
-                    val formattedModels =
-                        modelList.map {
-                            mapOf("id" to it.key.toString(), "name" to it.value)
-                        }
-
-                    formattedModels
-                } catch (e: Exception) {
-                    android.util.Log.e("BookEngine", "Failed to get Anki Models", e)
-                    throw Exception("Failed to get Anki Models: ${e.message}")
+                        modelList.map { mapOf("id" to it.key.toString(), "name" to it.value) }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookEngine", "Failed to get Anki Models", e)
+                        throw Exception("Failed to get Anki Models: ${e.message}")
+                    }
                 }
             }
-            }
 
-            AsyncFunction("getFields") { modelIdString: String ->
-                runBlocking {
+            AsyncFunction("getFields") Coroutine { modelIdString: String ->
+                withContext(Dispatchers.IO) {
                     val modelId = modelIdString.toLong()
-
                     try {
                         val ankiApi = AddContentApi(moduleContext)
                         ankiApi.getFieldList(modelId) ?: emptyArray<String>()
                     } catch (e: Exception) {
-                        android.util.Log.e(
-                            "BookEngine",
-                            "Failed to get fields for model with id: $modelId",
-                            e,
-                        )
+                        android.util.Log.e("BookEngine", "Failed to get fields for model with id: $modelId", e)
                         throw Exception("Failed to get fields for model with id: $modelId: ${e.message}")
                     }
                 }
             }
 
-            AsyncFunction(
-                "addNote",
-            ) {
-                deckIdString: String,
-                fields: Map<String, String>,
-                mapping: Map<String, Any?>,
-                mirroredMapping: Map<String, Any?>,
-                isTwoSided: Boolean,
-                ->
-                runBlocking {
+            AsyncFunction("addNote") Coroutine { deckIdString: String, fields: Map<String, String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?>, isTwoSided: Boolean ->
+                withContext(Dispatchers.IO) {
                     val deckId = deckIdString.toLong()
 
                     try {
@@ -223,11 +199,9 @@ class AnkiModule : Module() {
                 }
             }
 
-            AsyncFunction(
-                "updateNoteTags",
-            ) { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-                runBlocking {
-                    if (noteIds.isEmpty()) return@runBlocking
+            AsyncFunction("updateNoteTags") Coroutine { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
+                withContext(Dispatchers.IO) {
+                    if (noteIds.isEmpty()) return@withContext
 
                     val noteTagger = NoteTagger(moduleContext, freqDatabase)
                     val bestTier = noteTagger.getBestFrequencyTier(noteIds, mapping, mirroredMapping)
@@ -240,8 +214,8 @@ class AnkiModule : Module() {
                 }
             }
 
-            AsyncFunction("deleteNote") { noteIds: LongArray ->
-                runBlocking {
+            AsyncFunction("deleteNote") Coroutine { noteIds: LongArray ->
+                withContext(Dispatchers.IO) {
                     try {
                         val baseUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
 

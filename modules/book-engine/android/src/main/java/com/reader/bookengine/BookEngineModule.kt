@@ -12,6 +12,7 @@ import com.reader.bookengine.database.BlockEntity
 import com.reader.bookengine.database.FrequencyDatabase
 import com.reader.bookengine.database.WordFormEntity
 import com.reader.bookengine.database.syncWordFormsFromSupabase
+import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.*
@@ -249,8 +250,8 @@ class BookEngineModule : Module() {
         ModuleDefinition {
             Name("BookEngine")
 
-            AsyncFunction("onAppInit") {
-                runBlocking {
+            AsyncFunction("onAppInit") Coroutine { ->
+                withContext(Dispatchers.IO) {
                     android.util.Log.d("BookEngine", "onAppInit called")
                     try {
                         val myAppDatabase = AppDependencies.getDatabase(moduleContext)
@@ -304,10 +305,8 @@ class BookEngineModule : Module() {
                 }
             }
 
-            AsyncFunction(
-                "loadBookInSQL",
-            ) { bookBasePath: String, blockPaths: List<String>, blockIds: List<Int>, chapterTitles: List<String> ->
-                runBlocking {
+            AsyncFunction("loadBookInSQL") Coroutine { bookBasePath: String, blockPaths: List<String>, blockIds: List<Int>, chapterTitles: List<String> ->
+                withContext(Dispatchers.IO) {
                     val t1 = System.currentTimeMillis()
                     val db = AppDependencies.getDatabase(moduleContext)
 
@@ -333,16 +332,16 @@ class BookEngineModule : Module() {
                 }
             }
 
-            AsyncFunction("deleteBookFromSQL") { bookBasePath: String ->
-                runBlocking {
+            AsyncFunction("deleteBookFromSQL") Coroutine { bookBasePath: String ->
+                withContext(Dispatchers.IO) {
                     val db = AppDependencies.getDatabase(moduleContext)
                     db.blockDao().delete(bookBasePath)
                     android.util.Log.d("BookEngine", "Delete book from SQL: $bookBasePath")
                 }
             }
 
-            AsyncFunction("searchInBook") { query: String, bookBasePath: String ->
-                runBlocking {
+            AsyncFunction("searchInBook") Coroutine { query: String, bookBasePath: String ->
+                withContext(Dispatchers.IO) {
                     val t1 = System.currentTimeMillis()
                     val db = AppDependencies.getDatabase(moduleContext)
 
@@ -388,31 +387,27 @@ class BookEngineModule : Module() {
                 }
             }
 
-            AsyncFunction(
-                "loadAnkiDictionary",
-            ) { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-                runBlocking<Unit> {
+            AsyncFunction("loadAnkiDictionary") Coroutine { langCode: String, deckId: String, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
+                withContext(Dispatchers.IO) {
                     val myAppDatabase = AppDependencies.getDatabase(moduleContext)
                     val success = loadAnkiDictionary(langCode, deckId, myAppDatabase, mapping, mirroredMapping)
                     if (!success) throw Exception("Failed to load Anki dictionary")
                 }
             }
 
-            AsyncFunction("unloadAnkiDictionary") {
-                runBlocking {
-                    freeAnkiDictionary()
-                }
+            AsyncFunction("unloadAnkiDictionary") Coroutine { ->
+                freeAnkiDictionary()
             }
 
-            AsyncFunction("loadInitialHtml") { paths: List<String>, indices: List<Int>, cssPaths: List<String>, options: Map<String, Any> ->
-                runBlocking {
+            AsyncFunction("loadInitialHtml") Coroutine { paths: List<String>, indices: List<Int>, cssPaths: List<String>, options: Map<String, Any> ->
+                withContext(Dispatchers.IO) {
                     try {
                         val t1 = System.currentTimeMillis()
 
-                        if (paths.isEmpty()) return@runBlocking ""
+                        if (paths.isEmpty()) return@withContext ""
 
                         val firstFile = File(paths[0])
-                        if (!firstFile.exists()) return@runBlocking ""
+                        if (!firstFile.exists()) return@withContext ""
 
                         val firstHtml = firstFile.readText()
 
@@ -517,13 +512,13 @@ class BookEngineModule : Module() {
                 }
             }
 
-            AsyncFunction("setupBookBridge") { viewTag: Int, allBlockPaths: List<String>, initialBlocks: List<Int> ->
-                runBlocking(Dispatchers.Main) {
+            AsyncFunction("setupBookBridge") Coroutine { viewTag: Int, allBlockPaths: List<String>, initialBlocks: List<Int> ->
+                withContext(Dispatchers.Main) {
                     bookBridge.setup(allBlockPaths, initialBlocks)
                     val activity = appContext.activityProvider?.currentActivity
                     if (activity == null) {
                         android.util.Log.e("BookEngine", "setupBookBridge: no activity")
-                        return@runBlocking
+                        return@withContext
                     }
                     val rootView = activity.findViewById<View>(viewTag)
                     val webView = findWebView(rootView)
