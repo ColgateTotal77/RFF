@@ -26,6 +26,17 @@ modules/book-engine/android/cmake-build-debug/
 /android/*
 !/android/build.gradle
 !/android/settings.gradle
+!/android/app/
+/android/app/*
+!/android/app/src/
+/android/app/src/*
+!/android/app/src/main/
+/android/app/src/main/*
+!/android/app/src/main/AndroidManifest.xml
+!/android/app/src/main/res/
+/android/app/src/main/res/*
+!/android/app/src/main/res/xml/
+!/android/app/src/main/res/xml/file_provider_paths.xml
 /modules/book-engine/android/.gradle/
 /scripts/
 .history/

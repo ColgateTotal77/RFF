@@ -1,4 +1,3 @@
-import { corsHeaders } from '../../corsHeaders.ts';
 import { Database } from '../../types.ts';
 import { getWordForms } from './utils.ts';
 
@@ -6,28 +5,24 @@ type WordForm = Database['public']['Tables']['word_forms']['Row'];
 
 export const checkWordInDB = async (
   supabase: any,
-  word: string,
+  lemma: string,
   word_lang_code: string,
   translation_lang_code: string
 ) => {
+  console.log('lemma: ', lemma);
   const { data: cachedWord, error: cachedWordError } = await supabase
     .from('words')
     .select('*')
-    .eq('word', word)
+    .eq('word', lemma)
     .eq('word_lang_code', word_lang_code)
     .eq('translate_lang_code', translation_lang_code)
     .maybeSingle();
 
-  if (cachedWordError) {
-    return new Response(JSON.stringify({ error: cachedWordError }), {
-      status: 400,
-      headers: corsHeaders,
-    });
-  }
+  if (cachedWordError) throw new Error(JSON.stringify(cachedWordError));
 
   if (cachedWord) {
     const wordForms = await getWordForms(supabase, cachedWord.word, word_lang_code);
-    const response = {
+    return {
       ...cachedWord,
       wordForms: [
         cachedWord.word,
@@ -36,6 +31,7 @@ export const checkWordInDB = async (
           .filter((w: string) => w !== cachedWord.word) || []),
       ],
     };
-    return new Response(JSON.stringify(response), { headers: corsHeaders });
   }
+
+  return null;
 };

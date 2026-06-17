@@ -132,9 +132,8 @@ class AnkiModule : Module() {
 
                         val (wordTier, wordZipf) = freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
 
-                        val needsDescription = wordZipf < 4.0
                         val finalExamples =
-                            if (needsDescription && definition.isNotEmpty()) {
+                            if (definition.isNotEmpty()) {
                                 "$definition<br><br>$baseExamples"
                             } else {
                                 baseExamples
@@ -190,7 +189,6 @@ class AnkiModule : Module() {
                                 val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
                                 val mapper = FieldArrayMapper(moduleContext, AnkiAudioHelper(moduleContext))
 
-                                // ✅ Now perfectly legal because the parent function is marked suspend
                                 val mainFieldsArray = mapper.convertFieldsToArray(mutableFields, mapping)
                                 val mainNoteId =
                                     ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)

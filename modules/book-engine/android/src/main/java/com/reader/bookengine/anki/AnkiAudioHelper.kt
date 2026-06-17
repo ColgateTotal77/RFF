@@ -7,7 +7,9 @@ import android.net.Uri
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 import kotlin.coroutines.resume
@@ -27,7 +29,7 @@ class AnkiAudioHelper(
 
         if (audioFile.exists() && audioFile.length() > 0) return audioFile.absolutePath
 
-        return suspendCancellableCoroutine { continuation ->
+        return withContext(Dispatchers.Main) { suspendCancellableCoroutine { continuation ->
             var tts: TextToSpeech? = null
             val utteranceId = "audio_gen_${System.currentTimeMillis()}"
 
@@ -69,7 +71,7 @@ class AnkiAudioHelper(
                         continuation.resume(null)
                     }
                 }
-        }
+        } }
     }
 
     suspend fun importToAnkiMedia(audioFile: File): String? =

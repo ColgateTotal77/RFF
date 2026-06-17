@@ -31,19 +31,23 @@ Deno.serve(async (req) => {
   console.log('word_lang_code: ', word_lang_code);
   console.log('translation_lang_code: ', translation_lang_code);
 
-  const inputWord = word.toLowerCase();
-
-  await checkWordInDB(supabase, word, word_lang_code, translation_lang_code);
-
   const fromLang = langMap[word_lang_code];
   const toLang = langMap[translation_lang_code];
+
+  const inputWord = word.toLowerCase();
+
+  const lemma = await getLemma(word, fromLang, sentence, deepseekKey);
+
+  const cachedResult = await checkWordInDB(supabase, lemma, word_lang_code, translation_lang_code);
+
+  if (cachedResult) {
+    return new Response(JSON.stringify(cachedResult), { headers: corsHeaders });
+  }
 
   let apiResponse: ApiResponse | null = null;
   let definition;
 
   try {
-    const lemma = await getLemma(word, fromLang, sentence, deepseekKey);
-
     [apiResponse, definition] = await Promise.all([
       getCardData(lemma, fromLang, toLang, deepseekKey),
       getDefinition(lemma, fromLang, deepseekKey),
