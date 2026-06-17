@@ -11,9 +11,10 @@ import { useAnkiStore } from 'stores/useAnkiStore';
 interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
   title: string;
+  routeName: string;
 }
 
-export const Header = ({ navigation, title }: Props) => {
+export const Header = ({ navigation, title, routeName }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { loadBook } = useBookStore();
   const hasDeck = useAnkiStore((state) => state.hasDeck);
@@ -34,14 +35,18 @@ export const Header = ({ navigation, title }: Props) => {
     <Appbar.Header>
       <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
       <Appbar.Content title={title} />
-      <AppbarAction icon="magnify" onPress={() => {}} />
-      <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} />
-      <Other
-        isOpen={isMenuOpen}
-        onOpen={() => setIsMenuOpen(true)}
-        onClose={() => setIsMenuOpen(false)}
-        navigation={navigation}
-      />
+      {(routeName === 'Reading Now' || routeName === 'Have Read') && (
+        <>
+          <AppbarAction icon="magnify" onPress={() => {}} />
+          <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} />
+          <Other
+            isOpen={isMenuOpen}
+            onOpen={() => setIsMenuOpen(true)}
+            onClose={() => setIsMenuOpen(false)}
+            navigation={navigation}
+          />
+        </>
+      )}
     </Appbar.Header>
   );
 };

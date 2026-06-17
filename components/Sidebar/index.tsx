@@ -14,22 +14,12 @@ const Drawer = createDrawerNavigator<RootStackParamList>();
 
 const ReadingNowScreen = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
-  return (
-    <BookListScreen
-      filterFn={(book) => !book.misc.haveRead}
-      toggleLabel={t('readingNow')}
-    />
-  );
+  return <BookListScreen filterFn={(book) => !book.misc.haveRead} toggleLabel={t('readingNow')} />;
 };
 
 const HaveReadScreen = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
-  return (
-    <BookListScreen
-      filterFn={(book) => book.misc.haveRead}
-      toggleLabel={t('haveRead')}
-    />
-  );
+  return <BookListScreen filterFn={(book) => book.misc.haveRead} toggleLabel={t('haveRead')} />;
 };
 
 export const Sidebar = () => {
@@ -44,12 +34,30 @@ export const Sidebar = () => {
           const currentTab = route.name as DrawerTab;
 
           if (currentTab === 'Reader' && currentBook) return <BookHeader />;
-          return <Header navigation={navigation} title={getHeaderTitle(options, route.name)} />;
+          return (
+            <Header
+              navigation={navigation}
+              title={getHeaderTitle(options, route.name)}
+              routeName={route.name}
+            />
+          );
         },
       }}>
-      <Drawer.Screen name="Reading Now" component={ReadingNowScreen} options={{ title: t('readingNow') }} />
-      <Drawer.Screen name="Have Read" component={HaveReadScreen} options={{ title: t('haveRead') }} />
-      <Drawer.Screen name="Settings" component={SettingsScreen} options={{ title: t('settings') }} />
+      <Drawer.Screen
+        name="Reading Now"
+        component={ReadingNowScreen}
+        options={{ title: t('readingNow') }}
+      />
+      <Drawer.Screen
+        name="Have Read"
+        component={HaveReadScreen}
+        options={{ title: t('haveRead') }}
+      />
+      <Drawer.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: t('settings') }}
+      />
       <Drawer.Screen
         name="Reader"
         component={ReaderScreen}

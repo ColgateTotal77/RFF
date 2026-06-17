@@ -1,4 +1,4 @@
-import { Menu, Surface, useTheme, Text } from 'react-native-paper';
+import { Menu, Surface, useTheme, Text, Icon } from 'react-native-paper';
 import { View, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useWordAction } from 'lib/useWordAction';
@@ -110,11 +110,12 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
       {selectionMenu.noteIds ? (
         <Button
           mode="text"
-          textColor={theme.colors.onSurface}
           compact={true}
           contentStyle={{ paddingHorizontal: 4, paddingVertical: 0 }}
           onPress={onUpdateTagPress}>
-          +F
+          <Text variant="bodyLarge" style={{ color: theme.colors.primary }}>
+            +F
+          </Text>
         </Button>
       ) : (
         <IconButton icon="plus-circle" onPress={onAddNewCardPress} />
@@ -132,7 +133,13 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
       <Menu
         visible={isOpen}
         onDismiss={() => setIsOpen(false)}
-        anchor={<AppbarAction icon="dots-vertical" onPress={() => setIsOpen(true)} />}
+        anchor={
+          <AppbarAction
+            icon="dots-vertical"
+            iconColor={theme.colors.primary}
+            onPress={() => setIsOpen(true)}
+          />
+        }
         anchorPosition={'bottom'}
         contentStyle={{
           backgroundColor: theme.colors.surface,
@@ -143,7 +150,9 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
             <Menu.Item
               onPress={() => onDeleteNotePress()}
               title={t('deleteNote')}
-              leadingIcon="delete-outline"
+              leadingIcon={({ size }) => (
+                <Icon source="delete-outline" size={size} color={theme.colors.primary} />
+              )}
             />
             {selectionMenu.colorCode && Number(selectionMenu.colorCode) > 0 && (
               <>
@@ -153,7 +162,11 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
                 <Menu.Item
                   onPress={() => onDecreaseTagPress()}
                   title={t('decreaseTag')}
-                  leadingIcon={() => <Text variant="bodyLarge">-F</Text>}
+                  leadingIcon={() => (
+                    <Text variant="bodyLarge" style={{ color: theme.colors.primary }}>
+                      -F
+                    </Text>
+                  )}
                 />
               </>
             )}
