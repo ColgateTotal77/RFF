@@ -1,15 +1,13 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, BookSettings, CurrentCTree, DeepPartial, FieldMapping, Settings, Misc } from 'types';
+import { Book, BookSettings, CurrentCTree, DeepPartial, FieldMapping, Misc } from 'types';
 import { buildBookMapping, deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
 import { useAnkiStore } from './useAnkiStore';
 import { useWebViewStore } from './useWebViewStore';
-import i18n from 'i18n';
-import { LanguageCode, BOOK_LANGUAGE_OPTIONS, FALLBACK_LANGUAGE } from 'lib/langHelper';
-import { DEFAULT_FONT_FAMILY } from 'lib/constants';
+import { useAppStore } from './useAppStore';
 import { useTempStore } from './useTempStore';
 import { Directory } from 'expo-file-system';
 
@@ -33,8 +31,8 @@ const zustandStorage: StateStorage = {
 type Store = {
   books: Book[];
   currentBook: Book | null;
-  settings: Settings;
   currentCTree: CurrentCTree | null;
+  isDeckLoading: boolean;
 
   loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => Promise<void>;
@@ -48,14 +46,13 @@ type Store = {
   addBookmark: () => void;
   removeBookmark: (id: number) => void;
 
-  updateSettings: (toUpdate: DeepPartial<Settings>) => void;
   updateBookSettings: (toUpdate: DeepPartial<BookSettings>) => void;
   setBookFieldMapping: (
     mappingName: 'fieldMapping' | 'mirroredFieldMapping',
     mapping: FieldMapping | undefined
   ) => void;
   updateMisc: (misc: Partial<Misc>) => void;
-  getBookSettings: (book?: Book) => BookSettings;
+  getBookSettings: (book?: Book) => Required<BookSettings>;
 };
 
 export const useBookStore = create<Store>()(
@@ -64,26 +61,13 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       currentCTree: null,
-      settings: {
-        ankiDeckId: '',
-        ankiModelId: '',
-        fieldMappings: {},
-        mirroredAnkiModelId: '',
-        mirroredFieldMappings: {},
-        isTwoSided: false,
-        autoCardOnDoubleTap: false,
-        targetLang:
-          i18n.language in BOOK_LANGUAGE_OPTIONS
-            ? (i18n.language as LanguageCode)
-            : FALLBACK_LANGUAGE,
-        font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
-      },
+      isDeckLoading: false,
 
       loadBook: async (uri: string) => {
         get().closeBook();
 
         try {
-          const book = await parseBook(uri, get().settings.targetLang);
+          const book = await parseBook(uri, useAppStore.getState().settings.targetLang);
           book.mapping = buildBookMapping(book);
 
           set((state) => ({
@@ -119,6 +103,7 @@ export const useBookStore = create<Store>()(
                 langCode: bookSettings.bookLang,
                 deckId: bookSettings.ankiDeckId!,
               },
+              isDeckLoading: true,
             }));
 
             await BookEngine.loadAnkiDictionary(
@@ -127,6 +112,8 @@ export const useBookStore = create<Store>()(
               bookSettings.fieldMapping,
               bookSettings.mirroredFieldMapping
             );
+
+            set(() => ({ isDeckLoading: false }));
           }
 
           if (
@@ -153,6 +140,7 @@ export const useBookStore = create<Store>()(
               .loadWindow(bookToOpen.currentBlock, bookToOpen.misc.currentBlockScrollPercent);
           }
         } catch (e) {
+          set(() => ({ isDeckLoading: false }));
           console.error('❌ Failed to load book:', e);
         }
       },
@@ -234,11 +222,6 @@ export const useBookStore = create<Store>()(
             books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
           };
         }),
-
-      updateSettings: (toUpdate) =>
-        set((state) => ({
-          settings: deepMerge(state.settings, toUpdate),
-        })),
 
       updateBookSettings: (toUpdate) =>
         set((state) => {
@@ -360,7 +343,7 @@ export const useBookStore = create<Store>()(
 
       getBookSettings: (book) => {
         const currentBookSettings = (book ?? get().currentBook)?.settings ?? ({} as BookSettings);
-        const settings = get().settings;
+        const settings = useAppStore.getState().settings;
 
         const ankiDeckId = currentBookSettings.ankiDeckId || settings.ankiDeckId;
         const ankiModelId = currentBookSettings.ankiModelId || settings.ankiModelId;
@@ -381,6 +364,12 @@ export const useBookStore = create<Store>()(
             settings.mirroredFieldMappings?.[`${ankiDeckId}:${mirroredAnkiModelId}`] || {},
             currentBookSettings.mirroredFieldMapping || {}
           ),
+          font: {
+            fontFamily: currentBookSettings?.font?.fontFamily || settings.font.fontFamily,
+            fontSize: currentBookSettings?.font?.fontSize || settings.font.fontSize,
+          },
+          autoCardOnDoubleTap:
+            currentBookSettings.autoCardOnDoubleTap || settings.autoCardOnDoubleTap,
         };
       },
     }),
@@ -388,7 +377,6 @@ export const useBookStore = create<Store>()(
       name: 'book-storage',
       storage: createJSONStorage(() => zustandStorage),
       partialize: (state) => ({
-        settings: state.settings,
         books: state.books.map(({ mapping, ...rest }) => rest),
       }),
     }

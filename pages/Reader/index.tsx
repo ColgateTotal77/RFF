@@ -17,6 +17,7 @@ const TEST_WEBVIEW_SOURCE = {
 
 export const ReaderScreen = () => {
   const currentBook = useBookStore((state) => state.currentBook);
+  const isDeckLoading = useBookStore((state) => state.isDeckLoading);
   const registerWebViewAction = useWebViewStore((state) => state.registerWebViewAction);
   const webViewSource = useWebViewStore((state) => state.webViewSource);
   const isWebViewReady = useWebViewStore((state) => state.isWebViewReady);
@@ -56,7 +57,7 @@ export const ReaderScreen = () => {
 
   const handleMessage = useMessageHandler();
 
-  const isLoading = !webViewSource || !currentBook || !isWebViewReady;
+  const isLoading = !webViewSource || !currentBook || !isWebViewReady || isDeckLoading;
 
   return (
     <View

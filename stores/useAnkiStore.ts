@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { Alert, PermissionsAndroid } from 'react-native';
 import { Anki } from 'modules/book-engine';
 import { updateNestedMapping } from 'lib/utils';
-import { useBookStore } from './useBookStore';
+import { useAppStore } from './useAppStore';
 
 const ANKI_PERMISSION = 'com.ichi2.anki.permission.READ_WRITE_DATABASE';
 
@@ -59,7 +59,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
   },
 
   applyDefaultModel: async (deckId) => {
-    const { settings, updateSettings } = useBookStore.getState();
+    const { settings, updateSettings } = useAppStore.getState();
 
     if (get().decks.length > 1) return;
 
@@ -94,7 +94,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
     const {
       settings: { ankiModelId, mirroredAnkiModelId, ankiDeckId },
       updateSettings,
-    } = useBookStore.getState();
+    } = useAppStore.getState();
 
     const [decks, models, fields, mirroredFields] = await Promise.all([
       Anki.getDecks(),

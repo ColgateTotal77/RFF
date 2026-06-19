@@ -5,6 +5,7 @@ import { AnkiTab } from 'pages/Settings/tabs/AnkiTab';
 import { SegmentedButtons } from 'components/ui/SegmentedButtons';
 import { useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
+import { useAppStore } from 'stores/useAppStore';
 import { useFocusEffect } from '@react-navigation/native';
 
 type TabKey = 'anki' | 'misc';
@@ -13,7 +14,7 @@ export const SettingsScreen = () => {
   const theme = useTheme();
   const currentCTree = useBookStore((state) => state.currentCTree);
   const lastOpenedBook = useBookStore((state) => state.books?.[0]);
-  const settings = useBookStore((state) => state.settings);
+  const settings = useAppStore((state) => state.settings);
   const closeBook = useBookStore((state) => state.closeBook);
   const openBook = useBookStore((state) => state.openBook);
   const [activeTab, setActiveTab] = useState<TabKey>('anki');

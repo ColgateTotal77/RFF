@@ -3,6 +3,7 @@ import { Dropdown } from 'components/ui/Dropdown';
 import { Text, Switch, List } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useAppStore } from 'stores/useAppStore';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { useAnkiStore } from 'stores/useAnkiStore';
 import { Button } from 'components/ui/Button';
@@ -16,7 +17,7 @@ const isInherited = (bookValue: unknown) => bookValue === undefined;
 
 export const AnkiTab = () => {
   const currentBook = useCurrentBook();
-  const settings = useBookStore((state) => state.settings);
+  const settings = useAppStore((state) => state.settings);
   const { updateBookSettings, setBookFieldMapping } = useBookStore();
   const hasPermission = useAnkiStore((state) => state.hasPermission);
   const requestPermission = useAnkiStore((state) => state.requestPermission);

@@ -76,7 +76,6 @@
         }
       });
 
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SEARCH_HIGHLIGHT_COMPLETE' }));
       requestAnimationFrame(function () {
         requestAnimationFrame(resolve);
       });

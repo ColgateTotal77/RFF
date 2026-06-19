@@ -5,10 +5,13 @@
   },
   "build": {
     "preview": {
+      "autoIncrement": true,
       "android": {
         "buildType": "apk"
       }
     },
-    "production": {}
+    "production": {
+      "autoIncrement": true
+    }
   }
 }

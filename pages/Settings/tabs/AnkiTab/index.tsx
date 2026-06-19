@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Dropdown } from 'components/ui/Dropdown';
 import { Text, Switch, List } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { useBookStore } from 'stores/useBookStore';
+import { useAppStore } from 'stores/useAppStore';
 import { FieldMappingSection } from 'pages/Settings/tabs/AnkiTab/FieldMappingSection';
 import { CreateDeckDialog } from 'pages/Settings/tabs/AnkiTab/CreateDeckDialog';
 import { findBestMapping, updateNestedMapping } from 'lib/utils';
@@ -22,7 +22,7 @@ export const AnkiTab = () => {
       mirroredFieldMappings,
     },
     updateSettings,
-  } = useBookStore();
+  } = useAppStore();
   const hasPermission = useAnkiStore((state) => state.hasPermission);
   const requestPermission = useAnkiStore((state) => state.requestPermission);
   const decks = useAnkiStore((state) => state.decks);

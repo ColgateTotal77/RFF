@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { Button } from 'components/ui/Button';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { IconButton } from 'components/ui/IconButton';
+import { VerticalDivider } from 'components/ui/VerticalDivider';
+import { HorizontalDivider } from 'components/ui/HorizontalDivider';
 interface Props {
   selectionMenu: SelectedMenu;
 }
@@ -68,7 +70,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
           opacity: menuWidth === 0 ? 0 : 1,
           top:
             selectionMenu.top - menuHeight < 0
-              ? selectionMenu.top - menuHeight + 110
+              ? selectionMenu.bottom + 5
               : selectionMenu.top - menuHeight - 5,
           left: Math.max(
             10,
@@ -93,25 +95,10 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         accessibilityLabel="Translate"
       />
 
-      <View
-        style={{
-          marginHorizontal: 4,
-          height: 24,
-          width: 1,
-          backgroundColor: theme.colors.outline,
-        }}
-      />
-
+      <VerticalDivider />
       <IconButton icon="content-copy" onPress={onCopy} accessibilityLabel="Copy" />
+      <VerticalDivider />
 
-      <View
-        style={{
-          marginHorizontal: 4,
-          height: 24,
-          width: 1,
-          backgroundColor: theme.colors.outline,
-        }}
-      />
       {selectionMenu.noteIds ? (
         <Button
           mode="text"
@@ -123,17 +110,14 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
           </Text>
         </Button>
       ) : (
-        <IconButton icon="plus-circle" onPress={onAddNewCardPress} accessibilityLabel="Add Anki card" />
+        <IconButton
+          icon="plus-circle"
+          onPress={onAddNewCardPress}
+          accessibilityLabel="Add Anki card"
+        />
       )}
 
-      <View
-        style={{
-          marginHorizontal: 4,
-          height: 24,
-          width: 1,
-          backgroundColor: theme.colors.outline,
-        }}
-      />
+      <VerticalDivider />
 
       <Menu
         visible={isOpen}
@@ -162,9 +146,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
             />
             {selectionMenu.colorCode && Number(selectionMenu.colorCode) > 0 && (
               <>
-                <View
-                  style={{ marginHorizontal: 4, height: 1, backgroundColor: theme.colors.outline }}
-                />
+                <HorizontalDivider />
                 <Menu.Item
                   onPress={() => onDecreaseTagPress()}
                   title={t('decreaseTag')}

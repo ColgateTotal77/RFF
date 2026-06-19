@@ -12,17 +12,17 @@ import { FONT_FAMILY_OPTIONS } from 'lib/constants';
 
 export const MiscTab = () => {
   const {
-    settings: { autoCardOnDoubleTap, bookLang, targetLang, font: bookFont },
+    settings: { bookLang, targetLang },
   } = useCurrentBook();
-  const { settings } = useBookStore();
   const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
+  const getBookSettings = useBookStore((state) => state.getBookSettings);
   const { updateBookSettings } = useBookStore();
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const setIsBookSettingsTransparent = useTempStore((state) => state.setIsBookSettingsTransparent);
-  const [localFontSize, setLocalFontSize] = useState(bookFont?.fontSize || settings.font.fontSize);
+  const settings = getBookSettings();
+  const [localFontSize, setLocalFontSize] = useState(settings.font.fontSize);
 
   const lastUpdateRef = useRef(0);
-  const fontFamily = bookFont?.fontFamily || settings.font.fontFamily;
 
   return (
     <View className="gap-4 p-4">
@@ -49,7 +49,7 @@ export const MiscTab = () => {
         description={t('autoCardDescription')}
         right={() => (
           <Switch
-            value={autoCardOnDoubleTap}
+            value={settings.autoCardOnDoubleTap}
             onValueChange={(value) => updateBookSettings({ autoCardOnDoubleTap: value })}
           />
         )}
@@ -82,7 +82,7 @@ export const MiscTab = () => {
 
       <Dropdown
         label={t('fontFamilyLabel')}
-        value={fontFamily}
+        value={settings.font.fontSize}
         options={FONT_FAMILY_OPTIONS}
         onSelect={(value) => {
           updateBookSettings({ font: { ...settings.font, fontFamily: value } });

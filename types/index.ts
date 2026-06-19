@@ -163,6 +163,7 @@ export type SelectionMenu = {
   text: string;
   sentence: string;
   top: number;
+  bottom: number;
   left: number;
   noteIds?: string;
   colorCode?: string;

@@ -41,6 +41,7 @@ export const useTempStore = create<Store>()((set) => ({
     text: '',
     sentence: '',
     top: 0,
+    bottom: 0,
     left: 0,
   },
   isBookSettingsTransparent: false,

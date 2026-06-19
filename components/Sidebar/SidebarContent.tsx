@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer, Text, useTheme } from 'react-native-paper';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useTranslation } from 'react-i18next';
+import Constants from 'expo-constants';
 
 export const SidebarContent = (props: DrawerContentComponentProps) => {
   const theme = useTheme();
@@ -10,7 +11,9 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      className="flex flex-col">
       <View className="items-center py-6">
         <Text className="mt-2 text-xl font-bold">{t('brand')}</Text>
       </View>
@@ -47,6 +50,12 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
           className="rounded-lg"
         />
       </Drawer.Section>
+
+      <View className="flex-1 items-start justify-end px-2">
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          v{Constants.expoConfig?.version ?? '—'}
+        </Text>
+      </View>
     </SafeAreaView>
   );
 };

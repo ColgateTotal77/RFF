@@ -60,7 +60,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
   resetWebView: () => set({ webViewSource: null, isWebViewReady: false, postLoadQueue: [] }),
 
   loadWindow: async (targetBlockId: number, blockScrollPercent: number) => {
-    const { settings, jumpToBlock } = useBookStore.getState();
+    const { jumpToBlock, getBookSettings } = useBookStore.getState();
 
     if (targetBlockId !== -1) jumpToBlock(targetBlockId);
 
@@ -68,8 +68,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
       const currentBook = useBookStore.getState().currentBook;
       if (!currentBook) return;
 
-      const fontFamily = currentBook.settings?.font?.fontFamily || settings.font.fontFamily;
-      const fontSize = currentBook.settings?.font?.fontSize || settings.font.fontSize;
+      const settings = getBookSettings();
 
       const { currentBlocks, blocks } = currentBook;
       const paths = currentBlocks.map((index) => blocks[index].fullPath);
@@ -99,8 +98,8 @@ export const useWebViewStore = create<Store>()((set, get) => ({
         currentBlocks,
         currentBook.cssPaths,
         {
-          fontSize: fontSize,
-          fontFamily: fontFamily,
+          fontSize: settings.font.fontSize,
+          fontFamily: settings.font.fontFamily,
           theme: useAppStore.getState().theme,
         }
       );

@@ -1,6 +1,5 @@
 import { List, Switch, Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { useBookStore } from 'stores/useBookStore';
 import { Dropdown } from 'components/ui/Dropdown';
 import i18n, { changeLanguage } from 'i18n';
 import { APP_LANGUAGE_OPTIONS, BOOK_LANGUAGE_OPTIONS } from 'lib/langHelper';
@@ -8,11 +7,8 @@ import { View } from 'react-native';
 import { useAppStore } from 'stores/useAppStore';
 
 export const MiscTab = () => {
-  const {
-    settings: { autoCardOnDoubleTap, targetLang, theme: currentTheme },
-    updateSettings,
-  } = useBookStore();
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
+  const { settings, updateSettings, theme: currentTheme, toggleTheme } = useAppStore();
+  const { autoCardOnDoubleTap, targetLang } = settings;
 
   const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
 

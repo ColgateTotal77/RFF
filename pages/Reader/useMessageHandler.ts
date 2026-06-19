@@ -13,6 +13,7 @@ export const useMessageHandler = () => {
   const currentBook = useBookStore((state) => state.currentBook);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const updateMisc = useBookStore((state) => state.updateMisc);
+  const updateCurrentBlocks = useBookStore((state) => state.updateCurrentBlocks);
   const setSelectionMenu = useTempStore((state) => state.setSelectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
   const { openSystemTranslator, addNewCard, updateWordTag } = useWordAction();
@@ -35,12 +36,7 @@ export const useMessageHandler = () => {
           case 'TEXT_SELECTED':
             setSelectionMenu({
               visible: true,
-              text: parsedData.text,
-              sentence: parsedData.sentence,
-              top: parsedData.top,
-              left: parsedData.left,
-              noteIds: parsedData.noteIds,
-              colorCode: parsedData.colorCode,
+              ...parsedData,
             });
             break;
 
@@ -83,8 +79,9 @@ export const useMessageHandler = () => {
             break;
 
           case 'TRIPLE_TAP':
-            if (!parsedData.colorCode || parsedData.colorCode === '-1') return;
             if (parsedData.noteIds) {
+              if (!parsedData.colorCode || parsedData.colorCode === '-1') return;
+
               updateWordTag({
                 noteIds: parsedData.noteIds,
                 colorCode: String(Number(parsedData.colorCode) + 1),
@@ -100,6 +97,10 @@ export const useMessageHandler = () => {
             const chapterId = parseInt(url.hostname);
             const fragmentId = url.hash.replace('#', '');
             processBookLinks(chapterId, fragmentId);
+            break;
+
+          case 'UPDATE_BLOCK_WINDOW':
+            updateCurrentBlocks(parsedData.newWindow);
             break;
         }
       } catch (error) {
