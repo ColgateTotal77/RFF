@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { BookEngine } from 'modules/book-engine';
 import { useEffect } from 'react';
 import { useBookStore } from 'stores/useBookStore';
+import { useAppStore } from 'stores/useAppStore';
 
 import './global.css';
 import { useAnkiStore } from 'stores/useAnkiStore';
@@ -15,7 +16,7 @@ function AppContent() {
 
 export default function App() {
   const books = useBookStore((state) => state.books);
-  const settings = useBookStore((state) => state.settings);
+  const isDarkMode = useAppStore((state) => state.theme === 'dark');
   const openBook = useBookStore((state) => state.openBook);
   const checkAnkiPermission = useAnkiStore((state) => state.checkPermission);
 
@@ -34,7 +35,6 @@ export default function App() {
     checkAnkiPermission();
   }, []);
 
-  const isDarkMode = settings.theme === 'dark';
 
   return (
     <SafeAreaProvider>

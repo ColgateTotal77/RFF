@@ -13,20 +13,23 @@ import { useTempStore } from 'stores/useTempStore';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
-const ReadingScreen = (haveReade: boolean) => {
+const ReadingScreen = ({ haveRead }: { haveRead: boolean }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
   const query = useTempStore((state) => state.bookListQuery).toLowerCase();
 
   return (
     <BookListScreen
       filterFn={(book) =>
-        (haveReade ? book.misc.haveRead : !book.misc.haveRead) &&
+        (haveRead ? book.misc.haveRead : !book.misc.haveRead) &&
         book.title.toLowerCase().includes(query)
       }
       toggleLabel={t('readingNow')}
     />
   );
 };
+
+const ReadingNowScreen = () => <ReadingScreen haveRead={false} />;
+const HaveReadScreen = () => <ReadingScreen haveRead={true} />;
 
 export const Sidebar = () => {
   const currentBook = useBookStore((state) => state.currentBook);
@@ -51,12 +54,12 @@ export const Sidebar = () => {
       }}>
       <Drawer.Screen
         name="Reading Now"
-        component={() => ReadingScreen(false)}
+        component={ReadingNowScreen}
         options={{ title: t('readingNow') }}
       />
       <Drawer.Screen
         name="Have Read"
-        component={() => ReadingScreen(true)}
+        component={HaveReadScreen}
         options={{ title: t('haveRead') }}
       />
       <Drawer.Screen

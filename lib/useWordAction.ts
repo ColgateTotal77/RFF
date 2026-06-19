@@ -128,8 +128,9 @@ export const useWordAction = () => {
   };
 
   const deleteNote = async (noteIds: string, word: string) => {
-    const idsArray = JSON.parse(noteIds);
     try {
+      const idsArray = JSON.parse(noteIds);
+
       await Anki.deleteNote(idsArray);
       executeImmediateActions([
         {

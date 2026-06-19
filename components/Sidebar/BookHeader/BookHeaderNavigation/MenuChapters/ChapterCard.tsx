@@ -36,6 +36,7 @@ export const ChapterCard = ({
             icon={isExpanded ? 'chevron-down' : 'chevron-right'}
             onPress={onToggle}
             size={20}
+            accessibilityLabel={isExpanded ? 'Collapse chapter' : 'Expand chapter'}
           />
         )}
       </View>

@@ -48,6 +48,7 @@ export const FieldMappingSection = (props: FieldMappingSectionProps) => {
                   size={14}
                   style={{ margin: 0 }}
                   onPress={() => onReset(selectedAppKey)}
+                  accessibilityLabel="Reset field mapping"
                 />
               ) : undefined
             }

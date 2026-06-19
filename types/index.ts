@@ -140,7 +140,6 @@ export interface Settings {
   autoCardOnDoubleTap: boolean;
   targetLang: LanguageCode;
   font: Font;
-  theme: Theme;
 }
 
 export type Theme = 'light' | 'dark';

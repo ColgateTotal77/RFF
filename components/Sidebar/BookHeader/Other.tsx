@@ -21,7 +21,7 @@ export const Other = (props: Props) => {
     <Menu
       visible={isOpen}
       onDismiss={onClose}
-      anchor={<AppbarAction icon="dots-vertical" onPress={onOpen} />}
+      anchor={<AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />}
       anchorPosition={'bottom'}
       elevation={1}>
       <Menu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />

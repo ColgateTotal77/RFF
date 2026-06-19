@@ -21,7 +21,7 @@ export const BookmarkCard = (props: Props) => {
           <Text>{bookmark.title}</Text>
           <Text className="text-sm text-gray-500">{'[' + bookmark.blockId + ']'}</Text>
         </View>
-        <IconButton icon="delete" onPress={() => removeBookmark(bookmark.id)} />
+        <IconButton icon="delete" onPress={() => removeBookmark(bookmark.id)} accessibilityLabel="Delete bookmark" />
       </View>
     </Card>
   );

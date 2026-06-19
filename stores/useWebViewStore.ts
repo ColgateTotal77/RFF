@@ -2,6 +2,7 @@ import { BookEngine } from 'modules/book-engine';
 import { Theme } from 'types';
 import { create } from 'zustand';
 import { useBookStore } from './useBookStore';
+import { useAppStore } from './useAppStore';
 import { useTempStore } from './useTempStore';
 
 export type QueueAction =
@@ -100,7 +101,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
         {
           fontSize: fontSize,
           fontFamily: fontFamily,
-          theme: settings.theme,
+          theme: useAppStore.getState().theme,
         }
       );
 

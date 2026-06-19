@@ -83,12 +83,11 @@ export const useMessageHandler = () => {
             break;
 
           case 'TRIPLE_TAP':
-            console.log('TRIPLE_TAP: ', JSON.stringify(parsedData, null, 2));
-
+            if (!parsedData.colorCode || parsedData.colorCode === '-1') return;
             if (parsedData.noteIds) {
               updateWordTag({
                 noteIds: parsedData.noteIds,
-                colorCode: String(Number(parsedData.colorCode!) + 1),
+                colorCode: String(Number(parsedData.colorCode) + 1),
               });
             } else {
               addNewCard(parsedData.text, parsedData.sentence);

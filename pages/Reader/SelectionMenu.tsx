@@ -23,18 +23,22 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const onUpdateTagPress = () => {
-    updateWordTag({
-      noteIds: selectionMenu.noteIds!,
-      colorCode: String(Number(selectionMenu.colorCode!) + 1),
-    });
+    if (selectionMenu.colorCode && selectionMenu.colorCode !== '-1') {
+      updateWordTag({
+        noteIds: selectionMenu.noteIds!,
+        colorCode: String(Number(selectionMenu.colorCode) + 1),
+      });
+    }
     closeMenu();
   };
 
   const onDecreaseTagPress = () => {
-    updateWordTag({
-      noteIds: selectionMenu.noteIds!,
-      colorCode: String(Number(selectionMenu.colorCode!) - 1),
-    });
+    if (selectionMenu.colorCode && selectionMenu.colorCode !== '-1') {
+      updateWordTag({
+        noteIds: selectionMenu.noteIds!,
+        colorCode: String(Number(selectionMenu.colorCode) - 1),
+      });
+    }
     closeMenu();
   };
 
@@ -86,6 +90,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
       <IconButton
         icon="translate"
         onPress={async () => await openSystemTranslator(selectionMenu.text)}
+        accessibilityLabel="Translate"
       />
 
       <View
@@ -97,7 +102,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         }}
       />
 
-      <IconButton icon="content-copy" onPress={onCopy} />
+      <IconButton icon="content-copy" onPress={onCopy} accessibilityLabel="Copy" />
 
       <View
         style={{
@@ -118,7 +123,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
           </Text>
         </Button>
       ) : (
-        <IconButton icon="plus-circle" onPress={onAddNewCardPress} />
+        <IconButton icon="plus-circle" onPress={onAddNewCardPress} accessibilityLabel="Add Anki card" />
       )}
 
       <View
@@ -138,6 +143,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
             icon="dots-vertical"
             iconColor={theme.colors.primary}
             onPress={() => setIsOpen(true)}
+            accessibilityLabel="More options"
           />
         }
         anchorPosition={'bottom'}
@@ -172,7 +178,6 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
             )}
           </>
         )}
-        <Menu.Item title="?????" />
       </Menu>
     </Surface>
   );

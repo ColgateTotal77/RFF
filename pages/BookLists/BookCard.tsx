@@ -4,6 +4,7 @@ import { Card, Text, Menu } from 'react-native-paper';
 import { View, Image } from 'react-native';
 import { useBookStore } from 'stores/useBookStore';
 import { IconButton } from 'components/ui/IconButton';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   book: Book;
@@ -13,6 +14,7 @@ interface Props {
 
 export const BookCard = ({ book, onPress, toggleLabel }: Props) => {
   const { removeBook } = useBookStore();
+  const { t } = useTranslation('translation', { keyPrefix: 'bookLists' });
   const { toggleHaveRead } = useBookStore();
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -31,11 +33,11 @@ export const BookCard = ({ book, onPress, toggleLabel }: Props) => {
                   e?.stopPropagation();
                   setMenuVisible(true);
                 }}
+                accessibilityLabel="More options"
               />
             }>
-            <Menu.Item onPress={() => {}} title="Item 1" />
             <Menu.Item onPress={() => toggleHaveRead(book.basePath)} title={toggleLabel} />
-            <Menu.Item onPress={() => removeBook(book.basePath)} title="Delete" />
+            <Menu.Item onPress={() => removeBook(book.basePath)} title={t('delete')} />
           </Menu>
         </View>
 

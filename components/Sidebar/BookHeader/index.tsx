@@ -34,6 +34,7 @@ const SearchInput = ({
       returnKeyType="search"
       autoCapitalize="none"
       onSubmitEditing={() => onSubmit(searchQuery)}
+      accessibilityLabel="Search in book"
     />
   );
 };
@@ -99,7 +100,7 @@ export const BookHeader = () => {
     <>
       <Appbar.Header style={{ backgroundColor: theme.colors.background }}>
         <Appbar.Content title={currentBook?.title} />
-        <AppbarAction icon="magnify" onPress={toggleIsSearchModuleOpen} />
+        <AppbarAction icon="magnify" onPress={toggleIsSearchModuleOpen} accessibilityLabel="Search in book" />
         <Other
           isOpen={isMenuOpen}
           onOpen={() => setIsMenuOpen(true)}
@@ -110,6 +111,7 @@ export const BookHeader = () => {
         <AppbarAction
           icon="format-list-bulleted"
           onPress={() => setIsBookHeaderNavigationOpen(true)}
+          accessibilityLabel="Chapters and bookmarks"
         />
       </Appbar.Header>
 
@@ -130,7 +132,7 @@ export const BookHeader = () => {
         }}>
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           <Appbar.Header>
-            <AppbarAction icon="close" onPress={toggleIsSearchModuleOpen} />
+            <AppbarAction icon="close" onPress={toggleIsSearchModuleOpen} accessibilityLabel="Close search" />
             <SearchInput inputRef={searchInputRef} onSubmit={onSearchSubmit} />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
@@ -150,7 +152,7 @@ export const BookHeader = () => {
               opacity: opacityAnim,
             }}>
             <Appbar.Header style={{ backgroundColor: 'transparent' }}>
-              <AppbarAction icon="close" onPress={onBookSettingsClose} />
+              <AppbarAction icon="close" onPress={onBookSettingsClose} accessibilityLabel="Close book settings" />
               <Appbar.Content title={t('bookSettings')} />
             </Appbar.Header>
             <BookSettings />

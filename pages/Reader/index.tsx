@@ -97,26 +97,29 @@ export const ReaderScreen = () => {
       )}
 
       {!isLoading && (
-        <IconButton
-          icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
-          size={28}
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            zIndex: 50,
-            elevation: 5,
-          }}
-          onPress={() => {
-            if (activeBookmark) removeBookmark(activeBookmark.id);
-            else addBookmark();
-          }}
-        />
+        <>
+          <IconButton
+            icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
+            size={28}
+            accessibilityLabel={activeBookmark ? 'Remove bookmark' : 'Add bookmark'}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 50,
+              elevation: 5,
+            }}
+            onPress={() => {
+              if (activeBookmark) removeBookmark(activeBookmark.id);
+              else addBookmark();
+            }}
+          />
+
+          <Footer />
+        </>
       )}
 
       {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
-
-      {!isLoading && <Footer />}
     </View>
   );
 };

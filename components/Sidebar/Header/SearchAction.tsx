@@ -51,6 +51,7 @@ export const SearchAction = ({ leftContent }: Props) => {
             returnKeyType="search"
             autoCapitalize="none"
             autoFocus
+            accessibilityLabel="Search books"
           />
         </Animated.View>
       ) : (
@@ -69,6 +70,7 @@ export const SearchAction = ({ leftContent }: Props) => {
       <AppbarAction
         icon={isSearchOpen ? 'close' : 'magnify'}
         onPress={isSearchOpen ? closeSearch : openSearch}
+        accessibilityLabel={isSearchOpen ? 'Close search' : 'Search books'}
       />
     </>
   );

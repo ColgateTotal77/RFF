@@ -30,7 +30,6 @@ const zustandStorage: StateStorage = {
   },
 };
 
-// TODO(25): split into focused stores (books/currentBook, settings, reader bridge) to cut re-renders
 type Store = {
   books: Book[];
   currentBook: Book | null;
@@ -78,7 +77,6 @@ export const useBookStore = create<Store>()(
             ? (i18n.language as LanguageCode)
             : FALLBACK_LANGUAGE,
         font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
-        theme: 'light',
       },
 
       loadBook: async (uri: string) => {
@@ -172,10 +170,7 @@ export const useBookStore = create<Store>()(
         console.log('Closing book');
 
         try {
-          set(() => ({
-            currentBook: null,
-            lastFragmentId: '',
-          }));
+          set(() => ({ currentBook: null }));
           useWebViewStore.getState().resetWebView();
           useTempStore.getState().resetSearch();
           useTempStore.getState().closeSelectionMenu();
@@ -212,7 +207,6 @@ export const useBookStore = create<Store>()(
           };
 
           return {
-            currentBook: updatedBook,
             books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
           };
         }),

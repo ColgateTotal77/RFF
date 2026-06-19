@@ -40,21 +40,21 @@ export const Header = ({ navigation, title, routeName }: Props) => {
         <SearchAction
           leftContent={
             <>
-              <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
+              <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} accessibilityLabel="Open menu" />
               <Appbar.Content title={title} />
             </>
           }
         />
       ) : (
         <>
-          <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} />
+          <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} accessibilityLabel="Open menu" />
           <Appbar.Content title={title} />
         </>
       )}
 
       {isBookListRoute && (
         <>
-          <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} />
+          <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} accessibilityLabel="Add book" />
           <Other
             isOpen={isMenuOpen}
             onOpen={() => setIsMenuOpen(true)}

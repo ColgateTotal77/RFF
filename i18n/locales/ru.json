@@ -75,7 +75,12 @@
     "settings": "Настройки"
   },
   "bookLists": {
-    "setupAnki": "Создайте свою первую колоду в Anki.",
-    "goToSettings": "Перейти в настройки"
+    "setupAnkiTitle": "Настройте AnkiDroid для начала работы",
+    "setupAnkiBody": "RFF создаёт карточки прямо в AnkiDroid. Установите приложение из Play Store, затем выберите колоду в Настройках.",
+    "installAnki": "Установить AnkiDroid",
+    "goToSettings": "Перейти в настройки",
+    "noBooks": "Здесь пока нет книг",
+    "addBook": "Добавить книгу",
+    "delete": "Удалить"
   }
 }
