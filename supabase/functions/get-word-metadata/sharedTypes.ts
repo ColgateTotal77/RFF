@@ -1,7 +1,8 @@
-export type ApiResponse = {
+export type CardData = {
   lemma: string;
   translations: string;
   examples: string[];
   synonyms: string[];
-  generatedFrom: 'reverso' | 'gemini' | 'groq' | 'gpt' | 'deepseek';
+  definition: string;
+  generatedFrom: 'deepseek';
 };

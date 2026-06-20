@@ -19,28 +19,34 @@ export const callDeepseek = async <T>(
       ],
       response_format: { type: 'json_object' },
       temperature,
+      thinking: { type: 'disabled' },
     }),
   });
 
+  const data = await response.json();
+
+  const logTokenUsage = (label: string) =>
+    console.log(
+      `${label}:`,
+      JSON.stringify(
+        {
+          total_prompt_tokens: data.usage?.prompt_tokens,
+          cached_tokens: data.usage?.prompt_tokens_details?.cached_tokens,
+          completion_tokens: data.usage?.completion_tokens,
+          reasoning_tokens: data.usage?.completion_tokens_details?.reasoning_tokens,
+        },
+        null,
+        2
+      )
+    );
+
   if (!response.ok) {
-    const errorData = await response.json();
-    console.error('Deepseek API error:', JSON.stringify(errorData, null, 2));
+    console.error('Deepseek API error:', JSON.stringify(data, null, 2));
+    logTokenUsage('Token Usage (failed)');
     throw new Error(`Deepseek API error: ${response.status}`);
   }
 
-  const data = await response.json();
-
-  console.log(
-    'Token Usage:',
-    JSON.stringify(
-      {
-        total_prompt_tokens: data.usage?.prompt_tokens,
-        cached_tokens: data.usage?.prompt_tokens_details?.cached_tokens,
-      },
-      null,
-      2
-    )
-  );
+  logTokenUsage('Token Usage');
 
   return JSON.parse(data.choices[0].message.content) as T;
 };

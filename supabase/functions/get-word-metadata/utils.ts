@@ -1,4 +1,9 @@
-export const getWordForms = async (supabase: any, lemma: string, wordLangCode: string) => {
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../../types.ts';
+
+export type Supabase = SupabaseClient<Database>;
+
+export const getWordForms = async (supabase: Supabase, lemma: string, wordLangCode: string) => {
   const { data: wordForms, error: wordFormsError } = await supabase
     .from('word_forms')
     .select('input_word')
@@ -34,4 +39,18 @@ export const langMap: Record<string, string> = {
   ar: 'Arabic',
   hi: 'Hindi',
   cs: 'Czech',
+};
+
+export const dedupeArray = (array: string[]): string[] => {
+  const seen = new Set<string>();
+  const deduplicatedArray: string[] = [];
+  for (const item of array) {
+    const trimmed = item.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduplicatedArray.push(trimmed);
+  }
+  return deduplicatedArray;
 };
