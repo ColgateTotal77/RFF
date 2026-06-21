@@ -9,6 +9,7 @@ import { useAnkiStore } from './useAnkiStore';
 import { useWebViewStore } from './useWebViewStore';
 import { useAppStore } from './useAppStore';
 import { useTempStore } from './useTempStore';
+import { Toast } from 'components/ui/Toast';
 import { Directory } from 'expo-file-system';
 
 const mmkvStorage = createMMKV({
@@ -77,6 +78,7 @@ export const useBookStore = create<Store>()(
           get().openBook(book.basePath);
         } catch (e) {
           console.error('❌ Failed to load book:', e);
+          Toast.show('Failed to load book', 'error');
         }
       },
 
@@ -142,6 +144,7 @@ export const useBookStore = create<Store>()(
         } catch (e) {
           set(() => ({ isDeckLoading: false }));
           console.error('❌ Failed to load book:', e);
+          Toast.show('Failed to open book', 'error');
         }
       },
 

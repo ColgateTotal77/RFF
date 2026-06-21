@@ -3,6 +3,7 @@ import { Anki, BookEngine } from 'modules/book-engine';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { Toast } from 'components/ui/Toast';
 import { DASH_REGEX_STRING } from './constants';
 
 interface UpdateWordTag {
@@ -18,7 +19,7 @@ export const useWordAction = () => {
     const bookSettings = getBookSettings();
 
     if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
-      console.error('Missing Anki configuration');
+      Toast.show('Configure Anki deck in settings', 'error');
       return;
     }
 
@@ -73,6 +74,7 @@ export const useWordAction = () => {
       }
     } catch (error) {
       console.error('Anki error:', error);
+      Toast.show('Failed to add card', 'error');
       executeImmediateActions([
         {
           type: 'updateTag',
@@ -88,7 +90,7 @@ export const useWordAction = () => {
     const bookSettings = getBookSettings();
 
     if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
-      console.error('Missing Anki configuration');
+      Toast.show('Configure Anki deck in settings', 'error');
       return;
     }
 
@@ -112,6 +114,7 @@ export const useWordAction = () => {
       ]);
     } catch (error) {
       console.error('Anki error:', error);
+      Toast.show('Failed to update card', 'error');
     }
   };
 
@@ -124,6 +127,7 @@ export const useWordAction = () => {
       await BookEngine.openSystemTranslator(text);
     } catch (error) {
       console.error('Translation error:', error);
+      Toast.show('Failed to open translator', 'error');
     }
   };
 
@@ -142,6 +146,7 @@ export const useWordAction = () => {
       ]);
     } catch (error) {
       console.error('Anki error:', error);
+      Toast.show('Failed to delete note', 'error');
     }
   };
 

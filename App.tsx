@@ -9,9 +9,15 @@ import { useAppStore } from 'stores/useAppStore';
 
 import './global.css';
 import { useAnkiStore } from 'stores/useAnkiStore';
+import { AppToast } from 'components/ui/Toast';
 
 function AppContent() {
-  return <Sidebar />;
+  return (
+    <>
+      <Sidebar />
+      <AppToast />
+    </>
+  );
 }
 
 export default function App() {
