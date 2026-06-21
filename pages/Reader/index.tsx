@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
-import { findNodeHandle, View } from 'react-native';
+import { findNodeHandle, Linking, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
+import { useProcessBookLinks } from 'lib/useBookNavigation';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { useTempStore } from 'stores/useTempStore';
@@ -56,6 +57,7 @@ export const ReaderScreen = () => {
   }, [registerWebViewAction]);
 
   const handleMessage = useMessageHandler();
+  const processBookLinks = useProcessBookLinks();
 
   const isLoading = !webViewSource || !currentBook || !isWebViewReady || isDeckLoading;
 
@@ -74,6 +76,18 @@ export const ReaderScreen = () => {
           opacity: isLoading ? 0 : 1,
         }}
         onMessage={handleMessage}
+        onShouldStartLoadWithRequest={(request) => {
+          if (/^https?:\/\//.test(request.url)) {
+            Linking.openURL(request.url);
+            return false;
+          }
+          if (request.url.startsWith('chapter://')) {
+            const url = new URL(request.url);
+            processBookLinks(parseInt(url.hostname), url.hash.replace('#', ''));
+            return false;
+          }
+          return true;
+        }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         allowFileAccess={true}

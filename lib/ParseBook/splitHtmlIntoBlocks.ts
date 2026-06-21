@@ -54,7 +54,7 @@ export const splitHtmlIntoBlocks = (html: string, globalBlockId: number): Respon
   let currentSize = 0;
   let currentBlock = `<div id="block-${localGlobalBlockId}">`;
 
-  const tokens = html.split(/(<[^>]+>)/).filter(Boolean);
+  const tokens = html.split(/(<(?:[^>"']|"[^"]*"|'[^']*')*>)/).filter(Boolean);
   const unclosedTags: OpenTag[] = [];
 
   const closeTags = () =>

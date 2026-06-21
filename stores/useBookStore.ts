@@ -35,7 +35,7 @@ type Store = {
   currentCTree: CurrentCTree | null;
   isDeckLoading: boolean;
 
-  loadBook: (uri: string) => Promise<void>;
+  loadBook: (uri: string) => Promise<boolean>;
   openBook: (basePath: string) => Promise<void>;
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
@@ -69,16 +69,19 @@ export const useBookStore = create<Store>()(
 
         try {
           const book = await parseBook(uri, useAppStore.getState().settings.targetLang);
-          book.mapping = buildBookMapping(book);
 
           set((state) => ({
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
           }));
 
           get().openBook(book.basePath);
+
+          return true;
         } catch (e) {
           console.error('❌ Failed to load book:', e);
           Toast.show('Failed to load book', 'error');
+
+          return false;
         }
       },
 
@@ -143,7 +146,7 @@ export const useBookStore = create<Store>()(
           }
         } catch (e) {
           set(() => ({ isDeckLoading: false }));
-          console.error('❌ Failed to load book:', e);
+          console.error('❌ Failed to open book:', e);
           Toast.show('Failed to open book', 'error');
         }
       },

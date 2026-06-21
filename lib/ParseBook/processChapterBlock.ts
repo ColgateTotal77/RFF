@@ -29,13 +29,11 @@ export const processChapterBlocks = async (props: Props): Promise<Response> => {
     const idMatch = blockContent.match(/id="block-(\d+)"/);
     const blockId = idMatch ? parseInt(idMatch[1]) : startingBlockId;
 
-    const idRegex = /id=(["'])(.*?)\1/g;
+    const idRegex = /\bid=(["'])(.*?)\1|\bid=([^\s>"']+)/g;
     let match;
     while ((match = idRegex.exec(blockContent)) !== null) {
-      const foundId = match[2];
-      if (!foundId.startsWith('block-')) {
-        chapterAnchors[foundId] = blockId;
-      }
+      const foundId = match[2] ?? match[3];
+      if (!foundId.startsWith('block-')) chapterAnchors[foundId] = blockId;
     }
 
     const isLastBlock = blockId === blockContents.finalBlockId;

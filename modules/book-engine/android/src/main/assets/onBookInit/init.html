@@ -43,28 +43,6 @@
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'INITIAL_LOAD_COMPLETE' }));
   });
 
-  document.addEventListener('click', (event) => {
-    const anchor = event.target.closest('a');
-
-    if (anchor) {
-      const href = anchor.getAttribute('href');
-
-      if (!href) return;
-
-      if (href.startsWith('chapter://')) {
-        event.preventDefault();
-
-        window.log('BOOK_LINK_PRESSED: ' + href);
-        window.ReactNativeWebView.postMessage(
-          JSON.stringify({
-            type: 'BOOK_LINK_PRESSED',
-            href: href,
-          })
-        );
-      }
-    }
-  });
-
   window.setTheme = (theme) => {
     window.log('setTheme: ' + theme);
     document.documentElement.setAttribute('data-theme', theme);

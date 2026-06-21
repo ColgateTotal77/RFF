@@ -27,8 +27,8 @@ export const Header = ({ navigation, title, routeName }: Props) => {
     });
 
     if (!result.canceled) {
-      await loadBook(result.assets[0].uri);
-      navigation.navigate('Reader');
+      const isLoaded = await loadBook(result.assets[0].uri);
+      if (isLoaded) navigation.navigate('Reader');
     }
   };
 
@@ -40,21 +40,34 @@ export const Header = ({ navigation, title, routeName }: Props) => {
         <SearchAction
           leftContent={
             <>
-              <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} accessibilityLabel="Open menu" />
+              <AppbarAction
+                icon="menu"
+                onPress={() => navigation.openDrawer()}
+                accessibilityLabel="Open menu"
+              />
               <Appbar.Content title={title} />
             </>
           }
         />
       ) : (
         <>
-          <AppbarAction icon="menu" onPress={() => navigation.openDrawer()} accessibilityLabel="Open menu" />
+          <AppbarAction
+            icon="menu"
+            onPress={() => navigation.openDrawer()}
+            accessibilityLabel="Open menu"
+          />
           <Appbar.Content title={title} />
         </>
       )}
 
       {isBookListRoute && (
         <>
-          <AppbarAction icon="plus" onPress={pickDocument} disabled={!hasDeck()} accessibilityLabel="Add book" />
+          <AppbarAction
+            icon="plus"
+            onPress={pickDocument}
+            disabled={!hasDeck()}
+            accessibilityLabel="Add book"
+          />
           <Other
             isOpen={isMenuOpen}
             onOpen={() => setIsMenuOpen(true)}

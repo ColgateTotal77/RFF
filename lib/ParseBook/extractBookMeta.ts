@@ -5,7 +5,7 @@ interface Response {
   title: string;
   author: string;
   coverPath: string | undefined;
-  language: LanguageCode;
+  language: LanguageCode | null;
   absoluteBasePath: string;
   basePath: string;
   opfDirName: string;
@@ -13,11 +13,13 @@ interface Response {
   tocId: string;
   manifestMap: Record<string, string>;
   cssPaths: string[];
+  navHref?: string;
 }
 
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
+  removeNSPrefix: true,
 });
 
 export const extractBookMeta = async (unzippedPath: string): Promise<Response> => {
@@ -34,6 +36,7 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
   const opfXml = await opfFile.text();
   const opfData = parser.parse(opfXml);
   const packageData = opfData.package;
+  if (!packageData) throw new Error('INVALID_EPUB: OPF package element not found');
   const opfDirName = rootFilePath.substring(0, rootFilePath.lastIndexOf('/'));
 
   const absoluteBasePath = (opfDirName ? `${unzippedPath}/${opfDirName}` : unzippedPath).replace(
@@ -44,15 +47,17 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
 
   const metadata = packageData.metadata;
   const title =
-    typeof metadata['dc:title'] === 'object' ? metadata['dc:title']['#text'] : metadata['dc:title'];
+    typeof metadata.title === 'object' ? metadata.title['#text'] : metadata.title;
 
   const author =
-    typeof metadata['dc:creator'] === 'object'
-      ? metadata['dc:creator']['#text']
-      : metadata['dc:creator'];
+    typeof metadata.creator === 'object' ? metadata.creator['#text'] : metadata.creator;
 
-  const manifestItems = packageData.manifest.item;
-  const spineItems = packageData.spine.itemref;
+  const manifestRaw = packageData.manifest.item;
+  const manifestItems = Array.isArray(manifestRaw) ? manifestRaw : manifestRaw ? [manifestRaw] : [];
+
+  const spineRaw = packageData.spine.itemref;
+  const spineItems = Array.isArray(spineRaw) ? spineRaw : spineRaw ? [spineRaw] : [];
+
   const tocId = packageData.spine['@_toc'];
 
   const manifestMap: Record<string, string> = {};
@@ -60,27 +65,36 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
     manifestMap[item['@_id']] = item['@_href'];
   });
 
-  let coverPath;
-  const metaItems = metadata.meta;
+  const metaRaw = metadata.meta;
+  const metaItems = Array.isArray(metaRaw) ? metaRaw : metaRaw ? [metaRaw] : [];
   const coverMeta = metaItems.find((m: any) => m['@_name'] === 'cover');
+  let coverPath;
 
   if (coverMeta) {
     const coverId = coverMeta['@_content'];
     const coverHref = manifestMap[coverId];
-    if (coverHref) {
-      coverPath = `file://${absoluteBasePath}/${coverHref}`;
-    }
+    if (coverHref) coverPath = `file://${absoluteBasePath}/${coverHref}`;
+  }
+
+  if (!coverPath) {
+    const epub3CoverItem = manifestItems.find((item: any) =>
+      (item['@_properties'] || '').split(/\s+/).includes('cover-image')
+    );
+    if (epub3CoverItem) coverPath = `file://${absoluteBasePath}/${epub3CoverItem['@_href']}`;
   }
 
   let language = normalizeLanguageCode(
-    typeof metadata['dc:language'] === 'object'
-      ? metadata['dc:language']['#text']
-      : metadata['dc:language']
+    typeof metadata.language === 'object' ? metadata.language['#text'] : metadata.language
   );
 
   const cssPaths = manifestItems
     .filter((item: any) => item['@_media-type'] === 'text/css')
     .map((item: any) => `file://${absoluteBasePath}/${item['@_href']}`);
+
+  const navItem = manifestItems.find((item: any) =>
+    (item['@_properties'] || '').split(/\s+/).includes('nav')
+  );
+  const navHref: string | undefined = navItem?.['@_href'];
 
   return {
     title,
@@ -94,5 +108,6 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
     tocId,
     manifestMap,
     cssPaths,
+    navHref,
   };
 };

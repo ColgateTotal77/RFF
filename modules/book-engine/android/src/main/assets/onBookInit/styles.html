@@ -1,6 +1,7 @@
 <style>
   :root {
     --book-font-size: 16px;
+    --book-font-family: Georgia, serif;
     --book-bg-color: #ffffff;
     --book-text-color: #000000;
     --book-selection-bg: rgba(100, 150, 255, 0.4);
@@ -13,9 +14,6 @@
   }
 
   body {
-    background-color: var(--book-bg-color) !important;
-    color: var(--book-text-color) !important;
-    font-size: var(--book-font-size) !important;
     padding: 20px !important;
     margin: 0 !important;
     text-align: justify;
@@ -24,6 +22,9 @@
     overflow-x: hidden !important;
     touch-action: pan-y !important;
     -webkit-tap-highlight-color: transparent !important;
+    background-color: var(--book-bg-color) !important;
+    font-size: var(--book-font-size) !important;
+    color: var(--book-text-color) !important;
   }
 
   body p,
@@ -34,6 +35,7 @@
     text-align-last: left !important;
     hyphens: auto !important;
     font-size: var(--book-font-size) !important;
+    color: var(--book-text-color) !important;
   }
 
   :root:not([data-font='Book Default']) body,

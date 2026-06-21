@@ -27,6 +27,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       tocId,
       manifestMap,
       cssPaths,
+      navHref,
     } = await extractBookMeta(unzippedPath);
 
     const { chapterData, mapHrefChapterId } = await extractChapterData(
@@ -42,11 +43,22 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
     const blocks: Block[] = [];
     let globalBlockId = 0;
     let totalCharCount = 0;
+    let langSample = '';
 
     for (const chapter of chapterData) {
       const processedHtml = processChapterDom({ chapter, mapHrefChapterId, absoluteBasePath });
 
       const blockContents = splitHtmlIntoBlocks(processedHtml, globalBlockId);
+
+      if (langSample.length < 2000) {
+        for (const blockHtml of blockContents.blocks) {
+          const textOnly = blockHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          if (textOnly.length > 0) {
+            langSample += textOnly + '\n';
+            if (langSample.length >= 2000) break;
+          }
+        }
+      }
 
       const { newBlocks, chapterBlockIds, chapterAnchors, chapterCharCount } =
         await processChapterBlocks({
@@ -88,25 +100,28 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
     }
 
     let toc: TocItem[] = [];
-    if (manifestMap[tocId]) {
+    if (manifestMap[tocId] || navHref) {
       toc = await extractToc({
         tocId,
         unzippedPath,
         opfDirName,
         manifestMap,
         mapHrefChapterId,
+        navHref,
       });
     }
 
     const blockPaths = blocks.map((block) => block.fullPath);
 
-    let detectedLanguage = await detectLanguage(blockPaths);
+    const detectedLanguage = detectLanguage(langSample);
+
+    const tocTitleByChapterId = new Map(toc.map((t) => [t.chapterId, t.title]));
 
     BookEngine.loadBookInSQL(
       basePath,
       blockPaths,
       blocks.map((block) => block.id),
-      blocks.map((block) => toc.find((t) => t.chapterId === block.chapterId)?.title || '')
+      blocks.map((block) => tocTitleByChapterId.get(block.chapterId) || '')
     );
 
     return {

@@ -20,8 +20,8 @@ export const EmptyNoBooks = () => {
     });
 
     if (!result.canceled) {
-      await loadBook(result.assets[0].uri);
-      navigation.navigate('Reader');
+      const isLoaded = await loadBook(result.assets[0].uri);
+      if (isLoaded) navigation.navigate('Reader');
     }
   };
 

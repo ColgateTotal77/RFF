@@ -2,14 +2,12 @@ import { useCallback } from 'react';
 import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useWordAction } from 'lib/useWordAction';
-import { useProcessBookLinks } from 'lib/useBookNavigation';
 import { calculateBookProgress } from 'lib/utils';
 import { WebViewMessageEvent } from 'react-native-webview';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { DASH_REGEX_STRING } from 'lib/constants';
 
 export const useMessageHandler = () => {
-  const processBookLinks = useProcessBookLinks();
   const currentBook = useBookStore((state) => state.currentBook);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const updateMisc = useBookStore((state) => state.updateMisc);
@@ -92,13 +90,6 @@ export const useMessageHandler = () => {
             closeMenu();
             break;
 
-          case 'BOOK_LINK_PRESSED':
-            const url = new URL(parsedData.href);
-            const chapterId = parseInt(url.hostname);
-            const fragmentId = url.hash.replace('#', '');
-            processBookLinks(chapterId, fragmentId);
-            break;
-
           case 'UPDATE_BLOCK_WINDOW':
             updateCurrentBlocks(parsedData.newWindow);
             break;
@@ -108,7 +99,6 @@ export const useMessageHandler = () => {
       }
     },
     [
-      processBookLinks,
       setSelectionMenu,
       closeMenu,
       currentBook,

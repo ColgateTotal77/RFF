@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import { TocItem } from 'types';
 import { XMLParser } from 'fast-xml-parser';
+import { parse } from 'node-html-parser';
 
 interface Props {
   tocId: string;
@@ -8,6 +9,7 @@ interface Props {
   opfDirName: string;
   manifestMap: Record<string, string>;
   mapHrefChapterId: Record<string, number>;
+  navHref?: string;
 }
 
 const parser = new XMLParser({
@@ -16,7 +18,7 @@ const parser = new XMLParser({
 });
 
 export const extractToc = async (props: Props): Promise<TocItem[]> => {
-  const { tocId, unzippedPath, opfDirName, manifestMap, mapHrefChapterId } = props;
+  const { tocId, unzippedPath, opfDirName, manifestMap, mapHrefChapterId, navHref } = props;
 
   const toc: TocItem[] = [];
   try {
@@ -27,11 +29,15 @@ export const extractToc = async (props: Props): Promise<TocItem[]> => {
 
     const ncxXml = await ncxFile.text();
     const ncxData = parser.parse(ncxXml);
-    const navPoints = ncxData?.ncx?.navMap?.navPoint || [];
+    const navPointsRaw = ncxData?.ncx?.navMap?.navPoint;
+    const navPoints = Array.isArray(navPointsRaw) ? navPointsRaw : navPointsRaw ? [navPointsRaw] : [];
 
     const parseNavPoints = (points: any[], currentLevel: number, currentParentId?: string) => {
       points.forEach((point: any) => {
-        const chapterTitle = point.navLabel?.text?.trim() || 'Unknown Chapter';
+        const navLabelText = point.navLabel?.text;
+        const chapterTitle =
+          (typeof navLabelText === 'object' ? navLabelText?.['#text'] : navLabelText)?.trim() ||
+          'Unknown Chapter';
         const chapterSrc = point.content?.['@_src'];
         const pointId = point['@_id'];
 
@@ -50,14 +56,64 @@ export const extractToc = async (props: Props): Promise<TocItem[]> => {
           });
         }
 
-        if (Array.isArray(point?.navPoint))
-          parseNavPoints(point.navPoint, currentLevel + 1, pointId);
+        if (point?.navPoint) {
+          const children = point.navPoint;
+          parseNavPoints(
+            Array.isArray(children) ? children : [children],
+            currentLevel + 1,
+            pointId
+          );
+        }
       });
     };
 
     parseNavPoints(navPoints, 0);
   } catch (ncxError) {
     console.warn('Failed to parse NCX TOC:', ncxError);
+  }
+
+  if (toc.length === 0 && navHref) {
+    try {
+      const navFile = new File(unzippedPath, `${opfDirName ? opfDirName + '/' : ''}${navHref}`);
+      if (navFile.exists) {
+        const navHtml = await navFile.text();
+        const navDom = parse(navHtml);
+
+        const navElements = navDom.querySelectorAll('nav');
+        const tocNav =
+          navElements.find((n) => n.getAttribute('epub:type') === 'toc') ?? navElements[0];
+
+        if (tocNav) {
+          const rootOl = tocNav.querySelector('ol');
+          if (rootOl) {
+            const parseNavOl = (ol: any, level: number, parentId?: string) => {
+              let idx = 0;
+              for (const child of ol.childNodes as any[]) {
+                if ((child.rawTagName || '').toLowerCase() !== 'li') continue;
+                const a = child.querySelector('a');
+                if (!a) { idx++; continue; }
+
+                const title = (a.text ?? '').trim() || 'Unknown Chapter';
+                const file = (a.getAttribute('href') ?? '').split('#')[0];
+                const chapterId = mapHrefChapterId[file];
+                const pointId = `nav-${level}-${idx}`;
+                idx++;
+
+                if (chapterId !== undefined) {
+                  toc.push({ id: pointId, title, chapterId, level, parentId });
+                }
+
+                const nestedOl = child.querySelector('ol');
+                if (nestedOl) parseNavOl(nestedOl, level + 1, pointId);
+              }
+            };
+            parseNavOl(rootOl, 0);
+          }
+        }
+      }
+    } catch (navError) {
+      console.warn('Failed to parse EPUB3 NAV TOC:', navError);
+    }
   }
 
   return toc;
