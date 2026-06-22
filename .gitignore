@@ -29,6 +29,8 @@ modules/book-engine/android/cmake-build-debug/
 !/android/app/
 /android/app/*
 !/android/app/src/
+!/android/app/build.gradle
+!/android/app/proguard-rules.pro
 /android/app/src/*
 !/android/app/src/main/
 /android/app/src/main/*

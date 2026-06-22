@@ -27,20 +27,16 @@ export default function App() {
   const checkAnkiPermission = useAnkiStore((state) => state.checkPermission);
 
   useEffect(() => {
-    const runSync = async () => {
-      try {
-        await BookEngine.onAppInit();
-        const basePath = books[0]?.basePath;
-        if (basePath) openBook(basePath);
-      } catch (e) {
-        console.error('onAppInit failed:', e);
-      }
-    };
+    try {
+      BookEngine.onAppInit();
+      const basePath = books[0]?.basePath;
+      if (basePath) openBook(basePath);
+    } catch (e) {
+      console.error('onAppInit failed:', e);
+    }
 
-    runSync();
     checkAnkiPermission();
   }, []);
-
 
   return (
     <SafeAreaProvider>
