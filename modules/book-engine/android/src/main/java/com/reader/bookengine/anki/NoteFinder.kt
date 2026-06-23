@@ -60,7 +60,7 @@ class NoteFinder(
 
         try {
             val notesUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
-            val ankiSearchQuery = "did:$deckId"
+            val ankiSearchQuery = "did:$deckId \"${AnkiUtils.escapeAnkiSearchTerm(targetWord)}\""
 
             val noteCursor =
                 resolver.query(
@@ -70,9 +70,6 @@ class NoteFinder(
                     null,
                     null,
                 )
-
-            val configuredFrontIndex = (mapping["word"] as? Number)?.toInt() ?: 0
-            val configuredBackIndex = (mirroredMapping["translation"] as? Number)?.toInt() ?: 0
 
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
@@ -86,10 +83,8 @@ class NoteFinder(
                     val back = parsed.back
                     if (front.isEmpty() || back.isEmpty()) continue
 
-                    val noteId = cursor.getLong(idIndex)
-
-                    if (front.lowercase() == targetWord.lowercase() || back.lowercase() == targetWord.lowercase()) {
-                        return noteId
+                    if (front.equals(targetWord, ignoreCase = true) || back.equals(targetWord, ignoreCase = true)) {
+                        return cursor.getLong(idIndex)
                     }
                 }
             }

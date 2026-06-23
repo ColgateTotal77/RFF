@@ -10,6 +10,7 @@ import { AppbarAction } from 'components/ui/AppbarAction';
 import { IconButton } from 'components/ui/IconButton';
 import { VerticalDivider } from 'components/ui/VerticalDivider';
 import { HorizontalDivider } from 'components/ui/HorizontalDivider';
+
 interface Props {
   selectionMenu: SelectedMenu;
 }
@@ -61,6 +62,32 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
     closeMenu();
   };
 
+  const CardButton = selectionMenu.noteIds ? (
+    <>
+      <Button
+        mode="text"
+        compact={true}
+        contentStyle={{ paddingHorizontal: 4, paddingVertical: 0 }}
+        onPress={onUpdateTagPress}>
+        <Text variant="bodyLarge" style={{ color: theme.colors.primary }}>
+          +F
+        </Text>
+      </Button>
+      <VerticalDivider />
+    </>
+  ) : (
+    selectionMenu.text.length <= 50 && (
+      <>
+        <IconButton
+          icon="plus-circle"
+          onPress={onAddNewCardPress}
+          accessibilityLabel="Add Anki card"
+        />
+        <VerticalDivider />
+      </>
+    )
+  );
+
   return (
     <Surface
       elevation={1}
@@ -99,25 +126,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
       <IconButton icon="content-copy" onPress={onCopy} accessibilityLabel="Copy" />
       <VerticalDivider />
 
-      {selectionMenu.noteIds ? (
-        <Button
-          mode="text"
-          compact={true}
-          contentStyle={{ paddingHorizontal: 4, paddingVertical: 0 }}
-          onPress={onUpdateTagPress}>
-          <Text variant="bodyLarge" style={{ color: theme.colors.primary }}>
-            +F
-          </Text>
-        </Button>
-      ) : (
-        <IconButton
-          icon="plus-circle"
-          onPress={onAddNewCardPress}
-          accessibilityLabel="Add Anki card"
-        />
-      )}
-
-      <VerticalDivider />
+      {CardButton}
 
       <Menu
         visible={isOpen}

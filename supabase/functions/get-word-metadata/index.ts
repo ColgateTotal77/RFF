@@ -8,8 +8,6 @@ import { getCardData } from './getCardData.ts';
 import { saveCardInDB } from './saveCardInDB.ts';
 import { getLemma } from './getLemma.ts';
 
-type WordForm = Database['public']['Tables']['word_forms']['Row'];
-
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
 
@@ -37,6 +35,12 @@ Deno.serve(async (req) => {
 
     const { word, sentence, word_lang_code, translation_lang_code } = await req.json();
 
+    const inputWord = word.trim().toLowerCase();
+
+    if (typeof word !== 'string' || inputWord.length === 0 || inputWord.length > 50) {
+      return jsonResponse({ error: 'Word is incorrect' }, 400);
+    }
+
     console.log('word: ', word);
     console.log('sentence: ', sentence);
     console.log('word_lang_code: ', word_lang_code);
@@ -44,8 +48,6 @@ Deno.serve(async (req) => {
 
     const fromLang = langMap[word_lang_code];
     const toLang = langMap[translation_lang_code];
-
-    const inputWord = word.toLowerCase();
 
     let lemma;
     try {
@@ -88,7 +90,7 @@ Deno.serve(async (req) => {
       ...newWord,
       wordForms: [
         newWord.word,
-        ...wordForms.map((w: WordForm) => w.input_word).filter((w: string) => w !== newWord.word),
+        ...wordForms.map((w) => w.input_word).filter((w: string) => w !== newWord.word),
       ],
     };
 

@@ -14,10 +14,6 @@ class AllAnkiWordsFetcher(
     ): AnkiWordsData {
         val resolver = context.contentResolver
 
-        val tempWords = mutableListOf<String>()
-        val tempNoteIds = mutableListOf<LongArray>()
-        val tempColorCodes = mutableListOf<Int>()
-
         val t1 = System.currentTimeMillis()
         try {
             val notesUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
@@ -35,61 +31,60 @@ class AllAnkiWordsFetcher(
 
             data class ParsedNote(
                 val id: Long,
-                val front: String,
-                val back: String,
+                val frontLower: String,
+                val backLower: String,
                 val colorCode: Int,
             )
-            val parsedNotes = mutableListOf<ParsedNote>()
-            val frontLookup = mutableMapOf<String, Long>()
-            val backLookup = mutableMapOf<String, Long>()
+
+            val count = noteCursor?.count ?: 0
+            val parsedNotes = ArrayList<ParsedNote>(count)
+            val frontLookup = HashMap<String, Long>(count * 2)
+            val backLookup = HashMap<String, Long>(count * 2)
 
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
                 val tagsIndex = cursor.getColumnIndex("tags")
 
-                val configuredFrontIndex = (mapping["word"] as? Number)?.toInt() ?: 0
-                val configuredBackIndex = (mapping["translation"] as? Number)?.toInt() ?: 0
-                val fallbackBackIndex = (mirroredMapping["translation"] as? Number)?.toInt() ?: 0
-
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
 
                     val parsed = AnkiUtils.parseNoteFields(flds, mapping, mapping, mirroredMapping) ?: continue
-                    val front = parsed.front
-                    val back = parsed.back
-                    if (front.isEmpty() || back.isEmpty()) continue
+                    if (parsed.front.isEmpty() || parsed.back.isEmpty()) continue
+
+                    val frontLower = parsed.front.lowercase()
+                    val backLower = parsed.back.lowercase()
 
                     val noteId = cursor.getLong(idIndex)
                     val tagsStr = cursor.getString(tagsIndex) ?: ""
 
-                    var colorCode = AnkiUtils.parseColorCode(tagsStr)
+                    val colorCode = if (tagsStr.contains("Lookups_")) AnkiUtils.parseColorCode(tagsStr) else 0
 
-                    parsedNotes.add(ParsedNote(noteId, front, back, colorCode))
+                    parsedNotes.add(ParsedNote(noteId, frontLower, backLower, colorCode))
 
-                    frontLookup[front.lowercase()] = noteId
-                    backLookup[back.lowercase()] = noteId
+                    frontLookup[frontLower] = noteId
+                    backLookup[backLower] = noteId
                 }
             }
 
+            val tempWords = ArrayList<String>(parsedNotes.size)
+            val tempNoteIds = ArrayList<LongArray>(parsedNotes.size)
+            val tempColorCodes = ArrayList<Int>(parsedNotes.size)
+
             for (note in parsedNotes) {
-                var mirroredId = frontLookup[note.back.lowercase()] ?: -1L
+                var mirroredId = frontLookup[note.backLower] ?: -1L
                 if (mirroredId == -1L) {
-                    mirroredId = backLookup[note.front.lowercase()] ?: -1L
+                    mirroredId = backLookup[note.frontLower] ?: -1L
                 }
 
                 val noteIds =
-                    if (mirroredId != -1L) {
-                        if (note.id != mirroredId) {
-                            longArrayOf(note.id, mirroredId)
-                        } else {
-                            longArrayOf(note.id)
-                        }
+                    if (mirroredId != -1L && note.id != mirroredId) {
+                        longArrayOf(note.id, mirroredId)
                     } else {
                         longArrayOf(note.id)
                     }
 
-                tempWords.add(note.front.lowercase())
+                tempWords.add(note.frontLower)
                 tempNoteIds.add(noteIds)
                 tempColorCodes.add(note.colorCode)
             }

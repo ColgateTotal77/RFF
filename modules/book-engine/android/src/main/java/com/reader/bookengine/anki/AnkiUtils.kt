@@ -10,6 +10,10 @@ object AnkiUtils {
 
     val LOOKUPS_REGEX = Regex("Lookups_([1-8])")
 
+    private val ANKI_SEARCH_SPECIAL = Regex("""[\\"*_]""")
+
+    fun escapeAnkiSearchTerm(term: String): String = term.replace(ANKI_SEARCH_SPECIAL) { "\\${it.value}" }
+
     fun selectActiveMapping(
         mid: String,
         mapping: Map<String, Any?>,
