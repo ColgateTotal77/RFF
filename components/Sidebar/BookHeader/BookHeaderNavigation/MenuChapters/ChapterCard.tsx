@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import React from 'react';
 import { TocItem } from 'types';
 import { IconButton } from 'components/ui/IconButton';
+
 interface Props {
   tocItem: TocItem;
   hasChildren: boolean;

@@ -164,8 +164,8 @@ export const useBookStore = create<Store>()(
         console.log('Closing book');
 
         try {
-          set(() => ({ currentBook: null }));
           useWebViewStore.getState().resetWebView();
+          set(() => ({ currentBook: null }));
           useTempStore.getState().resetSearch();
           useTempStore.getState().closeSelectionMenu();
         } catch (e) {
@@ -185,7 +185,6 @@ export const useBookStore = create<Store>()(
         await BookEngine.deleteBookFromSQL(basePath);
 
         set((state) => ({
-          currentBook: state.currentBook?.basePath === basePath ? null : state.currentBook,
           books: state.books.filter((book) => book.basePath !== basePath),
         }));
       },

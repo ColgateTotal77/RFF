@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { findNodeHandle, Linking, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTheme } from 'react-native-paper';
@@ -7,24 +7,20 @@ import { useProcessBookLinks } from 'lib/useBookNavigation';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { useTempStore } from 'stores/useTempStore';
-import { Footer } from 'pages/Reader/Footer';
 import { useMessageHandler } from './useMessageHandler';
 import { Loading } from 'components/ui/Loading';
-import { IconButton } from 'components/ui/IconButton';
+import { Overlay } from 'pages/Reader/Overlay';
 
 const TEST_WEBVIEW_SOURCE = {
   html: '<!DOCTYPE html><html><head></head><body style="background-color: transparent;"></body></html>',
 };
 
 export const ReaderScreen = () => {
-  const currentBook = useBookStore((state) => state.currentBook);
   const isDeckLoading = useBookStore((state) => state.isDeckLoading);
   const registerWebViewAction = useWebViewStore((state) => state.registerWebViewAction);
   const webViewSource = useWebViewStore((state) => state.webViewSource);
   const isWebViewReady = useWebViewStore((state) => state.isWebViewReady);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
-  const addBookmark = useBookStore((state) => state.addBookmark);
-  const removeBookmark = useBookStore((state) => state.removeBookmark);
   const setReactTag = useWebViewStore((state) => state.setReactTag);
   const theme = useTheme();
 
@@ -37,19 +33,6 @@ export const ReaderScreen = () => {
     [setReactTag]
   );
 
-  const activeBookmark = useMemo(() => {
-    if (!currentBook) return null;
-    return (currentBook.bookmarks ?? []).find(
-      (bookmark) =>
-        bookmark.blockId === currentBook.currentBlock &&
-        Math.abs(bookmark.scrollPercent - currentBook.misc.currentBlockScrollPercent) < 0.05
-    );
-  }, [
-    currentBook?.bookmarks,
-    currentBook?.currentBlock,
-    currentBook?.misc.currentBlockScrollPercent,
-  ]);
-
   useEffect(() => {
     registerWebViewAction((script) => {
       webViewRef.current?.injectJavaScript(script);
@@ -59,7 +42,7 @@ export const ReaderScreen = () => {
   const handleMessage = useMessageHandler();
   const processBookLinks = useProcessBookLinks();
 
-  const isLoading = !webViewSource || !currentBook || !isWebViewReady || isDeckLoading;
+  const isLoading = !webViewSource || !isWebViewReady || isDeckLoading;
 
   return (
     <View
@@ -111,28 +94,7 @@ export const ReaderScreen = () => {
         </View>
       )}
 
-      {!isLoading && (
-        <>
-          <IconButton
-            icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
-            size={28}
-            accessibilityLabel={activeBookmark ? 'Remove bookmark' : 'Add bookmark'}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              zIndex: 50,
-              elevation: 5,
-            }}
-            onPress={() => {
-              if (activeBookmark) removeBookmark(activeBookmark.id);
-              else addBookmark();
-            }}
-          />
-
-          <Footer />
-        </>
-      )}
+      {!isLoading && <Overlay />}
 
       {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
     </View>
