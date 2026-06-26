@@ -5,6 +5,7 @@ import { TocItem } from 'types';
 import { calculateBookProgress } from 'lib/utils';
 import { useState, useEffect, useMemo } from 'react';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { useTempStore } from 'stores/useTempStore';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const currentBook = useCurrentBook();
@@ -13,6 +14,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
+  const addToBackStack = useTempStore((state) => state.addToBackStack);
   const chapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;
   const currentChapter = currentBook.mapping.tocByChapterId[chapterId]?.[0] ?? null;
 
@@ -45,6 +47,11 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   }, [currentChapter]);
 
   const onPress = (tocItem: TocItem) => {
+    addToBackStack({
+      blockId: currentBook.currentBlock,
+      scrollPercent: currentBook.misc.currentBlockScrollPercent,
+    });
+
     const firstBlockId = currentBook.mapping.firstBlockByChapterId[tocItem.chapterId];
 
     if (currentBook.currentBlocks.includes(firstBlockId)) {
@@ -57,6 +64,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
     updateMisc({
       percent: calculateBookProgress(currentBook, 0, firstBlockId),
     });
+
     onClose();
   };
 

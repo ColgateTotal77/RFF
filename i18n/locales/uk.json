@@ -48,7 +48,8 @@
       "clear": "Очистити",
       "next": "Наступна",
       "bookProgress": "Книга {{progress}}%",
-      "chapterProgress": "Розділ {{progress}}%"
+      "chapterProgress": "Розділ {{progress}}%",
+      "goBack": "Назад"
     },
     "selectionMenu": {
       "deleteNote": "Видалити нотатку",

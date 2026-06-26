@@ -18,8 +18,14 @@ export const MenuSearch = ({ onClose }: Props) => {
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
+  const addToBackStack = useTempStore((state) => state.addToBackStack);
 
   const onPress = (searchResult: SearchResult) => {
+    addToBackStack({
+      blockId: currentBook.currentBlock,
+      scrollPercent: currentBook.misc.currentBlockScrollPercent,
+    });
+
     if (!currentBook.currentBlocks.includes(searchResult.blockId)) {
       if (!currentSearchResult.query) {
         addToPostLoadQueue({
@@ -51,6 +57,7 @@ export const MenuSearch = ({ onClose }: Props) => {
     }
 
     setCurrentSearchResult(searchResult);
+
     onClose();
   };
 

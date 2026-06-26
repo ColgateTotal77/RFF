@@ -158,7 +158,7 @@ export interface CurrentCTree {
   deckId: string;
 }
 
-export type SelectionMenu = {
+export interface SelectionMenu {
   visible: boolean;
   text: string;
   sentence: string;
@@ -167,4 +167,9 @@ export type SelectionMenu = {
   left: number;
   noteIds?: string;
   colorCode?: string;
-};
+}
+
+export interface BackStackItem {
+  blockId: number;
+  scrollPercent: number;
+}

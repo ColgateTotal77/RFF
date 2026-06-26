@@ -48,7 +48,8 @@
       "clear": "Очистить",
       "next": "След.",
       "bookProgress": "Книга {{progress}}%",
-      "chapterProgress": "Глава {{progress}}%"
+      "chapterProgress": "Глава {{progress}}%",
+      "goBack": "Назад"
     },
     "selectionMenu": {
       "deleteNote": "Удалить заметку",

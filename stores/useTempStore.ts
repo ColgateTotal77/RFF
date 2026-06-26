@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SelectionMenu, SearchResult } from 'types';
+import { SelectionMenu, SearchResult, BackStackItem } from 'types';
 import { useWebViewStore } from 'stores/useWebViewStore';
 
 type Store = {
@@ -9,6 +9,7 @@ type Store = {
   currentSearchResult: SearchResult;
   selectionMenu: SelectionMenu;
   bookListQuery: string;
+  backStack: BackStackItem[];
 
   setSearchQuery: (searchQuery: string) => void;
   setSearchResults: (result: SearchResult[]) => void;
@@ -16,12 +17,16 @@ type Store = {
   setCurrentSearchResult: (searchResult: SearchResult) => void;
   resetSearch: () => void;
 
-  setSelectionMenu: (menu: Partial<SelectionMenu>) => void;
+  setSelectionMenu: (menu: SelectionMenu) => void;
   closeSelectionMenu: () => void;
 
   isBookSettingsTransparent: boolean;
   setIsBookSettingsTransparent: (isSliding: boolean) => void;
   setBookListQuery: (bookListQuery: string) => void;
+
+  addToBackStack: (backStackItem: BackStackItem) => void;
+  removeLastFromBackStack: () => void;
+  clearBackStack: () => void;
 };
 
 export const useTempStore = create<Store>()((set) => ({
@@ -46,6 +51,7 @@ export const useTempStore = create<Store>()((set) => ({
   },
   isBookSettingsTransparent: false,
   bookListQuery: '',
+  backStack: [],
 
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
@@ -68,10 +74,17 @@ export const useTempStore = create<Store>()((set) => ({
       searchResults: [],
     });
   },
-  setSelectionMenu: (menu) =>
-    set((state) => ({ selectionMenu: { ...state.selectionMenu, ...menu } })),
+
+  setSelectionMenu: (menu) => set({ selectionMenu: menu }),
   closeSelectionMenu: () =>
     set((state) => ({ selectionMenu: { ...state.selectionMenu, visible: false } })),
+
   setIsBookSettingsTransparent: (isSliding) => set({ isBookSettingsTransparent: isSliding }),
+
   setBookListQuery: (bookListQuery) => set({ bookListQuery }),
+
+  addToBackStack: (backStackItem) =>
+    set((state) => ({ backStack: [...state.backStack, backStackItem] })),
+  removeLastFromBackStack: () => set((state) => ({ backStack: state.backStack.slice(0, -1) })),
+  clearBackStack: () => set({ backStack: [] }),
 }));

@@ -4,6 +4,7 @@ import { Bookmark } from 'types';
 import { BookmarkCard } from './BookmarkCard';
 import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { useTempStore } from 'stores/useTempStore';
 
 interface Props {
   onClose: () => void;
@@ -16,8 +17,14 @@ export const MenuBookmarks = ({ onClose }: Props) => {
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
+  const addToBackStack = useTempStore((state) => state.addToBackStack);
 
   const onPress = (bookmark: Bookmark) => {
+    addToBackStack({
+      blockId: currentBook.currentBlock,
+      scrollPercent: currentBook.misc.currentBlockScrollPercent,
+    });
+
     if (currentBook.currentBlocks.includes(bookmark.blockId)) {
       setCurrentBlock(bookmark.blockId);
       executeImmediateActions([
@@ -35,9 +42,11 @@ export const MenuBookmarks = ({ onClose }: Props) => {
       });
       loadWindow(bookmark.blockId, 0);
     }
+
     updateMisc({
       percent: calculateBookProgress(currentBook, bookmark.scrollPercent, bookmark.blockId),
     });
+
     onClose();
   };
 

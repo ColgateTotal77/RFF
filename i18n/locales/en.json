@@ -48,7 +48,8 @@
       "clear": "Clear",
       "next": "Next",
       "bookProgress": "Book {{progress}}%",
-      "chapterProgress": "Chapter {{progress}}%"
+      "chapterProgress": "Chapter {{progress}}%",
+      "goBack": "Go back"
     },
     "selectionMenu": {
       "deleteNote": "Delete note",

@@ -62,14 +62,12 @@ export const useAnkiStore = create<Store>()((set, get) => ({
   applyDefaultModel: async (deckId) => {
     const { settings, updateSettings } = useAppStore.getState();
 
-    if (get().decks.length > 1) return;
-
     const sortedModels = [...get().models].sort((a, b) => Number(a.id) - Number(b.id)).slice(0, 1);
 
     let modelId: string | null = null;
     for (const model of sortedModels) {
       const fieldCount = (await Anki.getFields(model.id)).length;
-      if (fieldCount === 3) {
+      if (fieldCount === 2) {
         modelId = model.id;
         break;
       }
@@ -109,7 +107,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
     set({ decks, models });
 
     if (!ankiDeckId) return;
-    if (!fields) await get().applyDefaultModel(ankiDeckId);
+    if (!fields) get().applyDefaultModel(ankiDeckId);
     if (!mirroredFields) updateSettings({ isTwoSided: false });
   },
 
@@ -136,7 +134,6 @@ export const useAnkiStore = create<Store>()((set, get) => ({
 
   createDeck: async (deckName: string) => {
     const deckId = (await Anki.createDeck(deckName)).toString();
-    set({ decks: [...get().decks, { id: deckId, name: deckName }] });
     return deckId.toString();
   },
 

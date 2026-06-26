@@ -95,21 +95,32 @@ export const useProcessBookLinks = () => {
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const currentBook = useCurrentBook();
+  const addToBackStack = useTempStore((state) => state.addToBackStack);
 
   return (chapterId: number, fragmentId: string) => {
     const chapter = currentBook.mapping.chapterById[chapterId];
 
     if (!fragmentId) {
       const blockId = chapter.blockIds[0];
+      addToBackStack({
+        blockId: currentBook.currentBlock,
+        scrollPercent: currentBook.misc.currentBlockScrollPercent,
+      });
       if (!currentBook.currentBlocks.includes(blockId)) {
         loadWindow(blockId, 0);
       } else {
         executeImmediateActions([{ type: 'scrollToBlock', blockId, scrollPercent: 0 }]);
       }
+      return;
     }
 
     const blockId = chapter.anchors[fragmentId];
     if (!blockId) return;
+
+    addToBackStack({
+      blockId: currentBook.currentBlock,
+      scrollPercent: currentBook.misc.currentBlockScrollPercent,
+    });
 
     if (!currentBook.currentBlocks.includes(blockId)) {
       addToPostLoadQueue({ type: 'scrollToFragment', fragmentId });

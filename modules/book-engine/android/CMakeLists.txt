@@ -8,3 +8,5 @@ add_library(book_engine_native SHARED
 
 find_library(log-lib log)
 target_link_libraries(book_engine_native ${log-lib})
+
+target_link_options(book_engine_native PRIVATE "-Wl,-z,max-page-size=16384")
