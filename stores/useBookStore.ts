@@ -169,6 +169,7 @@ export const useBookStore = create<Store>()(
           useTempStore.getState().resetSearch();
           useTempStore.getState().closeSelectionMenu();
           useTempStore.getState().clearBackStack();
+          useTempStore.getState().setIsOverlayVisible(false);
         } catch (e) {
           console.error('❌ Failed to unload book:', e);
         }

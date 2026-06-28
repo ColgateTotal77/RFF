@@ -5,11 +5,11 @@ import { SidebarContent } from 'components/Sidebar/SidebarContent';
 import { SettingsScreen } from 'pages/Settings';
 import { ReaderScreen } from 'pages/Reader';
 import { DrawerTab, RootStackParamList } from 'types';
-import { BookHeader } from 'components/Sidebar/BookHeader';
-import { useBookStore } from 'stores/useBookStore';
 import { BookListScreen } from 'pages/BookLists';
 import { useTranslation } from 'react-i18next';
 import { useTempStore } from 'stores/useTempStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from 'react-native-paper';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
@@ -32,17 +32,19 @@ const ReadingNowScreen = () => <ReadingScreen haveRead={false} />;
 const HaveReadScreen = () => <ReadingScreen haveRead={true} />;
 
 export const Sidebar = () => {
-  const currentBook = useBookStore((state) => state.currentBook);
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
+  const { bottom } = useSafeAreaInsets();
+  const theme = useTheme();
 
   return (
     <Drawer.Navigator
       drawerContent={(props) => <SidebarContent {...props} />}
       screenOptions={{
+        sceneStyle: { paddingBottom: bottom, backgroundColor: theme.colors.background },
         header: ({ navigation, route, options }) => {
           const currentTab = route.name as DrawerTab;
 
-          if (currentTab === 'Reader' && currentBook) return <BookHeader />;
+          if (currentTab === 'Reader') return null;
           return (
             <Header
               navigation={navigation}
@@ -70,7 +72,7 @@ export const Sidebar = () => {
       <Drawer.Screen
         name="Reader"
         component={ReaderScreen}
-        options={{ drawerItemStyle: { display: 'none' } }}
+        options={{ sceneStyle: { paddingBottom: 0 }, drawerItemStyle: { display: 'none' } }}
       />
     </Drawer.Navigator>
   );

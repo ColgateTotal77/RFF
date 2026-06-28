@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { AnkiTab } from 'components/Sidebar/BookHeader/BookSettings/tabs/AnkiTab';
-import { MiscTab } from 'components/Sidebar/BookHeader/BookSettings/tabs/MiscTab';
+import { AnkiTab } from 'pages/Reader/Overlay/BookHeader/BookSettings/tabs/AnkiTab';
+import { MiscTab } from 'pages/Reader/Overlay/BookHeader/BookSettings/tabs/MiscTab';
 import { SegmentedButtons } from 'components/ui/SegmentedButtons';
 
 type TabKey = 'anki' | 'misc';

@@ -5,12 +5,16 @@ import { SearchOverlay } from 'pages/Reader/Overlay/SearchOverlay';
 import { BookMarkButton } from 'pages/Reader/Overlay/BookMarkButton';
 import { BookProgressOverlay } from 'pages/Reader/Overlay/BookProgressOverlay';
 import { BackStackOverlay } from 'pages/Reader/Overlay/BackStackOverlay';
+import { BookHeader } from 'pages/Reader/Overlay/BookHeader';
 
 export const Overlay = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
 
   return (
     <>
+      <View className="absolute left-0 right-0 top-0 z-50">
+        <BookHeader />
+      </View>
       <BookMarkButton />
       <View className="absolute bottom-8 left-0 right-0 items-center gap-2">
         <BackStackOverlay />

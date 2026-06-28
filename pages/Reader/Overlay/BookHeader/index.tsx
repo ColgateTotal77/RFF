@@ -1,15 +1,16 @@
 import { Appbar, PaperProvider, TextInput, useTheme } from 'react-native-paper';
-import { Other } from 'components/Sidebar/BookHeader/Other';
+import { Other } from 'pages/Reader/Overlay/BookHeader/Other';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { View, Modal, Animated, TextInput as NativeTextInput } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
-import { BookSettings } from 'components/Sidebar/BookHeader/BookSettings';
-import BookHeaderNavigation from 'components/Sidebar/BookHeader/BookHeaderNavigation';
-import { MenuSearch } from 'components/Sidebar/BookHeader/Search';
+import { BookSettings } from 'pages/Reader/Overlay/BookHeader/BookSettings';
+import BookHeaderNavigation from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation';
+import { MenuSearch } from 'pages/Reader/Overlay/BookHeader/Search';
 import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { useEffect, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SearchInput = ({
   onSubmit,
@@ -40,6 +41,7 @@ const SearchInput = ({
 };
 
 export const BookHeader = () => {
+  const { bottom } = useSafeAreaInsets();
   const theme = useTheme();
   const setSearchQuery = useTempStore((state) => state.setSearchQuery);
   const toggleIsSearchModuleOpen = useTempStore((state) => state.toggleIsSearchModuleOpen);
@@ -54,6 +56,7 @@ export const BookHeader = () => {
   const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
   const [isBookHeaderNavigationOpen, setIsBookHeaderNavigationOpen] = useState(false);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
+  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
 
   const onSearchSubmit = async (localQuery: string) => {
     const cleanedQuery = localQuery.trim();
@@ -96,11 +99,17 @@ export const BookHeader = () => {
     return unsubscribe;
   }, [opacityAnim]);
 
+  if (!isOverlayVisible) return null;
+
   return (
     <>
       <Appbar.Header style={{ backgroundColor: theme.colors.background }}>
         <Appbar.Content title={currentBook?.title} />
-        <AppbarAction icon="magnify" onPress={toggleIsSearchModuleOpen} accessibilityLabel="Search in book" />
+        <AppbarAction
+          icon="magnify"
+          onPress={toggleIsSearchModuleOpen}
+          accessibilityLabel="Search in book"
+        />
         <Other
           isOpen={isMenuOpen}
           onOpen={() => setIsMenuOpen(true)}
@@ -132,7 +141,11 @@ export const BookHeader = () => {
         }}>
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           <Appbar.Header>
-            <AppbarAction icon="close" onPress={toggleIsSearchModuleOpen} accessibilityLabel="Close search" />
+            <AppbarAction
+              icon="close"
+              onPress={toggleIsSearchModuleOpen}
+              accessibilityLabel="Close search"
+            />
             <SearchInput inputRef={searchInputRef} onSubmit={onSearchSubmit} />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
@@ -150,9 +163,14 @@ export const BookHeader = () => {
               flex: 1,
               backgroundColor: theme.colors.background,
               opacity: opacityAnim,
+              paddingBottom: bottom,
             }}>
             <Appbar.Header style={{ backgroundColor: 'transparent' }}>
-              <AppbarAction icon="close" onPress={onBookSettingsClose} accessibilityLabel="Close book settings" />
+              <AppbarAction
+                icon="close"
+                onPress={onBookSettingsClose}
+                accessibilityLabel="Close book settings"
+              />
               <Appbar.Content title={t('bookSettings')} />
             </Appbar.Header>
             <BookSettings />

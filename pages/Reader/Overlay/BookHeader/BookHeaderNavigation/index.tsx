@@ -1,9 +1,10 @@
 import { Modal, View } from 'react-native';
 import { useState } from 'react';
 import { Appbar, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { MenuChapters } from './MenuChapters';
-import { MenuBookmarks } from './MenuBookmarks';
+import { MenuChapters } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuChapters';
+import { MenuBookmarks } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuBookmarks';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { SegmentedButtons } from 'components/ui/SegmentedButtons';
 
@@ -19,6 +20,7 @@ const BookHeaderNavigation = ({
   bookTitle: string;
 }) => {
   const theme = useTheme();
+  const { bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>('chapters');
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
 
@@ -28,10 +30,10 @@ const BookHeaderNavigation = ({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingBottom: bottom }}>
         <Appbar.Header>
           <AppbarAction icon="close" onPress={onClose} accessibilityLabel="Close" />
-          <Appbar.Content title={bookTitle} titleStyle={{ fontWeight: 'bold', fontSize: 16 }} />
+          <Appbar.Content title={bookTitle} />
         </Appbar.Header>
 
         <View style={{ flex: 1, gap: 16 }}>

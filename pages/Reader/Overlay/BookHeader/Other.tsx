@@ -14,26 +14,18 @@ interface Props {
 export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose, onBookSettingsOpen } = props;
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.other' });
-  const addBookmark = useBookStore((state) => state.addBookmark);
   const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   return (
     <Menu
       visible={isOpen}
       onDismiss={onClose}
-      anchor={<AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />}
+      anchor={
+        <AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />
+      }
       anchorPosition={'bottom'}
       elevation={1}>
       <Menu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />
-      <Divider />
-
-      <Menu.Item
-        onPress={() => {
-          addBookmark();
-          onClose();
-        }}
-        title={t('addBookmark')}
-      />
       <Divider />
       <Menu.Item
         onPress={() => {

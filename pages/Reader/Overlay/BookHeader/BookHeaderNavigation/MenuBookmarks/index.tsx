@@ -1,7 +1,7 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
 import { Bookmark } from 'types';
-import { BookmarkCard } from './BookmarkCard';
+import { BookmarkCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuBookmarks/BookmarkCard';
 import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';

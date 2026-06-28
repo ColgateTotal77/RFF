@@ -27,7 +27,7 @@ export const BookMarkButton = () => {
       accessibilityLabel={activeBookmark ? 'Remove bookmark' : 'Add bookmark'}
       style={{
         position: 'absolute',
-        top: 16,
+        top: 116,
         right: 16,
         zIndex: 50,
         elevation: 5,

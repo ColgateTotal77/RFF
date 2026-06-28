@@ -2,7 +2,7 @@ import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { SearchResult } from 'types';
-import { SearchCard } from './SearchCard';
+import { SearchCard } from 'pages/Reader/Overlay/BookHeader/Search/SearchCard';
 import { ImmediateAction, useWebViewStore } from 'stores/useWebViewStore';
 
 interface Props {

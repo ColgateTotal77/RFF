@@ -132,9 +132,29 @@
   let tapTimer = null;
   let lastTapText = '';
   const TAP_DELAY = 230;
+  const SCROLL_THRESHOLD = 8;
+  const LONG_PRESS_THRESHOLD = 400;
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+
+  document.addEventListener('touchstart', (event) => {
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = event.timeStamp;
+  }, { passive: true });
 
   document.addEventListener('touchend', (event) => {
     const touch = event.changedTouches[0];
+    const dx = Math.abs(touch.clientX - touchStartX);
+    const dy = Math.abs(touch.clientY - touchStartY);
+    const duration = event.timeStamp - touchStartTime;
+
+    if (dx > SCROLL_THRESHOLD || dy > SCROLL_THRESHOLD) return;
+    if (duration > LONG_PRESS_THRESHOLD) return;
+
     const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
 
     if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
@@ -182,8 +202,8 @@
       tapCount = 0;
     } else {
       tapTimer = setTimeout(() => {
-        if (tapCount === 1 && lastSelectionText) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECTION_CLEARED' }));
+        if (tapCount === 1) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
           lastSelectionText = '';
         } else if (tapCount === 2) {
           window.ReactNativeWebView.postMessage(

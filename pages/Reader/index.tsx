@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { findNodeHandle, Linking, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBookStore } from 'stores/useBookStore';
 import { useProcessBookLinks } from 'lib/useBookNavigation';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { useAppStore } from 'stores/useAppStore';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { useTempStore } from 'stores/useTempStore';
 import { useMessageHandler } from './useMessageHandler';
@@ -22,7 +23,9 @@ export const ReaderScreen = () => {
   const isWebViewReady = useWebViewStore((state) => state.isWebViewReady);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
   const setReactTag = useWebViewStore((state) => state.setReactTag);
-  const theme = useTheme();
+  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
+  const theme = useAppStore((state) => state.theme);
+  const { top, bottom } = useSafeAreaInsets();
 
   const webViewRef = useRef<WebView>(null);
 
@@ -48,7 +51,7 @@ export const ReaderScreen = () => {
     <View
       ref={handleContainerRef}
       collapsable={false}
-      style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      style={{ flex: 1, backgroundColor: theme === 'dark' ? '#121212' : '#ffffff' }}>
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
@@ -57,6 +60,8 @@ export const ReaderScreen = () => {
         style={{
           backgroundColor: 'transparent',
           opacity: isLoading ? 0 : 1,
+          marginTop: top,
+          marginBottom: bottom,
         }}
         onMessage={handleMessage}
         onShouldStartLoadWithRequest={(request) => {
@@ -94,7 +99,7 @@ export const ReaderScreen = () => {
         </View>
       )}
 
-      {!isLoading && <Overlay />}
+      {!isLoading && isOverlayVisible && <Overlay />}
 
       {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
     </View>

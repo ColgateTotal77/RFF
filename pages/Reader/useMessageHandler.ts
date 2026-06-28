@@ -17,6 +17,8 @@ export const useMessageHandler = () => {
   const { openSystemTranslator, addNewCard, updateWordTag } = useWordAction();
   const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
   const setIsWebViewReady = useWebViewStore((state) => state.setIsWebViewReady);
+  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
+  const setIsOverlayVisible = useTempStore((state) => state.setIsOverlayVisible);
 
   return useCallback(
     async (event: WebViewMessageEvent) => {
@@ -69,6 +71,11 @@ export const useMessageHandler = () => {
             setIsWebViewReady(true);
             break;
 
+          case 'ONE_TAP':
+            setIsOverlayVisible(!isOverlayVisible);
+            closeMenu();
+            break;
+
           case 'DOUBLE_TAP':
             await openSystemTranslator(
               parsedData.text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '')
@@ -109,6 +116,8 @@ export const useMessageHandler = () => {
       openSystemTranslator,
       addNewCard,
       updateWordTag,
+      isOverlayVisible,
+      setIsOverlayVisible,
     ]
   );
 };

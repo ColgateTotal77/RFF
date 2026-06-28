@@ -7,8 +7,11 @@ import { View } from 'react-native';
 import { useAppStore } from 'stores/useAppStore';
 
 export const MiscTab = () => {
-  const { settings, updateSettings, theme: currentTheme, toggleTheme } = useAppStore();
-  const { autoCardOnDoubleTap, targetLang } = settings;
+  const autoCardOnDoubleTap = useAppStore((state) => state.settings.autoCardOnDoubleTap);
+  const targetLang = useAppStore((state) => state.settings.targetLang);
+  const updateSettings = useAppStore((state) => state.updateSettings);
+  const theme = useAppStore((state) => state.theme);
+  const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
 
@@ -46,7 +49,7 @@ export const MiscTab = () => {
       <List.Item
         title={t('themeTitle')}
         description={t('themeDescription')}
-        right={() => <Switch value={currentTheme === 'dark'} onValueChange={() => toggleTheme()} />}
+        right={() => <Switch value={theme === 'dark'} onValueChange={() => toggleTheme()} />}
       />
     </View>
   );

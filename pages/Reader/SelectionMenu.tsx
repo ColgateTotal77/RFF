@@ -10,6 +10,7 @@ import { AppbarAction } from 'components/ui/AppbarAction';
 import { IconButton } from 'components/ui/IconButton';
 import { VerticalDivider } from 'components/ui/VerticalDivider';
 import { HorizontalDivider } from 'components/ui/HorizontalDivider';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
   selectionMenu: SelectedMenu;
@@ -24,6 +25,9 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
   const [menuWidth, setMenuWidth] = useState(0);
   const [menuHeight, setMenuHeight] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const { top: topInset } = useSafeAreaInsets();
+  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
+  const headerOffset = isOverlayVisible ? 100 : topInset;
 
   const onUpdateTagPress = () => {
     if (selectionMenu.colorCode && selectionMenu.colorCode !== '-1') {
@@ -96,9 +100,9 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         {
           opacity: menuWidth === 0 ? 0 : 1,
           top:
-            selectionMenu.top - menuHeight < 0
-              ? selectionMenu.bottom + 5
-              : selectionMenu.top - menuHeight - 5,
+            selectionMenu.top + topInset - menuHeight < headerOffset
+              ? selectionMenu.bottom + topInset + 5
+              : selectionMenu.top + topInset - menuHeight - 5,
           left: Math.max(
             10,
             Math.min(selectionMenu.left - menuWidth / 2, screenWidth - menuWidth - 10)

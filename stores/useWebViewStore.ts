@@ -12,7 +12,8 @@ export type QueueAction =
   | { type: 'scrollToFragment'; fragmentId: string }
   | { type: 'highlightAll'; query: string }
   | { type: 'jumpToSearch'; blockId: number; occurrenceIndex: number }
-  | { type: 'clearSearch' };
+  | { type: 'clearSearch' }
+  | { type: 'setTheme'; theme: Theme };
 
 export type ImmediateAction =
   | { type: 'scrollToBlock'; blockId: number; scrollPercent?: number }

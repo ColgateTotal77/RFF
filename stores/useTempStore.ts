@@ -10,6 +10,7 @@ type Store = {
   selectionMenu: SelectionMenu;
   bookListQuery: string;
   backStack: BackStackItem[];
+  isOverlayVisible: boolean;
 
   setSearchQuery: (searchQuery: string) => void;
   setSearchResults: (result: SearchResult[]) => void;
@@ -27,6 +28,7 @@ type Store = {
   addToBackStack: (backStackItem: BackStackItem) => void;
   removeLastFromBackStack: () => void;
   clearBackStack: () => void;
+  setIsOverlayVisible: (isOverlayVisible: boolean) => void;
 };
 
 export const useTempStore = create<Store>()((set) => ({
@@ -52,6 +54,7 @@ export const useTempStore = create<Store>()((set) => ({
   isBookSettingsTransparent: false,
   bookListQuery: '',
   backStack: [],
+  isOverlayVisible: false,
 
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
@@ -87,4 +90,6 @@ export const useTempStore = create<Store>()((set) => ({
     set((state) => ({ backStack: [...state.backStack, backStackItem] })),
   removeLastFromBackStack: () => set((state) => ({ backStack: state.backStack.slice(0, -1) })),
   clearBackStack: () => set({ backStack: [] }),
+
+  setIsOverlayVisible: (isOverlayVisible) => set({ isOverlayVisible: isOverlayVisible }),
 }));

@@ -11,7 +11,10 @@ import { IconButtonWithBorder } from 'components/ui/IconButton';
 import { useState } from 'react';
 import { CreateDeckDialog } from 'pages/Settings/tabs/AnkiTab/CreateDeckDialog';
 import { BookSettings } from 'types';
-import { resetMappingKey, resolveMapping } from './utils';
+import {
+  resetMappingKey,
+  resolveMapping,
+} from 'pages/Reader/Overlay/BookHeader/BookSettings/tabs/AnkiTab/utils';
 
 const isInherited = (bookValue: unknown) => bookValue === undefined;
 

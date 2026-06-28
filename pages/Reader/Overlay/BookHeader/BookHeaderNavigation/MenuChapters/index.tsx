@@ -1,6 +1,6 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { FlatList } from 'react-native';
-import { ChapterCard } from './ChapterCard';
+import { ChapterCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuChapters/ChapterCard';
 import { TocItem } from 'types';
 import { calculateBookProgress } from 'lib/utils';
 import { useState, useEffect, useMemo } from 'react';

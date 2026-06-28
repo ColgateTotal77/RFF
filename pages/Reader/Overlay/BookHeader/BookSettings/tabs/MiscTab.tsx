@@ -14,12 +14,12 @@ export const MiscTab = () => {
   const {
     settings: { bookLang, targetLang },
   } = useCurrentBook();
-  const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
   const getBookSettings = useBookStore((state) => state.getBookSettings);
   const { updateBookSettings } = useBookStore();
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const setIsBookSettingsTransparent = useTempStore((state) => state.setIsBookSettingsTransparent);
   const settings = getBookSettings();
+  const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
   const [localFontSize, setLocalFontSize] = useState(settings.font.fontSize);
 
   const lastUpdateRef = useRef(0);
@@ -82,7 +82,7 @@ export const MiscTab = () => {
 
       <Dropdown
         label={t('fontFamilyLabel')}
-        value={settings.font.fontSize}
+        value={settings.font.fontFamily}
         options={FONT_FAMILY_OPTIONS}
         onSelect={(value) => {
           updateBookSettings({ font: { ...settings.font, fontFamily: value } });

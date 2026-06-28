@@ -27,12 +27,6 @@ type Store = {
 export const useAppStore = create<Store>()(
   persist(
     (set, get) => ({
-      theme: Appearance.getColorScheme() === 'dark' ? 'dark' : 'light',
-      toggleTheme: () => {
-        const nextTheme = get().theme === 'dark' ? 'light' : 'dark';
-        set({ theme: nextTheme });
-        useWebViewStore.getState().executeImmediateActions([{ type: 'setTheme', theme: nextTheme }]);
-      },
       settings: {
         ankiDeckId: '',
         ankiModelId: '',
@@ -47,10 +41,22 @@ export const useAppStore = create<Store>()(
             : FALLBACK_LANGUAGE,
         font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
       },
+      theme: Appearance.getColorScheme() === 'dark' ? 'dark' : 'light',
       updateSettings: (toUpdate) =>
         set((state) => ({
           settings: deepMerge(state.settings, toUpdate),
         })),
+      toggleTheme: () => {
+        const nextTheme = get().theme === 'dark' ? 'light' : 'dark';
+        set({ theme: nextTheme });
+        if (useWebViewStore.getState().isWebViewReady) {
+          useWebViewStore
+            .getState()
+            .executeImmediateActions([{ type: 'setTheme', theme: nextTheme }]);
+        } else {
+          useWebViewStore.getState().addToPostLoadQueue({ type: 'setTheme', theme: nextTheme });
+        }
+      },
     }),
     {
       name: 'app-storage',
