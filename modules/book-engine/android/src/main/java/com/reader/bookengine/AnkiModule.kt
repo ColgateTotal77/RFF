@@ -2,10 +2,8 @@ package com.reader.bookengine
 
 import android.net.Uri
 import com.ichi2.anki.api.AddContentApi
-import com.reader.bookengine.anki.AnkiAudioHelper
-import com.reader.bookengine.anki.FieldArrayMapper
-import com.reader.bookengine.anki.NoteFinder
 import com.reader.bookengine.anki.NoteTagger
+import com.reader.bookengine.anki.NoteUpserter
 import com.reader.bookengine.database.FrequencyDatabase
 import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
@@ -93,111 +91,22 @@ class AnkiModule : Module() {
                 }
             }
 
-            AsyncFunction("addNote") Coroutine { deckIdString: String, fields: Map<String, String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?>, isTwoSided: Boolean ->
-                withContext(Dispatchers.IO) {
-                    val deckId = deckIdString.toLong()
-
-                    try {
-                        val originalWord = fields["originalWord"] ?: throw Exception("originalWord field is missing")
-                        val definition = fields["definition"] ?: ""
-                        val baseExamples = fields["examples"] ?: ""
-                        val word = fields["word"] ?: throw Exception("Word field is missing")
-
-                        val modelId = mapping["modalId"] as String ?: throw Exception("modalId is missing")
-                        val ankiApi = AddContentApi(moduleContext)
-
-                        val (wordTier, wordZipf) = freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
-
-                        val finalExamples =
-                            if (definition.isNotEmpty()) {
-                                "$definition<br><br>$baseExamples"
-                            } else {
-                                baseExamples
-                            }
-
-                        val mutableFields = fields.toMutableMap()
-                        mutableFields["examples"] = finalExamples
-
-                        val updatedNoteIds = mutableListOf<Long>()
-                        val noteTagger = NoteTagger(moduleContext, freqDatabase)
-
-                        suspend fun updateOrCreateCardPair(
-                            targetWord: String,
-                            zipf: Double,
-                            tier: String,
-                        ) {
-                            val noteFinder = NoteFinder(moduleContext)
-                            val note = noteFinder.findByModelId(modelId.toLong(), targetWord)
-
-                            if (note != null) {
-                                val newTags = arrayOf("Lookups_1", tier)
-                                val (updatedWord, colorCode) = noteTagger.updateNoteTags(note.id, newTags, mapping, mirroredMapping, tier)
-
-                                updatedNoteIds.add(note.id)
-
-                                if (updatedWord.isNotEmpty()) {
-                                    upsertWordToAnkiDictionary(updatedWord, longArrayOf(note.id), colorCode)
-                                }
-
-                                if (isTwoSided) {
-                                    val mirroredNoteId = noteFinder.findMirrored(targetWord, deckId, mapping, mirroredMapping)
-
-                                    if (mirroredNoteId != null && mirroredNoteId != note.id) {
-                                        val (mirroredWord, mirroredColorCode) =
-                                            noteTagger.updateNoteTags(
-                                                mirroredNoteId,
-                                                newTags,
-                                                mapping,
-                                                mirroredMapping,
-                                                tier,
-                                            )
-                                        updatedNoteIds.add(mirroredNoteId)
-
-                                        if (mirroredWord.isNotEmpty()) {
-                                            upsertWordToAnkiDictionary(mirroredWord, longArrayOf(mirroredNoteId), mirroredColorCode)
-                                        }
-                                    }
-                                }
-                            } else {
-                                mutableFields["word"] = targetWord
-                                mutableFields["zipf"] = zipf.toString()
-
-                                val tags = setOf("Lookups_1", "New", "Generated_(temporary_tag)", tier)
-                                val mapper = FieldArrayMapper(moduleContext, AnkiAudioHelper(moduleContext))
-
-                                val mainFieldsArray = mapper.convertFieldsToArray(mutableFields, mapping)
-                                val mainNoteId =
-                                    ankiApi.addNote(modelId.toLong(), deckId, mainFieldsArray, tags)
-                                        ?: throw Exception("Failed to create main note for $targetWord")
-
-                                val combinedIds = mutableListOf<Long>()
-                                combinedIds.add(mainNoteId)
-                                updatedNoteIds.add(mainNoteId)
-
-                                if (isTwoSided) {
-                                    val mirroredModelId =
-                                        mirroredMapping["modalId"] as String ?: throw Exception("mirrored modalId is missing")
-                                    val mirroredFieldsArray = mapper.convertFieldsToArray(mutableFields, mirroredMapping)
-                                    val mirroredNoteId =
-                                        ankiApi.addNote(mirroredModelId.toLong(), deckId, mirroredFieldsArray, tags)
-                                            ?: throw Exception("Failed to create mirrored note for $targetWord")
-
-                                    combinedIds.add(mirroredNoteId)
-                                    updatedNoteIds.add(mirroredNoteId)
-                                }
-
-                                upsertWordToAnkiDictionary(targetWord, combinedIds.toLongArray(), 1)
-                            }
+            AsyncFunction("addNote") Coroutine
+                {
+                    deckIdString: String,
+                    fields: Map<String, String>,
+                    mapping: Map<String, Any?>,
+                    mirroredMapping: Map<String, Any?>,
+                    isTwoSided: Boolean,
+                    -> withContext(Dispatchers.IO) {
+                        try {
+                            NoteUpserter(moduleContext, freqDatabase, ::upsertWordToAnkiDictionary)
+                                .addOrUpdate(deckIdString.toLong(), fields, mapping, mirroredMapping, isTwoSided)
+                        } catch (e: Exception) {
+                            throw Exception("Failed to add/update Anki note: ${e.message}", e)
                         }
-
-                        updateOrCreateCardPair(word, wordZipf, wordTier)
-
-                        updatedNoteIds
-                    } catch (e: Exception) {
-                        throw Exception("Failed to add/update Anki note: ${e.message}")
                     }
                 }
-            }
 
             AsyncFunction("updateNoteTags") Coroutine { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
                 withContext(Dispatchers.IO) {
