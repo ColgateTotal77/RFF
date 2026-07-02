@@ -93,11 +93,7 @@ export const ReaderScreen = () => {
         mixedContentMode="always"
       />
 
-      {isLoading && (
-        <View className="absolute inset-0 z-50 flex-1 items-center justify-center ">
-          <Loading />
-        </View>
-      )}
+      {isLoading && <Loading message={'Processing anki deck…'} />}
 
       {!isLoading && isOverlayVisible && <Overlay />}
 

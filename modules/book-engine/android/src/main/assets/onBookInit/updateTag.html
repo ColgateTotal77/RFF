@@ -9,7 +9,7 @@
 
     if (colorCode === 'remove') {
       document.querySelectorAll('span.anki-word').forEach((span) => {
-        if (targetWords.has(span.textContent.trim().toLowerCase())) {
+        if (targetWords.has(span.textContent.trim().toLowerCase()) || span.dataset.noteIds === noteIdsString) {
           span.replaceWith(...span.childNodes);
         }
       });

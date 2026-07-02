@@ -43,25 +43,14 @@ object AnkiUtils {
 
     fun parseNoteFields(
         flds: String,
-        frontMapping: Map<String, Any?>,
-        backMapping: Map<String, Any?>,
-        fallbackMapping: Map<String, Any?>? = null,
+        activeMapping: Map<String, Any?>,
     ): ParsedNoteFields? {
         val fieldsArray = flds.split(FIELD_SEPARATOR)
-        val frontIndex = (frontMapping["word"] as? Number)?.toInt() ?: 0
-        val backIndex = (backMapping["translation"] as? Number)?.toInt() ?: 0
-        val fallbackBackIndex = (fallbackMapping?.get("translation") as? Number)?.toInt()
-        val fallbackFrontIndex = (fallbackMapping?.get("word") as? Number)?.toInt() ?: 0
+        val frontIndex = (activeMapping["word"] as? Number)?.toInt() ?: 0
+        val backIndex = (activeMapping["translation"] as? Number)?.toInt() ?: 0
 
-        val maxRequiredIndex = listOfNotNull(frontIndex, backIndex, fallbackBackIndex).maxOrNull() ?: 0
-
-        if (fieldsArray.size <= maxRequiredIndex) return null
-
-        var front = fieldsArray[frontIndex].trim()
-        var back = fieldsArray[backIndex].trim()
-
-        if (back.isEmpty() && fallbackBackIndex != null) back = fieldsArray[fallbackBackIndex].trim()
-        if (front.isEmpty() && fallbackMapping != null) front = fieldsArray[fallbackFrontIndex].trim()
+        val front = fieldsArray[frontIndex].trim()
+        val back = fieldsArray[backIndex].trim()
 
         return ParsedNoteFields(front, back)
     }

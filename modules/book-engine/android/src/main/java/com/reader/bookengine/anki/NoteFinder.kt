@@ -65,7 +65,7 @@ class NoteFinder(
             val noteCursor =
                 resolver.query(
                     notesUri,
-                    arrayOf("_id", "flds"),
+                    arrayOf("_id", "flds", "mid"),
                     ankiSearchQuery,
                     null,
                     null,
@@ -74,11 +74,14 @@ class NoteFinder(
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
+                val midIndex = cursor.getColumnIndex("mid")
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
+                    val mid = cursor.getLong(midIndex).toString()
 
-                    val parsed = AnkiUtils.parseNoteFields(flds, mapping, mirroredMapping) ?: continue
+                    val activeMapping = AnkiUtils.selectActiveMapping(mid, mapping, mirroredMapping)
+                    val parsed = AnkiUtils.parseNoteFields(flds, activeMapping) ?: continue
                     val front = parsed.front
                     val back = parsed.back
                     if (front.isEmpty() || back.isEmpty()) continue

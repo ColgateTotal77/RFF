@@ -1,9 +1,12 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { FlatList } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { SearchResult } from 'types';
 import { SearchCard } from 'pages/Reader/Overlay/BookHeader/Search/SearchCard';
 import { ImmediateAction, useWebViewStore } from 'stores/useWebViewStore';
+import { Loading } from 'components/ui/Loading';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from 'react-native-paper';
 
 interface Props {
   onClose: () => void;
@@ -19,6 +22,10 @@ export const MenuSearch = ({ onClose }: Props) => {
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
+  const isSearchLoading = useTempStore((state) => state.isSearchLoading);
+  const searchQuery = useTempStore((state) => state.searchQuery);
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
+  const theme = useTheme();
 
   const onPress = (searchResult: SearchResult) => {
     addToBackStack({
@@ -69,13 +76,26 @@ export const MenuSearch = ({ onClose }: Props) => {
     />
   );
 
+  const EmptyState = () =>
+    searchQuery ? (
+      <View className="flex-1 items-center justify-center p-8">
+        <Text style={{ color: theme.colors.onSurfaceVariant }}>{t('noResults')}</Text>
+      </View>
+    ) : null;
+
   return (
-    <FlatList
-      data={Object.values(searchResults)}
-      keyExtractor={(searchResults) => searchResults.id.toString()}
-      renderItem={renderSearchCard}
-      contentContainerClassName="p-4 gap-4"
-      initialNumToRender={15}
-    />
+    <>
+      {!isSearchLoading && (
+        <FlatList
+          data={Object.values(searchResults)}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderSearchCard}
+          contentContainerClassName="p-4 gap-4"
+          initialNumToRender={15}
+          ListEmptyComponent={EmptyState}
+        />
+      )}
+      {isSearchLoading && <Loading />}
+    </>
   );
 };

@@ -6,6 +6,7 @@ type Store = {
   searchQuery: string;
   searchResults: SearchResult[];
   isSearchModuleOpen: boolean;
+  isSearchLoading: boolean;
   currentSearchResult: SearchResult;
   selectionMenu: SelectionMenu;
   bookListQuery: string;
@@ -14,6 +15,7 @@ type Store = {
 
   setSearchQuery: (searchQuery: string) => void;
   setSearchResults: (result: SearchResult[]) => void;
+  setIsSearchLoading: (loading: boolean) => void;
   toggleIsSearchModuleOpen: () => void;
   setCurrentSearchResult: (searchResult: SearchResult) => void;
   resetSearch: () => void;
@@ -35,6 +37,7 @@ export const useTempStore = create<Store>()((set) => ({
   searchQuery: '',
   searchResults: [],
   isSearchModuleOpen: false,
+  isSearchLoading: false,
   currentSearchResult: {
     id: -1,
     occurrenceIndex: -1,
@@ -58,6 +61,7 @@ export const useTempStore = create<Store>()((set) => ({
 
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
+  setIsSearchLoading: (loading) => set({ isSearchLoading: loading }),
   toggleIsSearchModuleOpen: () =>
     set((state) => ({ isSearchModuleOpen: !state.isSearchModuleOpen })),
   setCurrentSearchResult: (searchResult) => set({ currentSearchResult: searchResult }),

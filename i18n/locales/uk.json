@@ -58,6 +58,7 @@
   },
   "bookHeader": {
     "searchPlaceholder": "пошук...",
+    "noResults": "Нічого не знайдено",
     "bookSettings": "Налаштування книги",
     "other": {
       "switchTheme": "Змінити тему",

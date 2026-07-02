@@ -24,7 +24,7 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
   );
 };
 
-export const Loading = ({ message = 'Processing anki deck…' }: { message?: string }) => {
+export const Loading = ({ message = '' }: { message?: string }) => {
   const { colors } = useTheme();
   const [showMessage, setShowMessage] = useState(false);
   const fade = useRef(new Animated.Value(0)).current;
@@ -43,7 +43,7 @@ export const Loading = ({ message = 'Processing anki deck…' }: { message?: str
 
   return (
     <Animated.View
-      className="absolute inset-0 items-center justify-center"
+      className="flex-1 items-center justify-center"
       style={{ opacity: fade, backgroundColor: colors.background }}>
       <View className="mb-6 flex-row items-center">
         <Dot delay={0} color={colors.primary} />

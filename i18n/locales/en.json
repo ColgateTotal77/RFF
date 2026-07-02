@@ -58,6 +58,7 @@
   },
   "bookHeader": {
     "searchPlaceholder": "search...",
+    "noResults": "No results found",
     "bookSettings": "Book Settings",
     "other": {
       "switchTheme": "Switch Theme",

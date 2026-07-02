@@ -23,7 +23,7 @@ class AllAnkiWordsFetcher(
             val noteCursor =
                 resolver.query(
                     notesUri,
-                    arrayOf("_id", "flds", "tags"),
+                    arrayOf("_id", "flds", "tags", "mid"),
                     ankiSearchQuery,
                     null,
                     null,
@@ -45,11 +45,14 @@ class AllAnkiWordsFetcher(
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
                 val tagsIndex = cursor.getColumnIndex("tags")
+                val midIndex = cursor.getColumnIndex("mid")
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
+                    val mid = cursor.getLong(midIndex).toString()
 
-                    val parsed = AnkiUtils.parseNoteFields(flds, mapping, mapping, mirroredMapping) ?: continue
+                    val activeMapping = AnkiUtils.selectActiveMapping(mid, mapping, mirroredMapping)
+                    val parsed = AnkiUtils.parseNoteFields(flds, activeMapping) ?: continue
                     if (parsed.front.isEmpty() || parsed.back.isEmpty()) continue
 
                     val frontLower = parsed.front.lowercase()

@@ -51,6 +51,7 @@ export const BookHeader = () => {
   const currentCTree = useBookStore((state) => state.currentCTree);
   const closeBook = useBookStore((state) => state.closeBook);
   const resetSearch = useTempStore((state) => state.resetSearch);
+  const setIsSearchLoading = useTempStore((state) => state.setIsSearchLoading);
   const currentBook = useCurrentBook();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
@@ -61,13 +62,17 @@ export const BookHeader = () => {
   const onSearchSubmit = async (localQuery: string) => {
     const cleanedQuery = localQuery.trim();
 
-    if (!cleanedQuery) return;
+    if (cleanedQuery.length < 2) return;
 
     resetSearch();
-
     setSearchQuery(cleanedQuery);
-    const results = await BookEngine.searchInBook(cleanedQuery, currentBook.basePath);
-    setSearchResults(results);
+    setIsSearchLoading(true);
+    try {
+      const results = await BookEngine.searchInBook(cleanedQuery, currentBook.basePath);
+      setSearchResults(results);
+    } finally {
+      setIsSearchLoading(false);
+    }
   };
 
   const onBookSettingsClose = () => {
