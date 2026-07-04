@@ -157,7 +157,24 @@
 
     const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
 
-    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
+    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) {
+      if (lastTapText !== '') {
+        tapCount = 0;
+        lastTapText = '';
+      }
+
+      tapCount++;
+      clearTimeout(tapTimer);
+
+      window.log(`TAP: non-text surface, count=${tapCount}`);
+
+      tapTimer = setTimeout(() => {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
+        lastSelectionText = '';
+        tapCount = 0;
+      }, TAP_DELAY);
+      return;
+    }
 
     const textNode = range.startContainer;
     const text = textNode.textContent;

@@ -27,7 +27,8 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const { top: topInset } = useSafeAreaInsets();
   const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
-  const headerOffset = isOverlayVisible ? 100 : topInset;
+  const overlayHeaderOffset = useTempStore((state) => state.overlayHeaderOffset);
+  const headerOffset = isOverlayVisible ? overlayHeaderOffset : topInset;
 
   const onUpdateTagPress = () => {
     if (selectionMenu.colorCode && selectionMenu.colorCode !== '-1') {

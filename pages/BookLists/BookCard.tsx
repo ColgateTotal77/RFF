@@ -12,11 +12,14 @@ interface Props {
   toggleLabel: string;
 }
 
+const CHARS_PER_PAGE = 1800;
+
 export const BookCard = ({ book, onPress, toggleLabel }: Props) => {
   const { removeBook } = useBookStore();
   const { t } = useTranslation('translation', { keyPrefix: 'bookLists' });
   const { toggleHaveRead } = useBookStore();
   const [menuVisible, setMenuVisible] = useState(false);
+  const pageCount = Math.max(1, Math.round(book.misc.totalCharCount / CHARS_PER_PAGE));
 
   return (
     <Card onPress={onPress}>
@@ -48,6 +51,7 @@ export const BookCard = ({ book, onPress, toggleLabel }: Props) => {
             {book.title}
           </Text>
           <Text className="text-md">{book.author}</Text>
+          <Text className="text-sm opacity-60">{t('pages', { count: pageCount })}</Text>
         </View>
       </View>
     </Card>

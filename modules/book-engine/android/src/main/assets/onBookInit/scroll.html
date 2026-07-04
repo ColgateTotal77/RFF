@@ -1,5 +1,5 @@
 <script>
-  function scrollToBlock(targetBlockId, blockScrollPercent) {
+  function scrollToBlock(targetBlockId, blockScrollPercent, instant) {
     return new Promise((resolve) => {
       var targetBlock = document.getElementById('block-' + targetBlockId);
 
@@ -9,10 +9,11 @@
             var top =
               window.scrollY +
               targetBlock.getBoundingClientRect().top +
-              targetBlock.offsetHeight * blockScrollPercent;
+              targetBlock.offsetHeight * blockScrollPercent -
+              window.BookConfig.overlayOffset;
 
             var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
-            window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
+            window.scrollTo({ top: top, behavior: instant || !isCloseToTop ? 'instant' : 'smooth' });
 
             window.log(
               'instantScroll: scrolling to block-' +
@@ -22,10 +23,11 @@
                 '%'
             );
           } else {
-            var top = window.scrollY + targetBlock.getBoundingClientRect().top;
+            var top =
+              window.scrollY + targetBlock.getBoundingClientRect().top - window.BookConfig.overlayOffset;
 
             var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
-            window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
+            window.scrollTo({ top: top, behavior: instant || !isCloseToTop ? 'instant' : 'smooth' });
             window.log('instantScroll: scrolling to block-' + targetBlockId + ' at 0%');
           }
           resolve(true);
@@ -114,7 +116,7 @@
   window.scrollToFragment = function (fragmentId) {
     const element = document.getElementById(fragmentId);
     if (element) {
-      var top = window.scrollY + element.getBoundingClientRect().top;
+      var top = window.scrollY + element.getBoundingClientRect().top - window.BookConfig.overlayOffset;
 
       var isCloseToTop = Math.abs(window.scrollY - top) < 0.7 * window.innerHeight;
       window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });

@@ -1,0 +1,64 @@
+<script>
+  window.resolveFontFamily = (family) => {
+    if (family.includes(',')) return family;
+    if (family.includes(' ')) return `"${family}"`;
+    return family;
+  };
+
+  window.caretFromPoint = (x, y) => {
+    if (document.caretPositionFromPoint) {
+      const pos = document.caretPositionFromPoint(x, y);
+      if (pos && pos.offsetNode) return { container: pos.offsetNode, offset: pos.offset };
+    } else if (document.caretRangeFromPoint) {
+      const range = document.caretRangeFromPoint(x, y);
+      if (range && range.startContainer) {
+        return { container: range.startContainer, offset: range.startOffset };
+      }
+    }
+    return null;
+  };
+
+  window.captureScrollAnchor = () => {
+    const x = Math.floor(window.innerWidth / 2);
+    for (let y = 0; y < window.innerHeight; y += 4) {
+      const caret = window.caretFromPoint(x, y);
+      if (caret) {
+        const probe = document.createRange();
+        probe.setStart(caret.container, caret.offset);
+        probe.collapse(true);
+        const rect = probe.getClientRects()[0] || probe.getBoundingClientRect();
+        if (rect) return { container: caret.container, offset: caret.offset, top: rect.top };
+      }
+    }
+    return null;
+  };
+
+  window.restoreScrollAnchor = (anchor) => {
+    if (!anchor || !anchor.container) return;
+    try {
+      const r = document.createRange();
+      r.setStart(anchor.container, anchor.offset);
+      r.collapse(true);
+      const rect = r.getClientRects()[0] || r.getBoundingClientRect();
+      if (!rect) return;
+      window.scrollBy(0, rect.top - anchor.top);
+    } catch (e) {
+    }
+  };
+
+  window.setFontSize = (size) => {
+    window.log('setFontSize: ' + size);
+    const anchor = window.captureScrollAnchor();
+    document.documentElement.style.setProperty('--book-font-size', `${size}px`, 'important');
+    window.restoreScrollAnchor(anchor);
+  };
+
+  window.setFontFamily = (family) => {
+    const resolved = window.resolveFontFamily(family);
+    const anchor = window.captureScrollAnchor();
+    document.documentElement.setAttribute('data-font', family);
+    document.documentElement.style.setProperty('--book-font-family', resolved, 'important');
+    window.restoreScrollAnchor(anchor);
+    window.log('setFontFamily: ' + resolved);
+  };
+</script>

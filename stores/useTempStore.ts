@@ -12,6 +12,7 @@ type Store = {
   bookListQuery: string;
   backStack: BackStackItem[];
   isOverlayVisible: boolean;
+  overlayHeaderOffset: number;
 
   setSearchQuery: (searchQuery: string) => void;
   setSearchResults: (result: SearchResult[]) => void;
@@ -31,6 +32,7 @@ type Store = {
   removeLastFromBackStack: () => void;
   clearBackStack: () => void;
   setIsOverlayVisible: (isOverlayVisible: boolean) => void;
+  setOverlayHeaderOffset: (overlayHeaderOffset: number) => void;
 };
 
 export const useTempStore = create<Store>()((set) => ({
@@ -58,6 +60,7 @@ export const useTempStore = create<Store>()((set) => ({
   bookListQuery: '',
   backStack: [],
   isOverlayVisible: false,
+  overlayHeaderOffset: 100,
 
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
@@ -96,4 +99,5 @@ export const useTempStore = create<Store>()((set) => ({
   clearBackStack: () => set({ backStack: [] }),
 
   setIsOverlayVisible: (isOverlayVisible) => set({ isOverlayVisible: isOverlayVisible }),
+  setOverlayHeaderOffset: (overlayHeaderOffset) => set({ overlayHeaderOffset }),
 }));

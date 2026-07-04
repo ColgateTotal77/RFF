@@ -31,12 +31,13 @@
     if (targetWords.size === 0) return;
 
     const DASH_CHARS = '-‐‑‒–—−';
+    const WORD_CHARS = `\\p{L}\\p{N}_`;
     const escapedWords = Array.from(targetWords).map((w) =>
       w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     );
     const combinedRegex = new RegExp(
-      `(^|[^\\w${DASH_CHARS}])(${escapedWords.join('|')})(?=[^\\w${DASH_CHARS}]|$)`,
-      'gi'
+      `(^|[^${WORD_CHARS}${DASH_CHARS}])(${escapedWords.join('|')})(?=[^${WORD_CHARS}${DASH_CHARS}]|$)`,
+      'giu'
     );
 
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {

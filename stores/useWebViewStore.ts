@@ -8,7 +8,7 @@ import { Toast } from 'components/ui/Toast';
 
 export type QueueAction =
   | { type: 'instantScroll'; targetBlockId: number; blockScrollPercent?: number }
-  | { type: 'scrollToBlock'; blockId: number; scrollPercent?: number }
+  | { type: 'scrollToBlock'; blockId: number; scrollPercent?: number; instant?: boolean }
   | { type: 'scrollToFragment'; fragmentId: string }
   | { type: 'highlightAll'; query: string }
   | { type: 'jumpToSearch'; blockId: number; occurrenceIndex: number }
@@ -82,6 +82,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
           type: 'scrollToBlock',
           blockId: currentBook.currentBlock,
           scrollPercent: blockScrollPercent,
+          instant: true,
         });
       }
 
@@ -103,6 +104,9 @@ export const useWebViewStore = create<Store>()((set, get) => ({
           fontSize: settings.font.fontSize,
           fontFamily: settings.font.fontFamily,
           theme: useAppStore.getState().theme,
+          overlayOffset: useTempStore.getState().isOverlayVisible
+            ? useTempStore.getState().overlayHeaderOffset
+            : 0,
         }
       );
 

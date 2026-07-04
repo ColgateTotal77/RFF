@@ -23,7 +23,7 @@ const ReadingScreen = ({ haveRead }: { haveRead: boolean }) => {
         (haveRead ? book.misc.haveRead : !book.misc.haveRead) &&
         book.title.toLowerCase().includes(query)
       }
-      toggleLabel={t('readingNow')}
+      toggleLabel={haveRead ? t('haveRead') : t('readingNow')}
     />
   );
 };

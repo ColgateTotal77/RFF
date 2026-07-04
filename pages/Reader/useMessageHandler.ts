@@ -19,6 +19,7 @@ export const useMessageHandler = () => {
   const setIsWebViewReady = useWebViewStore((state) => state.setIsWebViewReady);
   const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
   const setIsOverlayVisible = useTempStore((state) => state.setIsOverlayVisible);
+  const selectionMenu = useTempStore((state) => state.selectionMenu);
 
   return useCallback(
     async (event: WebViewMessageEvent) => {
@@ -72,8 +73,8 @@ export const useMessageHandler = () => {
             break;
 
           case 'ONE_TAP':
-            setIsOverlayVisible(!isOverlayVisible);
-            closeMenu();
+            if (selectionMenu.visible) closeMenu();
+            else setIsOverlayVisible(!isOverlayVisible);
             break;
 
           case 'DOUBLE_TAP':

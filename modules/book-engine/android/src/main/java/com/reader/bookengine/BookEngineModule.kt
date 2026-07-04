@@ -2,6 +2,7 @@ package com.reader.bookengine
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -205,21 +206,8 @@ class BookEngineModule : Module() {
                     activity.startActivity(translateIntent)
                     true
                 } catch (e: ActivityNotFoundException) {
-                    android.util.Log.w("BookEngine", "Google Translate not found, falling back to system chooser.")
-
-                    val fallbackIntent =
-                        Intent(Intent.ACTION_PROCESS_TEXT).apply {
-                            putExtra(Intent.EXTRA_PROCESS_TEXT, text)
-                            type = "text/plain"
-                        }
-
-                    try {
-                        activity.startActivity(fallbackIntent)
-                        true
-                    } catch (e2: Exception) {
-                        android.util.Log.e("BookEngine", "Failed to open any translator", e2)
-                        throw Exception("No translation app is installed.")
-                    }
+                    android.util.Log.e("BookEngine", "Failed to open any translator", e)
+                    throw Exception("No translation app is installed.")
                 }
             }
 

@@ -2,7 +2,7 @@
   window.executeImmediateActions = async (action) => {
     switch (action.type) {
       case 'scrollToBlock':
-        return window.scrollToBlock(action.blockId, action.scrollPercent);
+        return window.scrollToBlock(action.blockId, action.scrollPercent, action.instant);
       case 'scrollToFragment':
         window.scrollToFragment(action.fragmentId);
         return;
