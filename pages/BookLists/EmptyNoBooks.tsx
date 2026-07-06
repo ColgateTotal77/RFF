@@ -15,7 +15,12 @@ export const EmptyNoBooks = () => {
 
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({
-      type: 'application/epub+zip',
+      type: [
+        'application/epub+zip',
+        'application/x-fictionbook+xml',
+        'application/zip',
+        'application/octet-stream',
+      ],
       copyToCacheDirectory: true,
     });
 

@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import { XMLParser } from 'fast-xml-parser';
 import { LanguageCode, normalizeLanguageCode } from 'lib/langHelper';
+
 interface Response {
   title: string;
   author: string;
@@ -22,10 +23,10 @@ const parser = new XMLParser({
   removeNSPrefix: true,
 });
 
-export const extractBookMeta = async (unzippedPath: string): Promise<Response> => {
+export const extractEpubMeta = async (unzippedPath: string): Promise<Response> => {
   const containerFile = new File(unzippedPath, 'META-INF', 'container.xml');
 
-  if (!containerFile.exists) throw new Error('INVALID_EPUB: container.xml not found');
+  if (!containerFile.exists) throw new Error('This EPUB file appears to be corrupted or invalid.');
 
   const containerXml = await containerFile.text();
   const containerData = parser.parse(containerXml);
@@ -36,7 +37,7 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
   const opfXml = await opfFile.text();
   const opfData = parser.parse(opfXml);
   const packageData = opfData.package;
-  if (!packageData) throw new Error('INVALID_EPUB: OPF package element not found');
+  if (!packageData) throw new Error('This EPUB file appears to be corrupted or invalid.');
   const opfDirName = rootFilePath.substring(0, rootFilePath.lastIndexOf('/'));
 
   const absoluteBasePath = (opfDirName ? `${unzippedPath}/${opfDirName}` : unzippedPath).replace(
@@ -46,8 +47,7 @@ export const extractBookMeta = async (unzippedPath: string): Promise<Response> =
   const basePath = 'file://' + absoluteBasePath;
 
   const metadata = packageData.metadata;
-  const title =
-    typeof metadata.title === 'object' ? metadata.title['#text'] : metadata.title;
+  const title = typeof metadata.title === 'object' ? metadata.title['#text'] : metadata.title;
 
   const author =
     typeof metadata.creator === 'object' ? metadata.creator['#text'] : metadata.creator;

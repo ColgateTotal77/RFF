@@ -2,23 +2,21 @@ import { resolvePath } from 'lib/utils';
 import { parse } from 'node-html-parser';
 
 interface Props {
-  chapter: {
-    id: number;
-    href: string;
-    fullPath: string;
-    chapterBasePath: string;
-    html: string;
-  };
+  chapterId: number;
+  chapterBasePath: string;
+  html: string;
   mapHrefChapterId: Record<string, number>;
   absoluteBasePath: string;
 }
 
 export const processChapterDom = ({
-  chapter,
+  chapterId,
+  chapterBasePath,
+  html,
   mapHrefChapterId,
   absoluteBasePath,
 }: Props): string => {
-  const dom = parse(chapter.html);
+  const dom = parse(html);
 
   const links = dom.querySelectorAll('a[href]');
   for (const a of links) {
@@ -27,13 +25,13 @@ export const processChapterDom = ({
     if (!href || /^[a-z0-9\-.]+:/i.test(href)) continue;
 
     if (href.startsWith('#')) {
-      a.setAttribute('href', `chapter://${chapter.id}${href}`);
+      a.setAttribute('href', `chapter://${chapterId}${href}`);
       continue;
     }
 
     const [file, fragmentId] = href.split('#');
     const decodedFile = decodeURIComponent(file);
-    const resolvedFile = resolvePath(chapter.chapterBasePath, decodedFile);
+    const resolvedFile = resolvePath(chapterBasePath, decodedFile);
 
     const cleanResolvedFile = resolvedFile.replace(/^\/+/, '');
     const cleanBasePath = absoluteBasePath.replace(/^\/+/, '');
@@ -61,7 +59,7 @@ export const processChapterDom = ({
     if (!src || /^[a-z0-9\-.]+:/i.test(src)) continue;
 
     const decodedSrc = decodeURIComponent(src);
-    const resolvedSrc = resolvePath(chapter.chapterBasePath, decodedSrc);
+    const resolvedSrc = resolvePath(chapterBasePath, decodedSrc);
     img.setAttribute(attrName, `file:///${resolvedSrc}`);
   }
 

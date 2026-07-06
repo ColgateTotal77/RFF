@@ -47,7 +47,7 @@ export const AppToast = () => {
       Animated.timing(translateX, { toValue: 400, duration: 250, useNativeDriver: true }).start(
         hide
       );
-    }, 3000);
+    }, 4000);
   }, [visible, message]);
 
   if (!visible) return null;

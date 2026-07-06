@@ -79,7 +79,7 @@ export const useBookStore = create<Store>()(
           return true;
         } catch (e) {
           console.error('❌ Failed to load book:', e);
-          Toast.show('Failed to load book', 'error');
+          Toast.show(e instanceof Error && e.message ? e.message : 'Failed to load book', 'error');
 
           return false;
         }

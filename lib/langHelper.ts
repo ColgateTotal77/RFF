@@ -59,7 +59,7 @@ export const ISO_639_3_TO_2: Record<string, LanguageCode> = {
   ukr: 'uk',
 };
 
-export const normalizeLanguageCode = (lang: string): LanguageCode | null => {
+export const normalizeLanguageCode = (lang?: string): LanguageCode | null => {
   if (!lang) return 'en';
 
   const normalized = lang.toLowerCase().trim();

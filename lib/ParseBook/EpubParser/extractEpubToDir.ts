@@ -1,7 +1,7 @@
 import { Directory, Paths } from 'expo-file-system';
 import { unzip } from 'react-native-zip-archive';
 
-export const unzipEpubBook = async (uri: string) => {
+export const extractEpubToDir = async (uri: string) => {
   try {
     const fileName = uri.split('/').pop()?.replace('.epub', '') || 'unknown_book';
     const timestamp = Date.now();
@@ -13,7 +13,6 @@ export const unzipEpubBook = async (uri: string) => {
 
     await unzip(uri, targetDir.uri);
 
-    console.log('EPUB unzipped successfully to:', targetDir.uri);
     return targetDir.uri;
   } catch (error) {
     console.error('Error extracting EPUB:', error);

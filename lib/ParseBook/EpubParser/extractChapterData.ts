@@ -1,13 +1,9 @@
 import { File } from 'expo-file-system';
+import { processChapterDom } from 'lib/ParseBook/EpubParser/processChapterDom';
+import { SourceChapter } from 'lib/ParseBook/types';
 
 interface Response {
-  chapterData: {
-    id: number;
-    href: string;
-    fullPath: string;
-    chapterBasePath: string;
-    html: string;
-  }[];
+  chapters: SourceChapter[];
   mapHrefChapterId: Record<string, number>;
 }
 
@@ -16,7 +12,7 @@ export const extractChapterData = async (
   manifestMap: Record<string, string>,
   absoluteBasePath: string
 ): Promise<Response> => {
-  const chapterData: Response['chapterData'] = [];
+  const rawChapters: { chapterBasePath: string; html: string }[] = [];
   const mapHrefChapterId: Record<string, number> = {};
 
   for (const spineItem of spineItems) {
@@ -34,13 +30,24 @@ export const extractChapterData = async (
       const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
       if (bodyMatch) html = bodyMatch[1];
 
-      const chapterId = chapterData.length;
-      chapterData.push({ id: chapterId, href, fullPath: `${absoluteBasePath}/${href}`, chapterBasePath, html });
+      const chapterId = rawChapters.length;
+      rawChapters.push({ chapterBasePath, html });
       mapHrefChapterId[href] = chapterId;
     } catch (e) {
       console.warn(`Skipping chapter ${href}:`, e);
     }
   }
 
-  return { chapterData, mapHrefChapterId };
+  const chapters: SourceChapter[] = rawChapters.map(({ chapterBasePath, html }, chapterId) => ({
+    id: chapterId,
+    html: processChapterDom({
+      chapterId,
+      chapterBasePath,
+      html,
+      mapHrefChapterId,
+      absoluteBasePath,
+    }),
+  }));
+
+  return { chapters, mapHrefChapterId };
 };

@@ -1,58 +1,51 @@
 import { Directory } from 'expo-file-system';
-import { Chapter, Book, Block, TocItem } from 'types';
+import { Chapter, Book, Block } from 'types';
 import { BookEngine } from 'modules/book-engine';
-import { unzipEpubBook } from 'lib/ParseBook/unzipEpubBook';
-import { extractBookMeta } from 'lib/ParseBook/extractBookMeta';
 import { splitHtmlIntoBlocks } from 'lib/ParseBook/splitHtmlIntoBlocks';
-import { extractChapterData } from 'lib/ParseBook/extractChapterData';
-import { processChapterDom } from 'lib/ParseBook/processChapterDom';
 import { processChapterBlocks } from 'lib/ParseBook/processChapterBlock';
-import { extractToc } from 'lib/ParseBook/extractToc';
 import { detectLanguage } from 'lib/ParseBook/detectLang';
 import { LanguageCode } from 'lib/langHelper';
+import { epubParser } from 'lib/ParseBook/EpubParser';
+import { fb2Parser } from 'lib/ParseBook/Fb2Parser';
+import { detectBookFormat } from 'lib/ParseBook/detectFormat';
 
 export const parseBook = async (bookUri: string, targetLang: LanguageCode): Promise<Book> => {
   try {
-    const unzippedPath = await unzipEpubBook(bookUri);
+    const format = await detectBookFormat(bookUri);
 
     const {
       title,
       author,
       coverPath,
-      language: bookLanguage,
-      absoluteBasePath,
       basePath,
-      opfDirName,
-      spineItems,
-      tocId,
-      manifestMap,
+      unzippedPath,
       cssPaths,
-      navHref,
-    } = await extractBookMeta(unzippedPath);
-
-    const { chapterData, mapHrefChapterId } = await extractChapterData(
-      spineItems,
-      manifestMap,
-      absoluteBasePath
-    );
+      bookLanguage,
+      chapters,
+      toc,
+    } =
+      format === 'epub'
+        ? await epubParser(bookUri)
+        : await fb2Parser(bookUri, format === 'fb2-zip');
 
     const blocksDir = new Directory(unzippedPath, '_blocks');
     if (!blocksDir.exists) blocksDir.create({ intermediates: true });
 
-    const chapters: Chapter[] = [];
+    const outChapters: Chapter[] = [];
     const blocks: Block[] = [];
     let globalBlockId = 0;
     let totalCharCount = 0;
     let langSample = '';
 
-    for (const chapter of chapterData) {
-      const processedHtml = processChapterDom({ chapter, mapHrefChapterId, absoluteBasePath });
-
-      const blockContents = splitHtmlIntoBlocks(processedHtml, globalBlockId);
+    for (const chapter of chapters) {
+      const blockContents = splitHtmlIntoBlocks(chapter.html, globalBlockId);
 
       if (langSample.length < 2000) {
         for (const blockHtml of blockContents.blocks) {
-          const textOnly = blockHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          const textOnly = blockHtml
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
           if (textOnly.length > 0) {
             langSample += textOnly + '\n';
             if (langSample.length >= 2000) break;
@@ -72,7 +65,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       totalCharCount += chapterCharCount;
       globalBlockId = blockContents.finalBlockId + 1;
 
-      chapters.push({
+      outChapters.push({
         id: chapter.id,
         charCount: 0,
         charOffset: 0,
@@ -82,10 +75,10 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
     }
 
     let globalCharOffset = 0;
-    const chapterCharCounts: number[] = new Array(chapters.length).fill(0);
+    const chapterCharCounts: number[] = new Array(outChapters.length).fill(0);
 
     let blockIndex = 0;
-    for (const chapter of chapters) {
+    for (const chapter of outChapters) {
       chapter.charOffset = globalCharOffset;
 
       while (blockIndex < blocks.length && blocks[blockIndex].chapterId === chapter.id) {
@@ -97,18 +90,6 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       }
 
       chapter.charCount = chapterCharCounts[chapter.id];
-    }
-
-    let toc: TocItem[] = [];
-    if (manifestMap[tocId] || navHref) {
-      toc = await extractToc({
-        tocId,
-        unzippedPath,
-        opfDirName,
-        manifestMap,
-        mapHrefChapterId,
-        navHref,
-      });
     }
 
     const blockPaths = blocks.map((block) => block.fullPath);
@@ -135,7 +116,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
         bookLang: detectedLanguage || bookLanguage || 'en',
         targetLang,
       },
-      chapters,
+      chapters: outChapters,
       toc,
       blocks,
       bookmarks: [],
@@ -156,7 +137,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       },
     };
   } catch (error) {
-    console.error('Error parsing manifest:', error);
-    throw new Error('Failed to parse book manifest.');
+    console.error('Error parsing book:', error);
+    throw error instanceof Error ? error : new Error('Failed to load book.');
   }
 };
