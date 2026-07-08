@@ -6,6 +6,7 @@ import { IconButton } from 'components/ui/IconButton';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { useAppStore } from 'stores/useAppStore';
 import { calculateBookProgress } from 'lib/utils';
 
 export const BackStackOverlay = () => {
@@ -18,6 +19,7 @@ export const BackStackOverlay = () => {
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const { colors } = useTheme();
   const { t } = useTranslation('translation', { keyPrefix: 'reader.footer' });
 
@@ -38,6 +40,7 @@ export const BackStackOverlay = () => {
         blockId: target.blockId,
         scrollPercent: target.scrollPercent,
       });
+      setGlobalLoading({ isLoading: true, message: 'Going back…' });
       loadWindow(target.blockId, 0);
     }
 

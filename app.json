@@ -2,6 +2,7 @@
   "expo": {
     "name": "RFF",
     "slug": "RFF",
+    "scheme": "rff",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"

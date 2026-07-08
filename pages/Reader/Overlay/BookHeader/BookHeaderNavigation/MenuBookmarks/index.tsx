@@ -5,6 +5,7 @@ import { BookmarkCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigati
 import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';
+import { useAppStore } from 'stores/useAppStore';
 
 interface Props {
   onClose: () => void;
@@ -18,6 +19,7 @@ export const MenuBookmarks = ({ onClose }: Props) => {
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   const onPress = (bookmark: Bookmark) => {
     addToBackStack({
@@ -40,6 +42,7 @@ export const MenuBookmarks = ({ onClose }: Props) => {
         blockId: bookmark.blockId,
         scrollPercent: bookmark.scrollPercent,
       });
+      setGlobalLoading({ isLoading: true, message: 'Opening bookmark…' });
       loadWindow(bookmark.blockId, 0);
     }
 

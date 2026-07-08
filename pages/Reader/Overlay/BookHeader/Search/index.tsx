@@ -4,6 +4,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { SearchResult } from 'types';
 import { SearchCard } from 'pages/Reader/Overlay/BookHeader/Search/SearchCard';
 import { ImmediateAction, useWebViewStore } from 'stores/useWebViewStore';
+import { useAppStore } from 'stores/useAppStore';
 import { Loading } from 'components/ui/Loading';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
@@ -22,6 +23,7 @@ export const MenuSearch = ({ onClose }: Props) => {
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const isSearchLoading = useTempStore((state) => state.isSearchLoading);
   const searchQuery = useTempStore((state) => state.searchQuery);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
@@ -45,6 +47,7 @@ export const MenuSearch = ({ onClose }: Props) => {
         blockId: searchResult.blockId,
         occurrenceIndex: searchResult.occurrenceIndex,
       });
+      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
       loadWindow(searchResult.blockId, 0);
     } else {
       setCurrentBlock(searchResult.blockId);
@@ -85,7 +88,7 @@ export const MenuSearch = ({ onClose }: Props) => {
 
   return (
     <>
-      {!isSearchLoading && (
+      {!isSearchLoading && searchQuery && (
         <FlatList
           data={Object.values(searchResults)}
           keyExtractor={(item) => item.id.toString()}

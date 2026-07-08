@@ -3,11 +3,10 @@ import { useState } from 'react';
 import { Other } from 'components/Sidebar/Header/Other';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { ParamListBase } from '@react-navigation/native';
-import { useBookStore } from 'stores/useBookStore';
-import * as DocumentPicker from 'expo-document-picker';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { useAnkiStore } from 'stores/useAnkiStore';
 import { SearchAction } from 'components/Sidebar/Header/SearchAction';
+import { useAppStore } from 'stores/useAppStore';
 
 interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -17,25 +16,8 @@ interface Props {
 
 export const Header = ({ navigation, title, routeName }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { loadBook } = useBookStore();
-  const hasDeck = useAnkiStore((state) => state.hasDeck);
-
-  const pickDocument = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: [
-        'application/epub+zip',
-        'application/x-fictionbook+xml',
-        'application/zip',
-        'application/octet-stream',
-      ],
-      copyToCacheDirectory: true,
-    });
-
-    if (!result.canceled) {
-      const isLoaded = await loadBook(result.assets[0].uri);
-      if (isLoaded) navigation.navigate('Reader');
-    }
-  };
+  const decks = useAnkiStore((state) => state.decks);
+  const pickDocument = useAppStore((state) => state.pickDocument);
 
   const isBookListRoute = routeName === 'Reading Now' || routeName === 'Have Read';
 
@@ -70,7 +52,7 @@ export const Header = ({ navigation, title, routeName }: Props) => {
           <AppbarAction
             icon="plus"
             onPress={pickDocument}
-            disabled={!hasDeck()}
+            disabled={!decks.length}
             accessibilityLabel="Add book"
           />
           <Other

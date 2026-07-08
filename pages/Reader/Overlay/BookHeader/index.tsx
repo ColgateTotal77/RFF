@@ -20,21 +20,21 @@ const SearchInput = ({
   inputRef: React.Ref<NativeTextInput>;
 }) => {
   const theme = useTheme();
-  const setSearchQuery = useTempStore((state) => state.setSearchQuery);
-  const searchQuery = useTempStore((state) => state.searchQuery);
+  const setTempSearchQuery = useTempStore((state) => state.setTempSearchQuery);
+  const tempSearchQuery = useTempStore((state) => state.tempSearchQuery);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   return (
     <TextInput
       ref={inputRef}
       placeholder={t('searchPlaceholder')}
-      value={searchQuery}
-      onChangeText={setSearchQuery}
+      value={tempSearchQuery}
+      onChangeText={setTempSearchQuery}
       mode="flat"
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       returnKeyType="search"
       autoCapitalize="none"
-      onSubmitEditing={() => onSubmit(searchQuery)}
+      onSubmitEditing={() => onSubmit(tempSearchQuery)}
       accessibilityLabel="Search in book"
     />
   );

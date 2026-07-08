@@ -21,7 +21,6 @@ type Store = {
   models: { id: string; name: string }[];
   fields: { id: number; name: string }[];
   mirroredFields: { id: number; name: string }[];
-  hasDeck: () => boolean;
 
   bookFields: { id: number; name: string }[];
   bookMirroredFields: { id: number; name: string }[];
@@ -135,9 +134,5 @@ export const useAnkiStore = create<Store>()((set, get) => ({
   createDeck: async (deckName: string) => {
     const deckId = (await Anki.createDeck(deckName)).toString();
     return deckId.toString();
-  },
-
-  hasDeck: () => {
-    return get().decks.length > 0;
   },
 }));

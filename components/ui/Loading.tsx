@@ -36,7 +36,7 @@ export const Loading = ({ message = '' }: { message?: string }) => {
     const timer = setTimeout(() => {
       setShowMessage(true);
       Animated.timing(msgFade, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-    }, 1000);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, []);

@@ -2,6 +2,7 @@ import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
+import { useAppStore } from 'stores/useAppStore';
 
 export const useJumpToNextSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
@@ -13,6 +14,7 @@ export const useJumpToNextSearchResult = () => {
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const currentBook = useCurrentBook();
   const loadWindow = useWebViewStore((state) => state.loadWindow);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return () => {
     const newSearchResult = searchResults.find(
@@ -27,6 +29,7 @@ export const useJumpToNextSearchResult = () => {
         blockId: newSearchResult.blockId,
         occurrenceIndex: newSearchResult.occurrenceIndex,
       });
+      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
       loadWindow(newSearchResult.blockId, 0);
     } else {
       setCurrentBlock(newSearchResult.blockId);
@@ -57,6 +60,7 @@ export const useJumpToPrevSearchResult = () => {
   const currentBook = useCurrentBook();
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return () => {
     const newSearchResult = searchResults.find(
@@ -71,6 +75,7 @@ export const useJumpToPrevSearchResult = () => {
         blockId: newSearchResult.blockId,
         occurrenceIndex: newSearchResult.occurrenceIndex,
       });
+      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
       loadWindow(newSearchResult.blockId, 0);
     } else {
       setCurrentBlock(newSearchResult.blockId);
@@ -96,6 +101,7 @@ export const useProcessBookLinks = () => {
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const currentBook = useCurrentBook();
   const addToBackStack = useTempStore((state) => state.addToBackStack);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return (chapterId: number, fragmentId: string) => {
     const chapter = currentBook.mapping.chapterById[chapterId];
@@ -107,6 +113,7 @@ export const useProcessBookLinks = () => {
         scrollPercent: currentBook.misc.currentBlockScrollPercent,
       });
       if (!currentBook.currentBlocks.includes(blockId)) {
+        setGlobalLoading({ isLoading: true, message: 'Opening link…' });
         loadWindow(blockId, 0);
       } else {
         executeImmediateActions([{ type: 'scrollToBlock', blockId, scrollPercent: 0 }]);
@@ -124,6 +131,7 @@ export const useProcessBookLinks = () => {
 
     if (!currentBook.currentBlocks.includes(blockId)) {
       addToPostLoadQueue({ type: 'scrollToFragment', fragmentId });
+      setGlobalLoading({ isLoading: true, message: 'Opening link…' });
       loadWindow(blockId, 0);
     } else {
       executeImmediateActions([{ type: 'scrollToFragment', fragmentId }]);

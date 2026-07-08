@@ -6,6 +6,7 @@ import { calculateBookProgress } from 'lib/utils';
 import { WebViewMessageEvent } from 'react-native-webview';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { DASH_REGEX_STRING } from 'lib/constants';
+import { useAppStore } from 'stores/useAppStore';
 
 export const useMessageHandler = () => {
   const currentBook = useBookStore((state) => state.currentBook);
@@ -20,6 +21,7 @@ export const useMessageHandler = () => {
   const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
   const setIsOverlayVisible = useTempStore((state) => state.setIsOverlayVisible);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return useCallback(
     async (event: WebViewMessageEvent) => {
@@ -70,6 +72,7 @@ export const useMessageHandler = () => {
 
           case 'QUEUE_ACTIONS_COMPLETE':
             setIsWebViewReady(true);
+            setGlobalLoading({ isLoading: false, message: '' });
             break;
 
           case 'ONE_TAP':

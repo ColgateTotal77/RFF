@@ -77,6 +77,8 @@ export const useWebViewStore = create<Store>()((set, get) => ({
 
       const currentSearchResult = useTempStore.getState().currentSearchResult;
 
+      useTempStore.getState().setIsOverlayVisible(false);
+
       if (get().postLoadQueue.length === 0) {
         get().addToPostLoadQueue({
           type: 'scrollToBlock',
@@ -104,9 +106,6 @@ export const useWebViewStore = create<Store>()((set, get) => ({
           fontSize: settings.font.fontSize,
           fontFamily: settings.font.fontFamily,
           theme: useAppStore.getState().theme,
-          overlayOffset: useTempStore.getState().isOverlayVisible
-            ? useTempStore.getState().overlayHeaderOffset
-            : 0,
         }
       );
 
@@ -136,6 +135,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
     } catch (e) {
       console.error('Failed to prepare initial blocks:', e);
       Toast.show('Failed to load reader', 'error');
+      useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
     }
   },
 

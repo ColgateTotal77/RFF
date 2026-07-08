@@ -24,3 +24,5 @@
 
 # SLF4J: the api jar references StaticLoggerBinder but the binding is not included (Ktor uses SLF4J internally)
 -dontwarn org.slf4j.impl.StaticLoggerBinder
+
+-dontwarn kotlinx.datetime.**

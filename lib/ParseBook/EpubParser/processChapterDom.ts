@@ -1,5 +1,4 @@
 import { resolvePath } from 'lib/utils';
-import { parse } from 'node-html-parser';
 
 interface Props {
   chapterId: number;
@@ -9,6 +8,29 @@ interface Props {
   absoluteBasePath: string;
 }
 
+const SCHEME_RE = /^[a-z0-9\-.]+:/i;
+
+const rewriteFirstAttr = (
+  tag: string,
+  attrNames: string[],
+  transform: (value: string) => string | null
+): string => {
+  for (const name of attrNames) {
+    const re = new RegExp(`(\\s${name}\\s*=\\s*)(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i');
+    const m = re.exec(tag);
+    if (!m) continue;
+
+    const value = m[2] ?? m[3] ?? m[4] ?? '';
+    const newValue = transform(value);
+    if (newValue === null) return tag;
+
+    const quote = newValue.includes('"') && !newValue.includes("'") ? "'" : '"';
+    const rebuilt = `${m[1]}${quote}${newValue}${quote}`;
+    return tag.slice(0, m.index) + rebuilt + tag.slice(m.index + m[0].length);
+  }
+  return tag;
+};
+
 export const processChapterDom = ({
   chapterId,
   chapterBasePath,
@@ -16,52 +38,42 @@ export const processChapterDom = ({
   mapHrefChapterId,
   absoluteBasePath,
 }: Props): string => {
-  const dom = parse(html);
+  const withLinks = html.replace(/<a\b[^>]*>/gi, (tag) =>
+    rewriteFirstAttr(tag, ['href'], (href) => {
+      if (!href || SCHEME_RE.test(href)) return null;
 
-  const links = dom.querySelectorAll('a[href]');
-  for (const a of links) {
-    const href = a.getAttribute('href');
+      if (href.startsWith('#')) return `chapter://${chapterId}${href}`;
 
-    if (!href || /^[a-z0-9\-.]+:/i.test(href)) continue;
+      const [file, fragmentId] = href.split('#');
+      const decodedFile = decodeURIComponent(file);
+      const resolvedFile = resolvePath(chapterBasePath, decodedFile);
 
-    if (href.startsWith('#')) {
-      a.setAttribute('href', `chapter://${chapterId}${href}`);
-      continue;
-    }
+      const cleanResolvedFile = resolvedFile.replace(/^\/+/, '');
+      const cleanBasePath = absoluteBasePath.replace(/^\/+/, '');
 
-    const [file, fragmentId] = href.split('#');
-    const decodedFile = decodeURIComponent(file);
-    const resolvedFile = resolvePath(chapterBasePath, decodedFile);
+      const normalizedResolvedFile = cleanResolvedFile.startsWith(cleanBasePath)
+        ? cleanResolvedFile.substring(cleanBasePath.length).replace(/^\/+/, '')
+        : resolvedFile;
 
-    const cleanResolvedFile = resolvedFile.replace(/^\/+/, '');
-    const cleanBasePath = absoluteBasePath.replace(/^\/+/, '');
+      const matchingChapterId = mapHrefChapterId[normalizedResolvedFile];
 
-    const normalizedResolvedFile = cleanResolvedFile.startsWith(cleanBasePath)
-      ? cleanResolvedFile.substring(cleanBasePath.length).replace(/^\/+/, '')
-      : resolvedFile;
+      if (matchingChapterId) {
+        return fragmentId
+          ? `chapter://${matchingChapterId}#${fragmentId}`
+          : `chapter://${matchingChapterId}`;
+      }
 
-    const matchingChapterId = mapHrefChapterId[normalizedResolvedFile];
+      return null;
+    })
+  );
 
-    if (matchingChapterId) {
-      const newHref = fragmentId
-        ? `chapter://${matchingChapterId}#${fragmentId}`
-        : `chapter://${matchingChapterId}`;
-      a.setAttribute('href', newHref);
-    }
-  }
+  return withLinks.replace(/<(?:img|image)\b[^>]*>/gi, (tag) =>
+    rewriteFirstAttr(tag, ['src', 'href', 'xlink:href'], (src) => {
+      if (!src || SCHEME_RE.test(src)) return null;
 
-  const images = dom.querySelectorAll('img, image');
-  for (const img of images) {
-    const attrName = ['src', 'href', 'xlink:href'].find((attr) => img.hasAttribute(attr));
-    if (!attrName) continue;
-
-    const src = img.getAttribute(attrName);
-    if (!src || /^[a-z0-9\-.]+:/i.test(src)) continue;
-
-    const decodedSrc = decodeURIComponent(src);
-    const resolvedSrc = resolvePath(chapterBasePath, decodedSrc);
-    img.setAttribute(attrName, `file:///${resolvedSrc}`);
-  }
-
-  return dom.toString();
+      const decodedSrc = decodeURIComponent(src);
+      const resolvedSrc = resolvePath(chapterBasePath, decodedSrc);
+      return `file:///${resolvedSrc}`;
+    })
+  );
 };

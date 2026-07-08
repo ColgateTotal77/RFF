@@ -1,4 +1,6 @@
 import { Book, FieldMapping, Mapping } from 'types';
+import { File, Paths } from 'expo-file-system';
+import * as LegacyFS from 'expo-file-system/legacy';
 
 export const deepMerge = (target: any, source: any): any => {
   const result = { ...target };
@@ -48,7 +50,9 @@ export const findBestMapping = (
   deckId: string,
   modelId: string
 ): FieldMapping | undefined => {
-  return mappings[`${deckId}:${modelId}`] ?? Object.values(mappings).find((m) => m.modalId === modelId);
+  return (
+    mappings[`${deckId}:${modelId}`] ?? Object.values(mappings).find((m) => m.modalId === modelId)
+  );
 };
 
 export const updateNestedMapping = <T extends Record<string, any>>(
@@ -108,4 +112,16 @@ export const buildBookMapping = (book: Book) => {
   }
 
   return mapping;
+};
+
+export const copyUriToCache = async (uri: string): Promise<string> => {
+  if (uri.startsWith('file://')) return uri;
+
+  const guessedName = decodeURIComponent(uri.split('/').pop() ?? '').split('?')[0];
+  const name = /\.(epub|fb2|fb2\.zip)$/i.test(guessedName)
+    ? guessedName
+    : `incoming-${Date.now()}.epub`;
+  const dest = new File(Paths.cache, name);
+  await LegacyFS.copyAsync({ from: uri, to: dest.uri });
+  return dest.uri;
 };

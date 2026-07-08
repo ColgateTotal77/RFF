@@ -3,6 +3,7 @@ import { SelectionMenu, SearchResult, BackStackItem } from 'types';
 import { useWebViewStore } from 'stores/useWebViewStore';
 
 type Store = {
+  tempSearchQuery: string;
   searchQuery: string;
   searchResults: SearchResult[];
   isSearchModuleOpen: boolean;
@@ -14,6 +15,7 @@ type Store = {
   isOverlayVisible: boolean;
   overlayHeaderOffset: number;
 
+  setTempSearchQuery: (searchQuery: string) => void;
   setSearchQuery: (searchQuery: string) => void;
   setSearchResults: (result: SearchResult[]) => void;
   setIsSearchLoading: (loading: boolean) => void;
@@ -36,6 +38,7 @@ type Store = {
 };
 
 export const useTempStore = create<Store>()((set) => ({
+  tempSearchQuery: '',
   searchQuery: '',
   searchResults: [],
   isSearchModuleOpen: false,
@@ -62,6 +65,7 @@ export const useTempStore = create<Store>()((set) => ({
   isOverlayVisible: false,
   overlayHeaderOffset: 100,
 
+  setTempSearchQuery: (searchQuery: string) => set({ tempSearchQuery: searchQuery }),
   setSearchQuery: (searchQuery) => set({ searchQuery: searchQuery }),
   setSearchResults: (result) => set({ searchResults: result }),
   setIsSearchLoading: (loading) => set({ isSearchLoading: loading }),

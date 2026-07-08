@@ -33,9 +33,8 @@ type Store = {
   books: Book[];
   currentBook: Book | null;
   currentCTree: CurrentCTree | null;
-  isDeckLoading: boolean;
 
-  loadBook: (uri: string) => Promise<boolean>;
+  loadBook: (uri: string) => Promise<void>;
   openBook: (basePath: string) => Promise<void>;
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
@@ -62,7 +61,6 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       currentCTree: null,
-      isDeckLoading: false,
 
       loadBook: async (uri: string) => {
         get().closeBook();
@@ -75,13 +73,10 @@ export const useBookStore = create<Store>()(
           }));
 
           get().openBook(book.basePath);
-
-          return true;
         } catch (e) {
           console.error('❌ Failed to load book:', e);
           Toast.show(e instanceof Error && e.message ? e.message : 'Failed to load book', 'error');
-
-          return false;
+          useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
         }
       },
 
@@ -90,6 +85,10 @@ export const useBookStore = create<Store>()(
 
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
+
+        useAppStore
+          .getState()
+          .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
 
         const bookSettings = get().getBookSettings(bookToOpen);
 
@@ -108,7 +107,6 @@ export const useBookStore = create<Store>()(
                 langCode: bookSettings.bookLang,
                 deckId: bookSettings.ankiDeckId!,
               },
-              isDeckLoading: true,
             }));
 
             await BookEngine.loadAnkiDictionary(
@@ -117,8 +115,6 @@ export const useBookStore = create<Store>()(
               bookSettings.fieldMapping,
               bookSettings.mirroredFieldMapping
             );
-
-            set(() => ({ isDeckLoading: false }));
           }
 
           if (
@@ -143,9 +139,13 @@ export const useBookStore = create<Store>()(
             useWebViewStore
               .getState()
               .loadWindow(bookToOpen.currentBlock, bookToOpen.misc.currentBlockScrollPercent);
+          } else {
+            useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
           }
+
+          useAppStore.getState().navigate('Reader');
         } catch (e) {
-          set(() => ({ isDeckLoading: false }));
+          useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
           console.error('❌ Failed to open book:', e);
           Toast.show('Failed to open book', 'error');
         }
@@ -167,6 +167,7 @@ export const useBookStore = create<Store>()(
           useWebViewStore.getState().resetWebView();
           set(() => ({ currentBook: null }));
           useTempStore.getState().resetSearch();
+          useTempStore.getState().setTempSearchQuery('');
           useTempStore.getState().closeSelectionMenu();
           useTempStore.getState().clearBackStack();
           useTempStore.getState().setIsOverlayVisible(false);

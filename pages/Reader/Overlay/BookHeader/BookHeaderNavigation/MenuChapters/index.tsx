@@ -6,6 +6,7 @@ import { calculateBookProgress } from 'lib/utils';
 import { useState, useEffect, useMemo } from 'react';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';
+import { useAppStore } from 'stores/useAppStore';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const currentBook = useCurrentBook();
@@ -15,6 +16,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
+  const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const chapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;
   const currentChapter = currentBook.mapping.tocByChapterId[chapterId]?.[0] ?? null;
 
@@ -58,6 +60,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
       setCurrentBlock(firstBlockId);
       executeImmediateActions([{ type: 'scrollToBlock', blockId: firstBlockId }]);
     } else {
+      setGlobalLoading({ isLoading: true, message: 'Opening chapter…' });
       loadWindow(firstBlockId, 0);
     }
 
