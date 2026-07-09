@@ -86,10 +86,6 @@ export const useBookStore = create<Store>()(
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
 
-        useAppStore
-          .getState()
-          .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
-
         const bookSettings = get().getBookSettings(bookToOpen);
 
         try {
@@ -98,6 +94,10 @@ export const useBookStore = create<Store>()(
               currentCTree?.langCode !== bookSettings.bookLang) &&
             bookSettings.ankiDeckId
           ) {
+            useAppStore
+              .getState()
+              .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
+
             get().closeBook();
 
             console.log('Loading Anki dictionary for book');
@@ -122,6 +122,10 @@ export const useBookStore = create<Store>()(
             currentCTree?.deckId !== bookSettings.ankiDeckId ||
             currentCTree?.langCode !== bookSettings.bookLang
           ) {
+            useAppStore
+              .getState()
+              .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
+
             get().closeBook();
             console.log('Opening book');
 
@@ -166,7 +170,7 @@ export const useBookStore = create<Store>()(
         try {
           useWebViewStore.getState().resetWebView();
           set(() => ({ currentBook: null }));
-          useTempStore.getState().resetSearch();
+          useTempStore.getState().resetSearch(false);
           useTempStore.getState().setTempSearchQuery('');
           useTempStore.getState().closeSelectionMenu();
           useTempStore.getState().clearBackStack();

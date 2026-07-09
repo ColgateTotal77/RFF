@@ -28,7 +28,7 @@
             window.scrollTo({ top: top, behavior: instant || !isCloseToTop ? 'instant' : 'smooth' });
             window.log('instantScroll: scrolling to block-' + targetBlockId + ' at 0%');
           }
-          setTimeout(() => resolve(true), 0)
+          resolve(true);
         });
       });
     });

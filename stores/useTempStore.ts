@@ -21,7 +21,7 @@ type Store = {
   setIsSearchLoading: (loading: boolean) => void;
   toggleIsSearchModuleOpen: () => void;
   setCurrentSearchResult: (searchResult: SearchResult) => void;
-  resetSearch: () => void;
+  resetSearch: (clearWebView?: boolean) => void;
 
   setSelectionMenu: (menu: SelectionMenu) => void;
   closeSelectionMenu: () => void;
@@ -72,8 +72,8 @@ export const useTempStore = create<Store>()((set) => ({
   toggleIsSearchModuleOpen: () =>
     set((state) => ({ isSearchModuleOpen: !state.isSearchModuleOpen })),
   setCurrentSearchResult: (searchResult) => set({ currentSearchResult: searchResult }),
-  resetSearch: () => {
-    useWebViewStore.getState().executeImmediateActions([{ type: 'clearSearch' }]);
+  resetSearch: (clearWebView = true) => {
+    if (clearWebView) useWebViewStore.getState().executeImmediateActions([{ type: 'clearSearch' }]);
 
     set({
       currentSearchResult: {

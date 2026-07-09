@@ -57,7 +57,7 @@ export const SearchOverlay = () => {
       <IconButton
         icon="close"
         size={20}
-        onPress={resetSearch}
+        onPress={() => resetSearch()}
         iconColor={colors.error}
         accessibilityLabel={t('clear')}
       />
