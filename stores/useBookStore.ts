@@ -55,6 +55,7 @@ type Store = {
   ) => void;
   updateMisc: (misc: Partial<Misc>) => void;
   getBookSettings: (book?: Book) => Required<BookSettings>;
+  isAnkiConfigStale: (book?: Book) => boolean;
 };
 
 export const useBookStore = create<Store>()(
@@ -86,52 +87,44 @@ export const useBookStore = create<Store>()(
       },
 
       openBook: async (basePath: string) => {
-        const { currentBook, books, currentCTree } = get();
+        const { currentBook, books } = get();
 
         const bookToOpen = books.find((book) => book.basePath === basePath);
         if (!bookToOpen) return;
 
         const bookSettings = get().getBookSettings(bookToOpen);
+        const configStale = get().isAnkiConfigStale(bookToOpen);
+        const needsDictionaryReload = !!bookSettings.ankiDeckId && configStale;
+        const needsBookReload = currentBook?.basePath !== bookToOpen.basePath;
 
         try {
-          if (
-            (currentCTree?.deckId !== bookSettings.ankiDeckId ||
-              currentCTree?.langCode !== bookSettings.bookLang) &&
-            bookSettings.ankiDeckId
-          ) {
+          if (needsDictionaryReload || needsBookReload) {
             useAppStore
               .getState()
               .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
 
             get().closeBook();
 
-            console.log('Loading Anki dictionary for book');
+            if (needsDictionaryReload) {
+              console.log('Loading Anki dictionary for book');
 
-            set(() => ({
-              currentCTree: {
-                langCode: bookSettings.bookLang,
-                deckId: bookSettings.ankiDeckId!,
-              },
-            }));
+              set(() => ({
+                currentCTree: {
+                  langCode: bookSettings.bookLang,
+                  deckId: bookSettings.ankiDeckId!,
+                  fieldMapping: bookSettings.fieldMapping,
+                  mirroredFieldMapping: bookSettings.mirroredFieldMapping,
+                },
+              }));
 
-            await BookEngine.loadAnkiDictionary(
-              bookSettings.bookLang,
-              bookSettings.ankiDeckId,
-              bookSettings.fieldMapping,
-              bookSettings.mirroredFieldMapping
-            );
-          }
+              await BookEngine.loadAnkiDictionary(
+                bookSettings.bookLang,
+                bookSettings.ankiDeckId,
+                bookSettings.fieldMapping,
+                bookSettings.mirroredFieldMapping
+              );
+            }
 
-          if (
-            currentBook?.basePath !== bookToOpen.basePath ||
-            currentCTree?.deckId !== bookSettings.ankiDeckId ||
-            currentCTree?.langCode !== bookSettings.bookLang
-          ) {
-            useAppStore
-              .getState()
-              .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
-
-            get().closeBook();
             console.log('Opening book');
 
             const { loadFieldsInto } = useAnkiStore.getState();
@@ -410,6 +403,20 @@ export const useBookStore = create<Store>()(
           autoCardOnDoubleTap:
             currentBookSettings.autoCardOnDoubleTap || settings.autoCardOnDoubleTap,
         };
+      },
+
+      isAnkiConfigStale: (book) => {
+        const { currentCTree, getBookSettings } = get();
+        const bookSettings = getBookSettings(book);
+
+        return (
+          currentCTree?.deckId !== bookSettings.ankiDeckId ||
+          currentCTree?.langCode !== bookSettings.bookLang ||
+          JSON.stringify(currentCTree?.fieldMapping ?? {}) !==
+            JSON.stringify(bookSettings.fieldMapping) ||
+          JSON.stringify(currentCTree?.mirroredFieldMapping ?? {}) !==
+            JSON.stringify(bookSettings.mirroredFieldMapping)
+        );
       },
     }),
     {

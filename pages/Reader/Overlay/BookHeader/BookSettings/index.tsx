@@ -15,8 +15,7 @@ export const BookSettings = () => {
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as TabKey)}
         buttons={[
-          { value: 'anki', label: 'Anki' },
-          { value: 'misc', label: 'Misc' },
+          { value: 'anki', label: 'Anki' }, { value: 'misc', label: 'Misc' },
         ]}
         style={{ marginHorizontal: 16, marginBottom: 16 }}
       />

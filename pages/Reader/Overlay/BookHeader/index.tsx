@@ -48,8 +48,7 @@ export const BookHeader = () => {
   const setSearchResults = useTempStore((state) => state.setSearchResults);
   const isSearchModuleOpen = useTempStore((state) => state.isSearchModuleOpen);
   const openBook = useBookStore((state) => state.openBook);
-  const currentCTree = useBookStore((state) => state.currentCTree);
-  const closeBook = useBookStore((state) => state.closeBook);
+  const isAnkiConfigStale = useBookStore((state) => state.isAnkiConfigStale);
   const resetSearch = useTempStore((state) => state.resetSearch);
   const setIsSearchLoading = useTempStore((state) => state.setIsSearchLoading);
   const currentBook = useCurrentBook();
@@ -77,16 +76,8 @@ export const BookHeader = () => {
 
   const onBookSettingsClose = () => {
     setIsBookSettingsOpen(false);
-    if (
-      (currentBook.settings.ankiDeckId &&
-        currentCTree?.deckId !== currentBook.settings.ankiDeckId) ||
-      currentCTree?.langCode !== currentBook.settings.bookLang
-    ) {
-      const basePath = currentBook.basePath;
-      closeBook();
-      setTimeout(() => {
-        openBook(basePath);
-      }, 0);
+    if (isAnkiConfigStale(currentBook)) {
+      openBook(currentBook.basePath);
     }
   };
 

@@ -98,7 +98,8 @@ class AnkiModule : Module() {
                     mapping: Map<String, Any?>,
                     mirroredMapping: Map<String, Any?>,
                     isTwoSided: Boolean,
-                    -> withContext(Dispatchers.IO) {
+                    ->
+                    withContext(Dispatchers.IO) {
                         try {
                             NoteUpserter(moduleContext, freqDatabase, ::upsertWordToAnkiDictionary)
                                 .addOrUpdate(deckIdString.toLong(), fields, mapping, mirroredMapping, isTwoSided)
@@ -108,20 +109,21 @@ class AnkiModule : Module() {
                     }
                 }
 
-            AsyncFunction("updateNoteTags") Coroutine { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
-                withContext(Dispatchers.IO) {
-                    if (noteIds.isEmpty()) return@withContext
+            AsyncFunction("updateNoteTags") Coroutine
+                { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
+                    withContext(Dispatchers.IO) {
+                        if (noteIds.isEmpty()) return@withContext
 
-                    val noteTagger = NoteTagger(moduleContext, freqDatabase)
-                    val bestTier = noteTagger.getBestFrequencyTier(noteIds, mapping, mirroredMapping)
+                        val noteTagger = NoteTagger(moduleContext, freqDatabase)
+                        val bestTier = noteTagger.getBestFrequencyTier(noteIds, mapping, mirroredMapping)
 
-                    for (noteId in noteIds) {
-                        val (word, colorCode) = noteTagger.updateNoteTags(noteId, newTags, mapping, mirroredMapping, bestTier)
+                        for (noteId in noteIds) {
+                            val (word, colorCode) = noteTagger.updateNoteTags(noteId, newTags, mapping, mirroredMapping, bestTier)
 
-                        if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
+                            if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
+                        }
                     }
                 }
-            }
 
             AsyncFunction("deleteNote") Coroutine { noteIds: LongArray ->
                 withContext(Dispatchers.IO) {

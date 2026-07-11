@@ -156,6 +156,8 @@ export interface SearchResult {
 export interface CurrentCTree {
   langCode: LanguageCode;
   deckId: string;
+  fieldMapping: FieldMapping;
+  mirroredFieldMapping: FieldMapping;
 }
 
 export interface SelectionMenu {
