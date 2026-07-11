@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import { Book, BookSettings, CurrentCTree, DeepPartial, FieldMapping, Misc } from 'types';
+import { Book, Bookmark, BookSettings, CurrentCTree, DeepPartial, FieldMapping, Misc } from 'types';
 import { buildBookMapping, deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
 import { parseBook } from 'lib/ParseBook';
@@ -11,6 +11,7 @@ import { useAppStore } from './useAppStore';
 import { useTempStore } from './useTempStore';
 import { Toast } from 'components/ui/Toast';
 import { Directory } from 'expo-file-system';
+import i18n from 'i18n';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -44,6 +45,7 @@ type Store = {
   toggleHaveRead: (basePath: string) => void;
   updateCurrentBlocks: (newBlocks: number[]) => void;
   addBookmark: () => void;
+  updateBookmark: (bookmarkId: number, toUpdate: Partial<Bookmark>) => void;
   removeBookmark: (id: number) => void;
 
   updateBookSettings: (toUpdate: DeepPartial<BookSettings>) => void;
@@ -75,7 +77,10 @@ export const useBookStore = create<Store>()(
           get().openBook(book.basePath);
         } catch (e) {
           console.error('❌ Failed to load book:', e);
-          Toast.show(e instanceof Error && e.message ? e.message : 'Failed to load book', 'error');
+          Toast.show(
+            e instanceof Error && e.message ? e.message : i18n.t('toast.failedToLoadBook'),
+            'error'
+          );
           useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
         }
       },
@@ -151,7 +156,7 @@ export const useBookStore = create<Store>()(
         } catch (e) {
           useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
           console.error('❌ Failed to open book:', e);
-          Toast.show('Failed to open book', 'error');
+          Toast.show(i18n.t('toast.failedToOpenBook'), 'error');
         }
       },
 
@@ -330,6 +335,28 @@ export const useBookStore = create<Store>()(
           const updatedBook = {
             ...state.currentBook,
             bookmarks: [...state.currentBook.bookmarks, bookmark],
+          };
+
+          return {
+            currentBook: updatedBook,
+            books: state.books.map((b) => (b.basePath === updatedBook.basePath ? updatedBook : b)),
+          };
+        }),
+
+      updateBookmark: (bookmarkId, toUpdate) =>
+        set((state) => {
+          if (!state.currentBook) return state;
+
+          const bookmarks = state.currentBook.bookmarks || [];
+
+          const updatedBook = {
+            ...state.currentBook,
+            bookmarks: bookmarks.map((bookmark) => {
+              if (bookmark.id === bookmarkId) {
+                return { ...bookmark, ...toUpdate };
+              }
+              return bookmark;
+            }),
           };
 
           return {

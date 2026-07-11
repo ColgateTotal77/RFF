@@ -66,7 +66,13 @@
     },
     "navigation": {
       "chapters": "Chapters",
-      "bookmarks": "Bookmarks"
+      "bookmarks": "Bookmarks",
+      "renameBookmark": {
+        "title": "Rename bookmark",
+        "label": "Bookmark title",
+        "cancel": "Cancel",
+        "confirm": "Save"
+      }
     }
   },
   "sidebar": {
@@ -84,5 +90,16 @@
     "addBook": "Add Book",
     "delete": "Delete",
     "pages": "~{{count}} pages"
+  },
+  "toast": {
+    "failedToLoadBook": "Failed to load book",
+    "failedToOpenBook": "Failed to open book",
+    "failedToRequestAnkiPermission": "Failed to request Anki permission",
+    "failedToLoadReader": "Failed to load reader",
+    "configureAnkiDeck": "Configure Anki deck in settings",
+    "failedToAddCard": "Failed to add card",
+    "failedToUpdateCard": "Failed to update card",
+    "failedToOpenTranslator": "Failed to open translator",
+    "failedToDeleteNote": "Failed to delete note"
   }
 }

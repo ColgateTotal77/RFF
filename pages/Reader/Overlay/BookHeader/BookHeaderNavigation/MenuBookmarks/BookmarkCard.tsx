@@ -8,20 +8,26 @@ import { IconButton } from 'components/ui/IconButton';
 interface Props {
   bookmark: Bookmark;
   onPress: () => void;
+  onRename: () => void;
 }
 
 export const BookmarkCard = (props: Props) => {
-  const { bookmark, onPress } = props;
+  const { bookmark, onPress, onRename } = props;
   const removeBookmark = useBookStore((state) => state.removeBookmark);
 
   return (
-    <Card onPress={onPress}>
+    <Card onPress={onPress} onLongPress={onRename}>
       <View className="flex-row items-center">
         <View className="flex-1 gap-1 p-4">
           <Text>{bookmark.title}</Text>
           <Text className="text-sm text-gray-500">{'[' + bookmark.blockId + ']'}</Text>
         </View>
-        <IconButton icon="delete" onPress={() => removeBookmark(bookmark.id)} accessibilityLabel="Delete bookmark" />
+        <IconButton icon="pencil" onPress={onRename} accessibilityLabel="Rename bookmark" />
+        <IconButton
+          icon="delete"
+          onPress={() => removeBookmark(bookmark.id)}
+          accessibilityLabel="Delete bookmark"
+        />
       </View>
     </Card>
   );

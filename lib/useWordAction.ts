@@ -4,6 +4,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { Toast } from 'components/ui/Toast';
+import { useTranslation } from 'react-i18next';
 import { DASH_REGEX_STRING } from './constants';
 
 interface UpdateWordTag {
@@ -12,6 +13,7 @@ interface UpdateWordTag {
 }
 
 export const useWordAction = () => {
+  const { t } = useTranslation('translation', { keyPrefix: 'toast' });
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const getBookSettings = useBookStore((state) => state.getBookSettings);
 
@@ -19,7 +21,7 @@ export const useWordAction = () => {
     const bookSettings = getBookSettings();
 
     if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
-      Toast.show('Configure Anki deck in settings', 'error');
+      Toast.show(t('configureAnkiDeck'), 'error');
       return;
     }
 
@@ -74,7 +76,7 @@ export const useWordAction = () => {
       }
     } catch (error) {
       console.error('Anki error:', error);
-      Toast.show('Failed to add card', 'error');
+      Toast.show(t('failedToAddCard'), 'error');
       executeImmediateActions([
         {
           type: 'updateTag',
@@ -90,7 +92,7 @@ export const useWordAction = () => {
     const bookSettings = getBookSettings();
 
     if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
-      Toast.show('Configure Anki deck in settings', 'error');
+      Toast.show(t('configureAnkiDeck'), 'error');
       return;
     }
 
@@ -114,7 +116,7 @@ export const useWordAction = () => {
       ]);
     } catch (error) {
       console.error('Anki error:', error);
-      Toast.show('Failed to update card', 'error');
+      Toast.show(t('failedToUpdateCard'), 'error');
     }
   };
 
@@ -127,7 +129,7 @@ export const useWordAction = () => {
       await BookEngine.openSystemTranslator(text);
     } catch (error) {
       console.error('Translation error:', error);
-      Toast.show('Failed to open translator', 'error');
+      Toast.show(t('failedToOpenTranslator'), 'error');
     }
   };
 
@@ -146,7 +148,7 @@ export const useWordAction = () => {
       ]);
     } catch (error) {
       console.error('Anki error:', error);
-      Toast.show('Failed to delete note', 'error');
+      Toast.show(t('failedToDeleteNote'), 'error');
     }
   };
 

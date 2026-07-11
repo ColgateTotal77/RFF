@@ -4,6 +4,7 @@ import { Anki } from 'modules/book-engine';
 import { updateNestedMapping } from 'lib/utils';
 import { useAppStore } from './useAppStore';
 import { Toast } from 'components/ui/Toast';
+import i18n from 'i18n';
 
 const ANKI_PERMISSION = 'com.ichi2.anki.permission.READ_WRITE_DATABASE';
 
@@ -127,7 +128,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
       }
     } catch (err) {
       console.warn(err);
-      Toast.show('Failed to request Anki permission', 'error');
+      Toast.show(i18n.t('toast.failedToRequestAnkiPermission'), 'error');
     }
   },
 

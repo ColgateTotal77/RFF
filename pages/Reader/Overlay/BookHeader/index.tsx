@@ -1,4 +1,4 @@
-import { Appbar, PaperProvider, TextInput, useTheme } from 'react-native-paper';
+import { Appbar, Portal, TextInput, useTheme } from 'react-native-paper';
 import { Other } from 'pages/Reader/Overlay/BookHeader/Other';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { View, Modal, Animated, TextInput as NativeTextInput } from 'react-native';
@@ -162,7 +162,7 @@ export const BookHeader = () => {
         animationType="slide"
         transparent={true}
         onRequestClose={onBookSettingsClose}>
-        <PaperProvider theme={theme}>
+        <Portal.Host>
           <Animated.View
             style={{
               flex: 1,
@@ -180,7 +180,7 @@ export const BookHeader = () => {
             </Appbar.Header>
             <BookSettings />
           </Animated.View>
-        </PaperProvider>
+        </Portal.Host>
       </Modal>
     </>
   );

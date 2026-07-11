@@ -66,7 +66,13 @@
     },
     "navigation": {
       "chapters": "Главы",
-      "bookmarks": "Закладки"
+      "bookmarks": "Закладки",
+      "renameBookmark": {
+        "title": "Переименовать закладку",
+        "label": "Название закладки",
+        "cancel": "Отмена",
+        "confirm": "Сохранить"
+      }
     }
   },
   "sidebar": {
@@ -84,5 +90,16 @@
     "addBook": "Добавить книгу",
     "delete": "Удалить",
     "pages": "~{{count}} стр."
+  },
+  "toast": {
+    "failedToLoadBook": "Не удалось загрузить книгу",
+    "failedToOpenBook": "Не удалось открыть книгу",
+    "failedToRequestAnkiPermission": "Не удалось запросить разрешение Anki",
+    "failedToLoadReader": "Не удалось загрузить читалку",
+    "configureAnkiDeck": "Настройте колоду Anki в настройках",
+    "failedToAddCard": "Не удалось добавить карточку",
+    "failedToUpdateCard": "Не удалось обновить карточку",
+    "failedToOpenTranslator": "Не удалось открыть переводчик",
+    "failedToDeleteNote": "Не удалось удалить заметку"
   }
 }

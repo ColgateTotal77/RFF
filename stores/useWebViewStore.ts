@@ -5,6 +5,7 @@ import { useBookStore } from './useBookStore';
 import { useAppStore } from './useAppStore';
 import { useTempStore } from './useTempStore';
 import { Toast } from 'components/ui/Toast';
+import i18n from 'i18n';
 
 export type QueueAction =
   | { type: 'instantScroll'; targetBlockId: number; blockScrollPercent?: number }
@@ -134,7 +135,7 @@ export const useWebViewStore = create<Store>()((set, get) => ({
       }, 0);
     } catch (e) {
       console.error('Failed to prepare initial blocks:', e);
-      Toast.show('Failed to load reader', 'error');
+      Toast.show(i18n.t('toast.failedToLoadReader'), 'error');
       useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
     }
   },

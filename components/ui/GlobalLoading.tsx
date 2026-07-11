@@ -1,4 +1,4 @@
-import { Animated } from 'react-native';
+import { Animated, BackHandler } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { Loading } from 'components/ui/Loading';
 import React, { useEffect, useRef, useState } from 'react';
@@ -10,6 +10,13 @@ export const GlobalLoading = () => {
   const [isMounted, setIsMounted] = useState(globalLoading.isLoading);
   const [message, setMessage] = useState(globalLoading.message);
   const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!globalLoading.isLoading) return;
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, [globalLoading.isLoading]);
 
   useEffect(() => {
     if (globalLoading.isLoading) {
