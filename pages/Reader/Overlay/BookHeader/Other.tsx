@@ -1,5 +1,4 @@
-import { Divider, Menu } from 'react-native-paper';
-import { useBookStore } from 'stores/useBookStore';
+import { DropdownMenu } from 'components/ui/DropdownMenu';
 import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { useAppStore } from 'stores/useAppStore';
@@ -17,23 +16,21 @@ export const Other = (props: Props) => {
   const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   return (
-    <Menu
+    <DropdownMenu
       visible={isOpen}
       onDismiss={onClose}
       anchor={
         <AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />
       }
-      anchorPosition={'bottom'}
       elevation={1}>
-      <Menu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />
-      <Divider />
-      <Menu.Item
+      <DropdownMenu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />
+      <DropdownMenu.Item
         onPress={() => {
           onBookSettingsOpen();
           onClose();
         }}
         title={t('settings')}
       />
-    </Menu>
+    </DropdownMenu>
   );
 };

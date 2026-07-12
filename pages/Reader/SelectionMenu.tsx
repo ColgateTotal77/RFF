@@ -1,5 +1,5 @@
-import { Menu, Surface, useTheme, Text, Icon } from 'react-native-paper';
-import { View, Dimensions } from 'react-native';
+import { Surface, useTheme, Text, Icon } from 'react-native-paper';
+import { Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useWordAction } from 'lib/useWordAction';
 import { useTempStore } from 'stores/useTempStore';
@@ -9,7 +9,7 @@ import { Button } from 'components/ui/Button';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { IconButton } from 'components/ui/IconButton';
 import { VerticalDivider } from 'components/ui/VerticalDivider';
-import { HorizontalDivider } from 'components/ui/HorizontalDivider';
+import { DropdownMenu } from 'components/ui/DropdownMenu';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
@@ -133,7 +133,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
 
       {CardButton}
 
-      <Menu
+      <DropdownMenu
         visible={isOpen}
         onDismiss={() => setIsOpen(false)}
         anchor={
@@ -144,37 +144,33 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
             accessibilityLabel="More options"
           />
         }
-        anchorPosition={'bottom'}
-        contentStyle={{
+        style={{
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.outline,
+          borderRadius: 0,
         }}>
         {selectionMenu.noteIds && (
           <>
-            <Menu.Item
+            <DropdownMenu.Item
               onPress={() => onDeleteNotePress()}
               title={t('deleteNote')}
-              leadingIcon={({ size }) => (
-                <Icon source="delete-outline" size={size} color={theme.colors.primary} />
-              )}
+              icon={<Icon source="delete-outline" size={20} color={theme.colors.primary} />}
             />
             {selectionMenu.colorCode && Number(selectionMenu.colorCode) > 0 && (
               <>
-                <HorizontalDivider />
-                <Menu.Item
+                <DropdownMenu.Item
                   onPress={() => onDecreaseTagPress()}
                   title={t('decreaseTag')}
-                  leadingIcon={() => (
+                  icon={
                     <Text variant="bodyLarge" style={{ color: theme.colors.primary }}>
                       -F
                     </Text>
-                  )}
+                  }
                 />
               </>
             )}
           </>
         )}
-      </Menu>
+      </DropdownMenu>
     </Surface>
   );
 };

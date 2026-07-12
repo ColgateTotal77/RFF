@@ -1,4 +1,10 @@
 {
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "delete": "Delete"
+  },
   "ankiTab": {
     "title": "Anki Integration",
     "connect": "Connect to AnkiDroid",
@@ -15,8 +21,6 @@
     "createDeck": {
       "title": "New Deck",
       "label": "Deck name",
-      "cancel": "Cancel",
-      "confirm": "Create",
       "errorEmpty": "Deck name cannot be empty",
       "errorDuplicate": "A deck with this name already exists"
     },
@@ -69,9 +73,7 @@
       "bookmarks": "Bookmarks",
       "renameBookmark": {
         "title": "Rename bookmark",
-        "label": "Bookmark title",
-        "cancel": "Cancel",
-        "confirm": "Save"
+        "label": "Bookmark title"
       }
     }
   },
@@ -79,7 +81,8 @@
     "brand": "RFF",
     "readingNow": "Reading Now",
     "haveRead": "Have Read",
-    "settings": "Settings"
+    "settings": "Settings",
+    "searchPlaceholder": "Search books..."
   },
   "bookLists": {
     "setupAnkiTitle": "Set up AnkiDroid to get started",
@@ -88,8 +91,11 @@
     "goToSettings": "Go to Settings",
     "noBooks": "No books here yet",
     "addBook": "Add Book",
-    "delete": "Delete",
-    "pages": "~{{count}} pages"
+    "pages": "~{{count}} pages",
+    "deleteDialog": {
+      "title": "Delete book?",
+      "message": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone."
+    }
   },
   "toast": {
     "failedToLoadBook": "Failed to load book",

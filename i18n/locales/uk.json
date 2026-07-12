@@ -1,4 +1,10 @@
 {
+  "common": {
+    "cancel": "Скасувати",
+    "save": "Зберегти",
+    "create": "Створити",
+    "delete": "Видалити"
+  },
   "ankiTab": {
     "title": "Інтеграція з Anki",
     "connect": "Підключитися до AnkiDroid",
@@ -15,8 +21,6 @@
     "createDeck": {
       "title": "Нова колода",
       "label": "Назва колоди",
-      "cancel": "Скасувати",
-      "confirm": "Створити",
       "errorEmpty": "Назва не може бути порожньою",
       "errorDuplicate": "Колода з такою назвою вже існує"
     },
@@ -69,9 +73,7 @@
       "bookmarks": "Закладки",
       "renameBookmark": {
         "title": "Перейменувати закладку",
-        "label": "Назва закладки",
-        "cancel": "Скасувати",
-        "confirm": "Зберегти"
+        "label": "Назва закладки"
       }
     }
   },
@@ -79,7 +81,8 @@
     "brand": "RFF",
     "readingNow": "Зараз читаю",
     "haveRead": "Прочитано",
-    "settings": "Налаштування"
+    "settings": "Налаштування",
+    "searchPlaceholder": "Пошук книг..."
   },
   "bookLists": {
     "setupAnkiTitle": "Налаштуйте AnkiDroid для початку роботи",
@@ -88,8 +91,11 @@
     "goToSettings": "Перейти до налаштувань",
     "noBooks": "Тут поки немає книг",
     "addBook": "Додати книгу",
-    "delete": "Видалити",
-    "pages": "~{{count}} стор."
+    "pages": "~{{count}} стор.",
+    "deleteDialog": {
+      "title": "Видалити книгу?",
+      "message": "Ви впевнені, що хочете видалити «{{title}}»? Цю дію неможливо скасувати."
+    }
   },
   "toast": {
     "failedToLoadBook": "Не вдалося завантажити книгу",

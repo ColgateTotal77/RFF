@@ -1,4 +1,4 @@
-import { Menu } from 'react-native-paper';
+import { DropdownMenu } from 'components/ui/DropdownMenu';
 import { AppbarAction } from 'components/ui/AppbarAction';
 interface Props {
   isOpen: boolean;
@@ -10,13 +10,11 @@ export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose } = props;
 
   return (
-    <Menu
+    <DropdownMenu
       visible={isOpen}
       onDismiss={onClose}
-      anchor={<AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />}
-      anchorPosition={'bottom'}
-      elevation={1}>
-      <></>
-    </Menu>
+      anchor={
+        <AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />
+      }></DropdownMenu>
   );
 };

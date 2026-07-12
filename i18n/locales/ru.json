@@ -1,4 +1,10 @@
 {
+  "common": {
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "create": "Создать",
+    "delete": "Удалить"
+  },
   "ankiTab": {
     "title": "Интеграция с Anki",
     "connect": "Подключиться к AnkiDroid",
@@ -15,8 +21,6 @@
     "createDeck": {
       "title": "Новая колода",
       "label": "Название колоды",
-      "cancel": "Отмена",
-      "confirm": "Создать",
       "errorEmpty": "Название не может быть пустым",
       "errorDuplicate": "Колода с таким названием уже существует"
     },
@@ -69,9 +73,7 @@
       "bookmarks": "Закладки",
       "renameBookmark": {
         "title": "Переименовать закладку",
-        "label": "Название закладки",
-        "cancel": "Отмена",
-        "confirm": "Сохранить"
+        "label": "Название закладки"
       }
     }
   },
@@ -79,7 +81,8 @@
     "brand": "RFF",
     "readingNow": "Читаю сейчас",
     "haveRead": "Прочитано",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "searchPlaceholder": "Поиск книг..."
   },
   "bookLists": {
     "setupAnkiTitle": "Настройте AnkiDroid для начала работы",
@@ -88,8 +91,11 @@
     "goToSettings": "Перейти в настройки",
     "noBooks": "Здесь пока нет книг",
     "addBook": "Добавить книгу",
-    "delete": "Удалить",
-    "pages": "~{{count}} стр."
+    "pages": "~{{count}} стр.",
+    "deleteDialog": {
+      "title": "Удалить книгу?",
+      "message": "Вы уверены, что хотите удалить «{{title}}»? Это действие нельзя отменить."
+    }
   },
   "toast": {
     "failedToLoadBook": "Не удалось загрузить книгу",

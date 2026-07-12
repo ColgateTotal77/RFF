@@ -1,7 +1,8 @@
-import { TextInput, useTheme } from 'react-native-paper';
 import { useRef, useState } from 'react';
 import { Animated } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
+import { SearchInput } from 'components/ui/SearchInput';
 import { useTempStore } from 'stores/useTempStore';
 
 interface Props {
@@ -13,7 +14,7 @@ export const SearchAction = ({ leftContent }: Props) => {
   const [showSearch, setShowSearch] = useState(false);
   const bookListQuery = useTempStore((state) => state.bookListQuery);
   const setBookListQuery = useTempStore((state) => state.setBookListQuery);
-  const theme = useTheme();
+  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
 
   const titleAnim = useRef(new Animated.Value(1)).current;
   const searchAnim = useRef(new Animated.Value(0)).current;
@@ -43,15 +44,11 @@ export const SearchAction = ({ leftContent }: Props) => {
       {showSearch ? (
         <Animated.View
           style={{ flex: 1, opacity: searchAnim, transform: [{ translateX: searchSlide }] }}>
-          <TextInput
+          <SearchInput
             value={bookListQuery}
             onChangeText={setBookListQuery}
-            mode="flat"
-            style={{ flex: 1, backgroundColor: theme.colors.background }}
-            returnKeyType="search"
-            autoCapitalize="none"
+            placeholder={t('searchPlaceholder')}
             autoFocus
-            accessibilityLabel="Search books"
           />
         </Animated.View>
       ) : (

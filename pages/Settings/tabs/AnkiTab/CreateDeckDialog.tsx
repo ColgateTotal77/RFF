@@ -64,9 +64,9 @@ export const CreateDeckDialog = ({ isOpen, onConfirm, onClose }: Props) => {
           {trimmed.length > 0 && Boolean(error) && <HelperText type="error">{error}</HelperText>}
         </Dialog.Content>
         <Dialog.Actions>
-          <Button onPress={onClose}>{t('cancel')}</Button>
+          <Button onPress={onClose}>{t('cancel', { keyPrefix: 'common' })}</Button>
           <Button onPress={handleConfirm} disabled={!!error || creating} loading={creating}>
-            {t('confirm')}
+            {t('create', { keyPrefix: 'common' })}
           </Button>
         </Dialog.Actions>
       </Dialog>

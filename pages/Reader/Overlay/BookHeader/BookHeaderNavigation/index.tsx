@@ -32,8 +32,8 @@ const BookHeaderNavigation = ({
       onRequestClose={onClose}>
       <Portal.Host>
         <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingBottom: bottom }}>
-          <Appbar.Header>
-            <AppbarAction icon="close" onPress={onClose} accessibilityLabel="Close" />
+          <Appbar.Header style={{ marginLeft: 4 }}>
+            <AppbarAction icon="arrow-left" onPress={onClose} accessibilityLabel="Close" />
             <Appbar.Content title={bookTitle} />
           </Appbar.Header>
 

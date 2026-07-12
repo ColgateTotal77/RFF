@@ -33,9 +33,9 @@ export const RenameBookmarkDialog = ({ isOpen, initialTitle, onConfirm, onClose 
           <TextInput label={t('label')} value={title} onChangeText={setTitle} autoFocus />
         </Dialog.Content>
         <Dialog.Actions>
-          <Button onPress={onClose}>{t('cancel')}</Button>
+          <Button onPress={onClose}>{t('cancel', { keyPrefix: 'common' })}</Button>
           <Button onPress={handleConfirm} disabled={!trimmed}>
-            {t('confirm')}
+            {t('save', { keyPrefix: 'common' })}
           </Button>
         </Dialog.Actions>
       </Dialog>

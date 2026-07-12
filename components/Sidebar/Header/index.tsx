@@ -22,7 +22,7 @@ export const Header = ({ navigation, title, routeName }: Props) => {
   const isBookListRoute = routeName === 'Reading Now' || routeName === 'Have Read';
 
   return (
-    <Appbar.Header>
+    <Appbar.Header style={{ marginLeft: 4 }}>
       {isBookListRoute ? (
         <SearchAction
           leftContent={

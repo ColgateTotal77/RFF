@@ -1,4 +1,4 @@
-import { Appbar, Portal, TextInput, useTheme } from 'react-native-paper';
+import { Appbar, Portal, useTheme } from 'react-native-paper';
 import { Other } from 'pages/Reader/Overlay/BookHeader/Other';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
 import { View, Modal, Animated, TextInput as NativeTextInput } from 'react-native';
@@ -9,34 +9,32 @@ import BookHeaderNavigation from 'pages/Reader/Overlay/BookHeader/BookHeaderNavi
 import { MenuSearch } from 'pages/Reader/Overlay/BookHeader/Search';
 import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
+import { SearchInput } from 'components/ui/SearchInput';
 import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const SearchInput = ({
+const BookSearchInput = ({
   onSubmit,
   inputRef,
 }: {
   onSubmit: (q: string) => void;
   inputRef: React.Ref<NativeTextInput>;
 }) => {
-  const theme = useTheme();
   const setTempSearchQuery = useTempStore((state) => state.setTempSearchQuery);
   const tempSearchQuery = useTempStore((state) => state.tempSearchQuery);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   return (
-    <TextInput
-      ref={inputRef}
-      placeholder={t('searchPlaceholder')}
-      value={tempSearchQuery}
-      onChangeText={setTempSearchQuery}
-      mode="flat"
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      returnKeyType="search"
-      autoCapitalize="none"
-      onSubmitEditing={() => onSubmit(tempSearchQuery)}
-      accessibilityLabel="Search in book"
-    />
+    <View style={{ flex: 1 }}>
+      <SearchInput
+        inputRef={inputRef}
+        value={tempSearchQuery}
+        onChangeText={setTempSearchQuery}
+        placeholder={t('searchPlaceholder')}
+        accessibilityLabel="Search in book"
+        onSubmitEditing={() => onSubmit(tempSearchQuery)}
+      />
+    </View>
   );
 };
 
@@ -99,7 +97,7 @@ export const BookHeader = () => {
 
   return (
     <>
-      <Appbar.Header style={{ backgroundColor: theme.colors.background }}>
+      <Appbar.Header>
         <Appbar.Content title={currentBook?.title} />
         <AppbarAction
           icon="magnify"
@@ -136,13 +134,13 @@ export const BookHeader = () => {
             searchInputRef.current?.focus();
         }}>
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-          <Appbar.Header>
+          <Appbar.Header style={{ marginRight: 8, marginLeft: 4 }}>
             <AppbarAction
-              icon="close"
+              icon="arrow-left"
               onPress={toggleIsSearchModuleOpen}
               accessibilityLabel="Close search"
             />
-            <SearchInput inputRef={searchInputRef} onSubmit={onSearchSubmit} />
+            <BookSearchInput inputRef={searchInputRef} onSubmit={onSearchSubmit} />
           </Appbar.Header>
           <MenuSearch onClose={toggleIsSearchModuleOpen} />
         </View>
@@ -161,9 +159,9 @@ export const BookHeader = () => {
               opacity: opacityAnim,
               paddingBottom: bottom,
             }}>
-            <Appbar.Header style={{ backgroundColor: 'transparent' }}>
+            <Appbar.Header style={{ marginLeft: 4 }}>
               <AppbarAction
-                icon="close"
+                icon="arrow-left"
                 onPress={onBookSettingsClose}
                 accessibilityLabel="Close book settings"
               />
