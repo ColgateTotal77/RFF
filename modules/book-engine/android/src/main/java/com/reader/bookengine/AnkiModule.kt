@@ -34,6 +34,8 @@ class AnkiModule : Module() {
         colorCode: Int,
     )
 
+    private external fun removeNotesFromAnkiDictionary(noteIds: LongArray)
+
     override fun definition() =
         ModuleDefinition {
             Name("Anki")
@@ -134,6 +136,8 @@ class AnkiModule : Module() {
                             val noteUri = Uri.withAppendedPath(baseUri, noteId.toString())
                             moduleContext.contentResolver.delete(noteUri, null, null)
                         }
+
+                        removeNotesFromAnkiDictionary(noteIds)
                     } catch (e: Exception) {
                         android.util.Log.e("BookEngine", "Failed to delete Anki notes", e)
                         throw Exception("Failed to delete Anki notes: ${e.message}")

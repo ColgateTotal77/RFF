@@ -30,15 +30,10 @@
 
     if (targetWords.size === 0) return;
 
-    const DASH_CHARS = '-‐‑‒–—−';
-    const WORD_CHARS = `\\p{L}\\p{N}_`;
-    const escapedWords = Array.from(targetWords).map((w) =>
-      w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    );
-    const combinedRegex = new RegExp(
-      `(^|[^${WORD_CHARS}${DASH_CHARS}])(${escapedWords.join('|')})(?=[^${WORD_CHARS}${DASH_CHARS}]|$)`,
-      'giu'
-    );
+    const escapedWords = Array.from(targetWords)
+      .sort((a, b) => b.length - a.length)
+      .map((w) => window.buildWordPattern(w));
+    const combinedRegex = new RegExp(`(?:${escapedWords.join('|')})`, 'giu');
 
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode: function (node) {
@@ -58,9 +53,9 @@
     textNodes.forEach((textNode) => {
       const matches = [];
       let match;
+      combinedRegex.lastIndex = 0;
       while ((match = combinedRegex.exec(textNode.nodeValue)) !== null) {
-        const start = match.index + match[1].length;
-        matches.push({ start, length: match[2].length });
+        matches.push({ start: match.index, length: match[0].length });
       }
 
       for (let i = matches.length - 1; i >= 0; i--) {

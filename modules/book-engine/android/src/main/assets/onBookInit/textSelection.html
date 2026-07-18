@@ -4,6 +4,49 @@
   const MAX_SENTENCE_LENGTH = 200;
   const SENTENCE_CONTAINER_SELECTOR =
     'p, div, h1, h2, h3, h4, h5, h6, li, blockquote, article, section, td';
+  const DASH_CHARS = ['-', '‐', '‑', '‒', '–', '—', '−'];
+  const DASH_CLASS = DASH_CHARS.map((ch) => (ch === '-' ? '\\-' : ch)).join('');
+  const DASH_SPLIT_REGEX = new RegExp(`([${DASH_CLASS}]+)`);
+  const PUNCTUATION_REGEX = /^[^\p{L}\d]+|[^\p{L}\d]+$/gu;
+
+  const resolveTappedWord = (word, relOffset) => {
+    const tokens = word.split(DASH_SPLIT_REGEX);
+    if (tokens.length === 1) return word;
+
+    const idx = Math.min(Math.max(relOffset, 0), word.length - 1);
+
+    let pos = 0;
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      if (idx < pos + token.length) {
+        return i % 2 === 0 ? token : word;
+      }
+      pos += token.length;
+    }
+
+    return word;
+  };
+
+  const segmenter =
+    typeof Intl !== 'undefined' && Intl.Segmenter
+      ? new Intl.Segmenter(undefined, { granularity: 'word' })
+      : null;
+
+  const resolveWordBounds = (text, offset) => {
+    const spacedStart = text.lastIndexOf(' ', offset - 1) + 1;
+    const spacedIndex = text.indexOf(' ', offset);
+    const spacedEnd = spacedIndex === -1 ? text.length : spacedIndex;
+
+    const unspaced = window.hasUnspacedText(text.substring(spacedStart, spacedEnd));
+    if (!unspaced || !segmenter) return { start: spacedStart, end: spacedEnd, unspaced };
+
+    for (const segment of segmenter.segment(text)) {
+      const end = segment.index + segment.segment.length;
+      if (offset < end) return { start: segment.index, end, unspaced };
+    }
+
+    return { start: spacedStart, end: spacedEnd, unspaced };
+  };
 
   const getTextOffset = (ancestor, node, offset) => {
     const walker = document.createTreeWalker(ancestor, NodeFilter.SHOW_TEXT);
@@ -180,13 +223,19 @@
     const text = textNode.textContent;
     const offset = range.startOffset;
 
-    const start = text.lastIndexOf(' ', offset - 1) + 1;
-    const end = text.indexOf(' ', offset);
-    const selectedText = text.substring(start, end === -1 ? text.length : end).trim();
+    const { start, end: rawEnd, unspaced } = resolveWordBounds(text, offset);
+    const rawWord = text.substring(start, rawEnd);
+
+    const highlightedElement = textNode.parentElement.closest('.anki-word');
+
+    const rawSelection =
+      unspaced && highlightedElement
+        ? highlightedElement.textContent
+        : resolveTappedWord(rawWord, offset - start);
+    const selectedText = rawSelection.trim().replace(PUNCTUATION_REGEX, '');
 
     if (!selectedText) return;
 
-    const highlightedElement = textNode.parentElement.closest('.anki-word');
     const noteIds = highlightedElement?.dataset.noteIds || null;
     const colorCode = highlightedElement?.dataset.flag || null;
 
@@ -204,7 +253,7 @@
       const sentenceContainer =
         textNode.parentElement.closest(SENTENCE_CONTAINER_SELECTOR) || textNode.parentElement;
       const wordStart = getTextOffset(sentenceContainer, textNode, start);
-      const wordEnd = getTextOffset(sentenceContainer, textNode, end === -1 ? text.length : end);
+      const wordEnd = getTextOffset(sentenceContainer, textNode, rawEnd);
       const sentence = extractSentence(sentenceContainer, wordStart, wordEnd);
 
       window.ReactNativeWebView.postMessage(

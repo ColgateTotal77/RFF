@@ -91,6 +91,7 @@
     "goToSettings": "Перейти до налаштувань",
     "noBooks": "Тут поки немає книг",
     "addBook": "Додати книгу",
+    "noSearchResults": "За вашим запитом книг не знайдено",
     "pages": "~{{count}} стор.",
     "deleteDialog": {
       "title": "Видалити книгу?",

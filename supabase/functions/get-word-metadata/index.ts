@@ -49,6 +49,11 @@ Deno.serve(async (req) => {
     const fromLang = langMap[word_lang_code];
     const toLang = langMap[translation_lang_code];
 
+    if (!fromLang || !toLang) {
+      const bad = !fromLang ? word_lang_code : translation_lang_code;
+      return jsonResponse({ error: `Unsupported language code: ${bad}` }, 400);
+    }
+
     let lemma;
     try {
       lemma = await getLemma(word, fromLang, sentence, deepseekKey);

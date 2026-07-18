@@ -3,7 +3,10 @@ project("book_engine_native")
 
 add_library(book_engine_native SHARED
     src/main/jni/logic.c
+    src/main/jni/render.c
     src/main/jni/trie.c
+    src/main/jni/utf8.c
+    src/main/jni/utf8proc/utf8proc.c
 )
 
 find_library(log-lib log)

@@ -1,0 +1,57 @@
+<script>
+  // Mirrors UNSPACED_RANGES in jni/utf8.c — keep the two tables in sync.
+  window.UNSPACED_RANGES = [
+    [0x00e00, 0x00e7f], // Thai
+    [0x00e80, 0x00eff], // Lao
+    [0x00f00, 0x00fff], // Tibetan
+    [0x01000, 0x0109f], // Myanmar
+    [0x01780, 0x017ff], // Khmer
+    [0x01980, 0x019df], // New Tai Lue
+    [0x03040, 0x030ff], // Hiragana + Katakana
+    [0x03400, 0x04dbf], // CJK Unified Ideographs Extension A
+    [0x04e00, 0x09fff], // CJK Unified Ideographs
+    [0x0a000, 0x0a4cf], // Yi
+    [0x0a980, 0x0a9df], // Javanese
+    [0x0ac00, 0x0d7af], // Hangul syllables
+    [0x0f900, 0x0faff], // CJK Compatibility Ideographs
+    [0x1b000, 0x1b16f], // Kana supplement / extended
+    [0x20000, 0x2fa1f], // CJK Extensions B-F + Compatibility Supp.
+  ];
+
+  window.isUnspacedCodePoint = (cp) => {
+    if (cp === undefined || cp === null) return false;
+    for (const [min, max] of window.UNSPACED_RANGES) {
+      if (cp < min) return false;
+      if (cp <= max) return true;
+    }
+    return false;
+  };
+
+  window.hasUnspacedText = (text) => {
+    if (!text) return false;
+    for (const char of text) {
+      if (window.isUnspacedCodePoint(char.codePointAt(0))) return true;
+    }
+    return false;
+  };
+
+  const WORD_CHARS = `\\p{L}\\p{N}_`;
+
+  const UNSPACED_CLASS = window.UNSPACED_RANGES.map(
+    ([min, max]) => `\\u{${min.toString(16)}}-\\u{${max.toString(16)}}`
+  ).join('');
+
+  const LEAD = `(?:(?<![${WORD_CHARS}])|(?<=[${UNSPACED_CLASS}]))`;
+  const TRAIL = `(?:(?![${WORD_CHARS}])|(?=[${UNSPACED_CLASS}]))`;
+
+  window.buildWordPattern = (word) => {
+    const chars = Array.from(word);
+    if (chars.length === 0) return '';
+
+    const body = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+');
+    const lead = window.isUnspacedCodePoint(chars[0].codePointAt(0)) ? '' : LEAD;
+    const trail = window.isUnspacedCodePoint(chars[chars.length - 1].codePointAt(0)) ? '' : TRAIL;
+
+    return `${lead}${body}${trail}`;
+  };
+</script>

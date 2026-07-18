@@ -5,7 +5,6 @@ import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { Toast } from 'components/ui/Toast';
 import { useTranslation } from 'react-i18next';
-import { DASH_REGEX_STRING } from './constants';
 
 interface UpdateWordTag {
   noteIds: string;
@@ -25,20 +24,18 @@ export const useWordAction = () => {
       return;
     }
 
-    const cleanedText = text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '');
-
     try {
       executeImmediateActions([
         {
           type: 'updateTag',
-          word: cleanedText,
+          word: text,
           noteIds: '',
           colorCode: '-1',
         },
       ]);
 
       const metadata = await fetchWordMetadata(
-        cleanedText,
+        text,
         sentence === text ? '' : sentence,
         bookSettings.bookLang,
         bookSettings.targetLang
@@ -47,7 +44,7 @@ export const useWordAction = () => {
       const isTwoSided = bookSettings.isTwoSided;
 
       const fields = {
-        originalWord: cleanedText.toLowerCase(),
+        originalWord: text.toLowerCase(),
         word: metadata?.word || '',
         translation: metadata?.translation || '',
         definition: metadata?.definition || '',
@@ -68,7 +65,7 @@ export const useWordAction = () => {
         executeImmediateActions([
           {
             type: 'updateTag',
-            word: metadata?.wordForms || cleanedText,
+            word: metadata?.wordForms || text,
             noteIds: noteIdsString,
             colorCode: '1',
           },
@@ -80,7 +77,7 @@ export const useWordAction = () => {
       executeImmediateActions([
         {
           type: 'updateTag',
-          word: cleanedText,
+          word: text,
           noteIds: '',
           colorCode: 'remove',
         },

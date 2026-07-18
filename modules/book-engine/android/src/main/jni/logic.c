@@ -1,45 +1,92 @@
 #include <jni.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <ctype.h>
 #include <android/log.h>
 #include "trie.h"
-#include "logic.h"
+#include "utf8.h"
+#include "render.h"
 
-TrieNode* global_dictionary = NULL;
+Trie* global_dictionary = NULL;
+
+static pthread_rwlock_t dict_lock;
+static pthread_once_t dict_lock_once = PTHREAD_ONCE_INIT;
+
+static void dict_lock_init(void) {
+    pthread_rwlockattr_t attr;
+    pthread_rwlockattr_init(&attr);
+    pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
+    pthread_rwlock_init(&dict_lock, &attr);
+    pthread_rwlockattr_destroy(&attr);
+}
+
+static void dict_rdlock(void) {
+    pthread_once(&dict_lock_once, dict_lock_init);
+    pthread_rwlock_rdlock(&dict_lock);
+}
+
+static void dict_wrlock(void) {
+    pthread_once(&dict_lock_once, dict_lock_init);
+    pthread_rwlock_wrlock(&dict_lock);
+}
+
+static void dict_unlock(void) {
+    pthread_rwlock_unlock(&dict_lock);
+}
 
 JNIEXPORT void JNICALL
 Java_com_reader_bookengine_AnkiModule_upsertWordToAnkiDictionary(
         JNIEnv* env, jobject thiz, jstring jword, jlongArray noteIds, jint colorCode) {
 
-    if (global_dictionary == NULL) {
-        __android_log_print(ANDROID_LOG_DEBUG, "BookEngine", "global_dictionary is NULL");
-        return;
-    }
-
     const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
+    if (word_str == NULL) return;
 
     jsize note_count = (*env)->GetArrayLength(env, noteIds);
     jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
-    trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
+    dict_wrlock();
+    bool inserted = global_dictionary != NULL &&
+                    trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
+    dict_unlock();
+
+    if (!inserted) {
+        __android_log_print(ANDROID_LOG_WARN, "BookEngine", "upsertWordToAnkiDictionary: insert failed for '%s'", word_str);
+    }
 
     (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, jword, word_str);
 }
 
 JNIEXPORT void JNICALL
+Java_com_reader_bookengine_AnkiModule_removeNotesFromAnkiDictionary(
+        JNIEnv* env, jobject thiz, jlongArray noteIds) {
+
+    jsize note_count = (*env)->GetArrayLength(env, noteIds);
+    jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
+
+    dict_wrlock();
+    trie_remove_notes(global_dictionary, notes, note_count);
+    dict_unlock();
+
+    (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL
 Java_com_reader_bookengine_BookEngineModule_initAnkiDictionary(
     JNIEnv* env, jobject thiz, jobjectArray words, jobjectArray noteIdsArray, jintArray colorCodes) {
 
-    if (global_dictionary != NULL) {
-        trie_free(global_dictionary);
-        global_dictionary = NULL;
-    }
+    dict_wrlock();
 
-    global_dictionary = trie_create_node();
+    trie_free(global_dictionary);
+    global_dictionary = trie_create();
+
+    if (global_dictionary == NULL) {
+        dict_unlock();
+        __android_log_print(ANDROID_LOG_WARN, "BookEngine", "initAnkiDictionary: FAILED to allocate root");
+        return;
+    }
 
     jsize word_count = (*env)->GetArrayLength(env, words);
     jint* colors = (*env)->GetIntArrayElements(env, colorCodes, NULL);
@@ -48,145 +95,36 @@ Java_com_reader_bookengine_BookEngineModule_initAnkiDictionary(
         jstring jword = (jstring)(*env)->GetObjectArrayElement(env, words, i);
         const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
 
-        char* lower_word = strdup(word_str);
-        for (char* p = lower_word; *p; p++) {
-            *p = tolower((unsigned char)*p);
-        }
-
         jlongArray noteIds = (jlongArray)(*env)->GetObjectArrayElement(env, noteIdsArray, i);
         jsize note_count = (*env)->GetArrayLength(env, noteIds);
         jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
 
-        trie_insert(global_dictionary, lower_word, notes, note_count, colors[i]);
+        if (word_str != NULL) {
+            trie_insert(global_dictionary, word_str, notes, note_count, colors[i]);
+            (*env)->ReleaseStringUTFChars(env, jword, word_str);
+        }
 
-        free(lower_word);
         (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
-        (*env)->ReleaseStringUTFChars(env, jword, word_str);
         (*env)->DeleteLocalRef(env, jword);
         (*env)->DeleteLocalRef(env, noteIds);
     }
 
     (*env)->ReleaseIntArrayElements(env, colorCodes, colors, JNI_ABORT);
+
+    dict_unlock();
 }
 
 JNIEXPORT void JNICALL
 Java_com_reader_bookengine_BookEngineModule_freeAnkiDictionary(JNIEnv* env, jobject thiz) {
-    __android_log_print(ANDROID_LOG_DEBUG, "BookEngine", "Try to free anki dictionary");
-    if (global_dictionary != NULL) {
-        trie_free(global_dictionary);
-        global_dictionary = NULL;
+    dict_wrlock();
+    bool freed = global_dictionary != NULL;
+    trie_free(global_dictionary);
+    global_dictionary = NULL;
+    dict_unlock();
+
+    if (freed) {
         __android_log_print(ANDROID_LOG_DEBUG, "BookEngine", "Anki dictionary freed");
     }
-}
-
-// TODO(19): NUL at bytes_read not size; handle short fread; prefer fseeko/ftello for large files
-char* extract_block_html_from_file(const char* path_from) {
-    FILE* file = fopen(path_from, "rb");
-    if (!file) {
-        return NULL;
-    }
-
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    if (size <= 0) {
-        fclose(file);
-        return NULL;
-    }
-
-    char* buffer = (char*)malloc((size_t)size + 1);
-    if (!buffer) {
-        fclose(file);
-        return NULL;
-    }
-
-    size_t bytes_read = fread(buffer, 1, (size_t)size, file);
-    buffer[bytes_read] = '\0';
-    fclose(file);
-
-    char* content_start = buffer;
-    size_t content_length = bytes_read;
-
-    char temp_end_char = content_start[content_length];
-    content_start[content_length] = '\0';
-
-    StringBuffer* out = sb_create(content_length * 2);
-    const char* p = content_start;
-
-    while (*p != '\0') {
-        if (*p == '<') {
-            while (*p != '\0' && *p != '>') {
-                sb_append_char(out, *p);
-                p++;
-            }
-            if (*p == '>') {
-                sb_append_char(out, *p);
-                p++;
-            }
-            continue;
-        }
-
-        if (*p == '&') {
-            while (*p != '\0' && *p != ';') {
-                sb_append_char(out, *p);
-                p++;
-            }
-            if (*p == ';') {
-                sb_append_char(out, *p);
-                p++;
-            }
-            continue;
-        }
-
-        if (!is_word_char_at(p)) {
-            sb_append_char(out, *p);
-            p++;
-            continue;
-        }
-
-        const char* word_start = p;
-        while (*p != '\0' && is_word_char_at(p)) {
-            p++;
-        }
-        size_t word_len = p - word_start;
-
-        TrieNode* match = NULL;
-        if (global_dictionary != NULL) {
-            match = trie_search(global_dictionary, word_start, word_len);
-        }
-
-        if (match != NULL && match->note_count > 0) {
-            sb_append(out, "<span class=\"anki-word\" data-note-ids=\"[", 40);
-
-            for (int i = 0; i < match->note_count; i++) {
-                char note_id_str[32];
-                snprintf(note_id_str, sizeof(note_id_str), "%ld", match->note_ids[i]);
-                sb_append(out, note_id_str, strlen(note_id_str));
-
-                if (i < match->note_count - 1) {
-                    sb_append(out, ",", 1);
-                }
-            }
-
-            char span_close[64];
-            snprintf(span_close, sizeof(span_close), "]\" data-flag=\"%d\">", match->color_code);
-            sb_append(out, span_close, strlen(span_close));
-
-            sb_append(out, word_start, word_len);
-            sb_append(out, "</span>", 7);
-        } else {
-            sb_append(out, word_start, word_len);
-        }
-    }
-
-    content_start[content_length] = temp_end_char;
-
-    char* result = out->data;
-    free(out);
-    free(buffer);
-
-    return result;
 }
 
 JNIEXPORT jstring JNICALL
@@ -194,7 +132,12 @@ Java_com_reader_bookengine_BookEngineModule_extractBlockHtml(
     JNIEnv* env, jobject thiz, jstring filePath) {
 
     const char* path_from = (*env)->GetStringUTFChars(env, filePath, 0);
-    char* html = extract_block_html_from_file(path_from);
+    if (path_from == NULL) return NULL;
+
+    dict_rdlock();
+    char* html = render_block_file(global_dictionary, path_from);
+    dict_unlock();
+
     (*env)->ReleaseStringUTFChars(env, filePath, path_from);
 
     if (html == NULL) {

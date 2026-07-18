@@ -12,7 +12,12 @@ export const IconButton = ({ style, contentStyle, iconColor, ...props }: IconBut
   );
 };
 
-export const IconButtonWithBorder = ({ style, contentStyle, iconColor, ...props }: IconButtonProps) => {
+export const IconButtonWithBorder = ({
+  style,
+  contentStyle,
+  iconColor,
+  ...props
+}: IconButtonProps) => {
   const theme = useTheme();
   return (
     <PaperIconButton

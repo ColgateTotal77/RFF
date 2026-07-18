@@ -339,17 +339,23 @@ class BookEngineModule : Module() {
                             }
 
                             val baseUrlString = "file://${firstFile.parentFile?.absolutePath}/"
-                            val headIdx = header.indexOf("<head", ignoreCase = true)
-                            if (headIdx != -1) {
-                                val headEndIdx = header.indexOf(">", headIdx)
-                                if (headEndIdx != -1) {
-                                    header =
-                                        header.substring(0, headEndIdx + 1) + "\n<base href=\"$baseUrlString\">\n" +
-                                        header.substring(headEndIdx + 1)
-                                }
-                            } else {
+                            val headInject = "\n<meta charset=\"utf-8\">\n<base href=\"$baseUrlString\">\n"
+                            val headTagMatch = Regex("<head\\b[^>]*>", RegexOption.IGNORE_CASE).find(header)
+                            if (headTagMatch != null) {
+                                val headEndIdx = headTagMatch.range.last + 1
                                 header =
-                                    header.replaceFirst("<html>", "<html><head><base href=\"$baseUrlString\"></head>", ignoreCase = true)
+                                    header.substring(0, headEndIdx) + headInject +
+                                    header.substring(headEndIdx)
+                            } else {
+                                val htmlTagMatch = Regex("<html\\b[^>]*>", RegexOption.IGNORE_CASE).find(header)
+                                header =
+                                    if (htmlTagMatch != null) {
+                                        val htmlEndIdx = htmlTagMatch.range.last + 1
+                                        header.substring(0, htmlEndIdx) + "<head>$headInject</head>" +
+                                            header.substring(htmlEndIdx)
+                                    } else {
+                                        "<head>$headInject</head>$header"
+                                    }
                             }
 
                             val footer =

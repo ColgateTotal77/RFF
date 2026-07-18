@@ -11,7 +11,9 @@ type Props = {
 };
 
 export const RenameBookmarkDialog = ({ isOpen, initialTitle, onConfirm, onClose }: Props) => {
-  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation.renameBookmark' });
+  const { t } = useTranslation('translation', {
+    keyPrefix: 'bookHeader.navigation.renameBookmark',
+  });
   const [title, setTitle] = useState(initialTitle);
 
   useEffect(() => {

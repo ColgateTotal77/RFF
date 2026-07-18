@@ -91,6 +91,7 @@
     "goToSettings": "Go to Settings",
     "noBooks": "No books here yet",
     "addBook": "Add Book",
+    "noSearchResults": "No books match your search",
     "pages": "~{{count}} pages",
     "deleteDialog": {
       "title": "Delete book?",

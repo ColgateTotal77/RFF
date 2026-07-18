@@ -5,7 +5,6 @@ import { useWordAction } from 'lib/useWordAction';
 import { calculateBookProgress } from 'lib/utils';
 import { WebViewMessageEvent } from 'react-native-webview';
 import { useWebViewStore } from 'stores/useWebViewStore';
-import { DASH_REGEX_STRING } from 'lib/constants';
 import { useAppStore } from 'stores/useAppStore';
 
 export const useMessageHandler = () => {
@@ -81,9 +80,7 @@ export const useMessageHandler = () => {
             break;
 
           case 'DOUBLE_TAP':
-            await openSystemTranslator(
-              parsedData.text.replace(new RegExp(`[^\\p{L}\\d\\s${DASH_REGEX_STRING}]+`, 'gu'), '')
-            );
+            await openSystemTranslator(parsedData.text);
             closeMenu();
             break;
 

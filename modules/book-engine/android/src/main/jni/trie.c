@@ -1,12 +1,119 @@
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <android/log.h>
 #include "trie.h"
+#include "utf8.h"
+
+#define KEY_SPACE ' '
+#define ARENA_BLOCK (64 * 1024)
+
+struct ArenaBlock {
+    ArenaBlock* next;
+    size_t used;
+    size_t size;
+    char data[];
+};
+
+static void* arena_alloc(Trie* trie, size_t size) {
+    size = (size + 7) & ~(size_t)7;
+
+    if (!trie->blocks || trie->blocks->used + size > trie->blocks->size) {
+        size_t block = size > ARENA_BLOCK ? size : ARENA_BLOCK;
+        ArenaBlock* b = malloc(sizeof(ArenaBlock) + block);
+        if (!b) return NULL;
+        b->next = trie->blocks;
+        b->used = 0;
+        b->size = block;
+        trie->blocks = b;
+    }
+
+    void* p = trie->blocks->data + trie->blocks->used;
+    trie->blocks->used += size;
+    return p;
+}
+
+static TrieNode* node_create(Trie* trie, uint32_t key) {
+    TrieNode* node = arena_alloc(trie, sizeof(TrieNode));
+    if (!node) return NULL;
+
+    memset(node, 0, sizeof(TrieNode));
+    node->key = key;
+    return node;
+}
+
+static bool ends_word(CpClass prev, CpClass next) {
+    return prev == CP_UNSPACED || next != CP_ALPHA;
+}
+
+static bool child_slot(const TrieNode* node, uint32_t key, uint32_t* slot) {
+    uint32_t lo = 0, hi = node->child_count;
+
+    while (lo < hi) {
+        uint32_t mid = lo + (hi - lo) / 2;
+        if (node->children[mid]->key < key) lo = mid + 1;
+        else hi = mid;
+    }
+
+    *slot = lo;
+    return lo < node->child_count && node->children[lo]->key == key;
+}
+
+static TrieNode* trie_child_find(const TrieNode* node, uint32_t key) {
+    uint32_t slot;
+    return child_slot(node, key, &slot) ? node->children[slot] : NULL;
+}
+
+static bool grow_children(Trie* trie, TrieNode* node) {
+    uint32_t cap = node->child_cap ? node->child_cap * 2 : 2;
+    TrieNode** grown = arena_alloc(trie, cap * sizeof(TrieNode*));
+    if (!grown) return false;
+
+    if (node->child_count) {
+        memcpy(grown, node->children, node->child_count * sizeof(TrieNode*));
+    }
+    node->children = grown;
+    node->child_cap = cap;
+    return true;
+}
+
+static TrieNode* trie_child_insert(Trie* trie, TrieNode* node, uint32_t key) {
+    uint32_t slot;
+    if (child_slot(node, key, &slot)) return node->children[slot];
+
+    if (node->child_count == node->child_cap && !grow_children(trie, node)) return NULL;
+
+    TrieNode* child = node_create(trie, key);
+    if (!child) return NULL;
+
+    memmove(&node->children[slot + 1], &node->children[slot],
+            (node->child_count - slot) * sizeof(TrieNode*));
+    node->children[slot] = child;
+    node->child_count++;
+    return child;
+}
+
+static const char* skip_spaces(const char* p) {
+    const char* q;
+    while (*p != '\0' && cp_is_space(cp_at(p, &q))) p = q;
+    return p;
+}
+
+static bool contains(const int64_t* ids, int count, int64_t id) {
+    for (int i = 0; i < count; i++) {
+        if (ids[i] == id) return true;
+    }
+    return false;
+}
 
 StringBuffer* sb_create(size_t initial_cap) {
     StringBuffer* sb = malloc(sizeof(StringBuffer));
+    if (!sb) return NULL;
+
     sb->data = malloc(initial_cap);
+    if (!sb->data) {
+        free(sb);
+        return NULL;
+    }
     sb->data[0] = '\0';
     sb->length = 0;
     sb->capacity = initial_cap;
@@ -15,8 +122,11 @@ StringBuffer* sb_create(size_t initial_cap) {
 
 void sb_append(StringBuffer* sb, const char* str, size_t len) {
     if (sb->length + len + 1 > sb->capacity) {
-        sb->capacity = (sb->capacity + len) * 2;
-        sb->data = realloc(sb->data, sb->capacity);
+        size_t cap = (sb->capacity + len) * 2;
+        char* grown = realloc(sb->data, cap);
+        if (!grown) return;
+        sb->data = grown;
+        sb->capacity = cap;
     }
     memcpy(sb->data + sb->length, str, len);
     sb->length += len;
@@ -27,104 +137,133 @@ void sb_append_char(StringBuffer* sb, char c) {
     sb_append(sb, &c, 1);
 }
 
-TrieNode* trie_create_node() {
-    TrieNode* node = calloc(1, sizeof(TrieNode));
-    node->note_ids = NULL;
-    node->note_count = 0;
-    return node;
+Trie* trie_create(void) {
+    Trie* trie = calloc(1, sizeof(Trie));
+    if (!trie) return NULL;
+
+    trie->root = node_create(trie, 0);
+    if (!trie->root) {
+        free(trie);
+        return NULL;
+    }
+    return trie;
 }
 
-// TODO(20): OOM mid-word leaves partial path — return bool and propagate, or allocate full path first
-void trie_insert(TrieNode* root, const char* word, long* note_ids, int note_count, int color_code) {
-    TrieNode* curr = root;
-    for (int i = 0; word[i] != '\0'; i++) {
-        unsigned char c = tolower((unsigned char)word[i]);
-        // TODO(29): sibling linked-list is O(n) per byte — use [256] table or hash map
-        TrieChild* child = curr->children;
-        TrieNode* next_node = NULL;
-        while (child) {
-            if (child->character == c) {
-                next_node = child->child;
-                break;
-            }
-            child = child->next;
+bool trie_insert(Trie* trie, const char* word, const int64_t* note_ids, int note_count, int color_code) {
+    if (!trie || note_count <= 0) return false;
+
+    TrieNode* curr = trie->root;
+    const char* p = word;
+    bool pending_space = false;
+
+    while (*p != '\0') {
+        uint32_t cp = cp_at(p, &p);
+
+        if (cp_is_space(cp)) {
+            pending_space = (curr != trie->root);
+            continue;
         }
-        if (!next_node) {
-            TrieChild* new_child = malloc(sizeof(TrieChild));
-            if (!new_child) {
-                __android_log_print(ANDROID_LOG_DEBUG, "BookEngine", "trie_insert: FAILED to allocate child for character '%c'", c);
-                return;
-            }
-            new_child->character = c;
-            new_child->child = trie_create_node();
-            new_child->next = curr->children;
-            curr->children = new_child;
-            next_node = new_child->child;
+        if (pending_space) {
+            curr = trie_child_insert(trie, curr, KEY_SPACE);
+            pending_space = false;
         }
-
-        curr = next_node;
+        if (curr) curr = trie_child_insert(trie, curr, cp_fold_key(cp));
+        if (!curr) {
+            __android_log_print(ANDROID_LOG_WARN, "BookEngine", "trie_insert: out of memory on '%s'", word);
+            return false;
+        }
     }
 
-    if (curr->note_ids) {
-        free(curr->note_ids);
-    }
+    if (curr == trie->root) return false;
 
-    curr->note_ids = malloc(note_count * sizeof(long));
-    if (curr->note_ids) {
-        memcpy(curr->note_ids, note_ids, note_count * sizeof(long));
-        curr->note_count = note_count;
-    } else {
-        curr->note_count = 0;
-    }
+    int64_t* ids = malloc((size_t)note_count * sizeof(int64_t));
+    if (!ids) return false;
+
+    memcpy(ids, note_ids, (size_t)note_count * sizeof(int64_t));
+    free(curr->note_ids);
+    curr->note_ids = ids;
+    curr->note_count = note_count;
     curr->color_code = color_code;
+    return true;
 }
 
-TrieNode* trie_search(TrieNode* root, const char* word, size_t len) {
-    TrieNode* curr = root;
-    for (size_t i = 0; i < len; i++) {
-        unsigned char c = tolower((unsigned char)word[i]);
-        TrieChild* child = curr->children;
-        TrieNode* next_node = NULL;
+TrieNode* trie_search_longest(const Trie* trie, const char* text, size_t* out_len) {
+    const TrieNode* curr = trie->root;
+    TrieNode* best = NULL;
+    size_t best_len = 0;
+    const char* p = text;
+    const char* q;
+    CpClass cls = cp_word_class(p, CP_NONE, &q);
 
-        while (child) {
-            if (child->character == c) {
-                next_node = child->child;
-                break;
-            }
-            child = child->next;
+    while (*p != '\0') {
+        uint32_t key;
+
+        if (cls == CP_NONE) {
+            if (curr == trie->root) break;
+            q = skip_spaces(p);
+            if (q == p) break;
+            key = KEY_SPACE;
+        } else {
+            key = cp_fold_key(cp_at(p, NULL));
         }
 
-        if (!next_node) return NULL;
-        curr = next_node;
+        const TrieNode* next = trie_child_find(curr, key);
+        if (!next) break;
+
+        curr = next;
+        CpClass consumed = cls;
+        p = q;
+        cls = cp_word_class(p, consumed, &q);
+
+        if (consumed != CP_NONE && curr->note_count > 0 && ends_word(consumed, cls)) {
+            best = (TrieNode*)curr;
+            best_len = (size_t)(p - text);
+        }
     }
-    return curr;
+
+    if (out_len) *out_len = best_len;
+    return best;
 }
 
-void trie_free(TrieNode* root) {
-    if (!root) return;
-
-    TrieChild* child = root->children;
-    while (child) {
-        TrieChild* next = child->next;
-        trie_free(child->child);
-        free(child);
-        child = next;
+static void node_remove_notes(TrieNode* node, const int64_t* note_ids, int count) {
+    int kept = 0;
+    for (int i = 0; i < node->note_count; i++) {
+        if (!contains(note_ids, count, node->note_ids[i])) {
+            node->note_ids[kept++] = node->note_ids[i];
+        }
     }
-
-    if (root->note_ids) {
-        free(root->note_ids);
+    if (kept == 0 && node->note_ids) {
+        free(node->note_ids);
+        node->note_ids = NULL;
     }
+    node->note_count = kept;
 
-    free(root);
+    for (uint32_t i = 0; i < node->child_count; i++) {
+        node_remove_notes(node->children[i], note_ids, count);
+    }
 }
 
-bool is_word_char_at(const char* p) {
-    if (p == NULL || *p == '\0') {
-        return false;
+void trie_remove_notes(Trie* trie, const int64_t* note_ids, int count) {
+    if (trie) node_remove_notes(trie->root, note_ids, count);
+}
+
+static void node_free_notes(TrieNode* node) {
+    free(node->note_ids);
+    for (uint32_t i = 0; i < node->child_count; i++) {
+        node_free_notes(node->children[i]);
     }
-    unsigned char c = (unsigned char)*p;
-    if (c < 0x80) {
-        return isalnum(c) || c == '\'' || c == '-';
+}
+
+void trie_free(Trie* trie) {
+    if (!trie) return;
+
+    node_free_notes(trie->root);
+
+    ArenaBlock* b = trie->blocks;
+    while (b) {
+        ArenaBlock* next = b->next;
+        free(b);
+        b = next;
     }
-    return true;
+    free(trie);
 }

@@ -23,7 +23,7 @@ class AllAnkiWordsFetcher(
             val noteCursor =
                 resolver.query(
                     notesUri,
-                    arrayOf("_id", "flds", "tags", "mid"),
+                    arrayOf("_id", "flds", "tags"),
                     ankiSearchQuery,
                     null,
                     null,
@@ -32,64 +32,49 @@ class AllAnkiWordsFetcher(
             data class ParsedNote(
                 val id: Long,
                 val frontLower: String,
-                val backLower: String,
                 val colorCode: Int,
             )
 
             val count = noteCursor?.count ?: 0
             val parsedNotes = ArrayList<ParsedNote>(count)
-            val frontLookup = HashMap<String, Long>(count * 2)
-            val backLookup = HashMap<String, Long>(count * 2)
 
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
                 val tagsIndex = cursor.getColumnIndex("tags")
-                val midIndex = cursor.getColumnIndex("mid")
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
-                    val mid = cursor.getLong(midIndex).toString()
 
-                    val activeMapping = AnkiUtils.selectActiveMapping(mid, mapping, mirroredMapping)
-                    val parsed = AnkiUtils.parseNoteFields(flds, activeMapping) ?: continue
-                    if (parsed.front.isEmpty() || parsed.back.isEmpty()) continue
+                    val parsed = AnkiUtils.parseNote(flds, mapping, mirroredMapping) ?: continue
 
                     val frontLower = parsed.front.lowercase()
-                    val backLower = parsed.back.lowercase()
 
                     val noteId = cursor.getLong(idIndex)
                     val tagsStr = cursor.getString(tagsIndex) ?: ""
 
                     val colorCode = if (tagsStr.contains("Lookups_")) AnkiUtils.parseColorCode(tagsStr) else 0
 
-                    parsedNotes.add(ParsedNote(noteId, frontLower, backLower, colorCode))
-
-                    frontLookup[frontLower] = noteId
-                    backLookup[backLower] = noteId
+                    parsedNotes.add(ParsedNote(noteId, frontLower, colorCode))
                 }
             }
 
-            val tempWords = ArrayList<String>(parsedNotes.size)
-            val tempNoteIds = ArrayList<LongArray>(parsedNotes.size)
-            val tempColorCodes = ArrayList<Int>(parsedNotes.size)
-
+            val groupedByWord = LinkedHashMap<String, MutableList<ParsedNote>>(parsedNotes.size)
             for (note in parsedNotes) {
-                var mirroredId = frontLookup[note.backLower] ?: -1L
-                if (mirroredId == -1L) {
-                    mirroredId = backLookup[note.frontLower] ?: -1L
-                }
+                groupedByWord.getOrPut(note.frontLower) { mutableListOf() }.add(note)
+            }
 
-                val noteIds =
-                    if (mirroredId != -1L && note.id != mirroredId) {
-                        longArrayOf(note.id, mirroredId)
-                    } else {
-                        longArrayOf(note.id)
-                    }
+            val tempWords = ArrayList<String>(groupedByWord.size)
+            val tempNoteIds = ArrayList<LongArray>(groupedByWord.size)
+            val tempColorCodes = ArrayList<Int>(groupedByWord.size)
 
-                tempWords.add(note.frontLower)
+            for ((word, notes) in groupedByWord) {
+                val noteIds = notes.map { it.id }.toLongArray()
+                val colorCode = notes.map { it.colorCode }.firstOrNull { it != 0 } ?: 0
+
+                tempWords.add(word)
                 tempNoteIds.add(noteIds)
-                tempColorCodes.add(note.colorCode)
+                tempColorCodes.add(colorCode)
             }
             val t2 = System.currentTimeMillis()
             android.util.Log.d("BookEngine", "Note cursor processing took: ${t2 - t1} ms")

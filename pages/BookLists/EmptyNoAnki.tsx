@@ -1,5 +1,5 @@
-import { View, Text, Linking } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { View, Linking } from 'react-native';
+import { useTheme, Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { RootDrawerNavigationProp } from 'types';
 import { Button } from 'components/ui/Button';
@@ -14,17 +14,9 @@ export const EmptyNoAnki = () => {
     <View
       className="flex-1 items-center justify-center gap-6 px-8"
       style={{ backgroundColor: theme.colors.background }}>
-      <View className="gap-3">
-        <Text
-          className="text-center text-xl font-semibold"
-          style={{ color: theme.colors.onBackground }}>
-          {t('setupAnkiTitle')}
-        </Text>
-        <Text
-          className="text-center text-base leading-6"
-          style={{ color: theme.colors.onSurfaceVariant }}>
-          {t('setupAnkiBody')}
-        </Text>
+      <View className="items-center justify-center gap-3">
+        <Text variant="titleLarge">{t('setupAnkiTitle')}</Text>
+        <Text variant="bodyMedium">{t('setupAnkiBody')}</Text>
       </View>
       <View className="w-full gap-3">
         <Button

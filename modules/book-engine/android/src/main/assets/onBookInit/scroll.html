@@ -36,22 +36,20 @@
 
   let lastSentTime = 0;
   let ticking = false;
+  let topZoneArmed = true;
+  let endZoneArmed = true;
 
   function updateScrollPosition() {
     const blocks = document.querySelectorAll('div[id^="block-"]');
     if (blocks.length === 0) return;
 
     let blockId = 0;
-    let currentRect;
+    let currentRect = blocks[0].getBoundingClientRect();
 
     for (let i = 0; i < blocks.length; i++) {
       currentRect = blocks[i].getBoundingClientRect();
-      if (currentRect.top <= 0 && currentRect.bottom > 0) {
-        blockId = i;
-        break;
-      } else if (currentRect.top > 0) {
-        break;
-      }
+      blockId = i;
+      if (currentRect.bottom > 0) break;
     }
 
     const currentBlockScrollPercent =
@@ -88,14 +86,25 @@
             const lastBlockHeight = blocks[blocks.length - 1].offsetHeight;
 
             if (scrollY < firstBlockHeight * 0.45) {
-              window.isFetching = true;
-              window.log('scroll: TOP_REACHED triggered');
-              window.BookBridge.onTopReached();
+              if (topZoneArmed) {
+                topZoneArmed = false;
+                window.isFetching = true;
+                window.log('scroll: TOP_REACHED triggered');
+                window.BookBridge.onTopReached();
+              }
+            } else {
+              topZoneArmed = true;
             }
+
             if (bottomY > documentHeight - lastBlockHeight * 0.45) {
-              window.isFetching = true;
-              window.log('scroll: END_REACHED triggered');
-              window.BookBridge.onEndReached();
+              if (endZoneArmed) {
+                endZoneArmed = false;
+                window.isFetching = true;
+                window.log('scroll: END_REACHED triggered');
+                window.BookBridge.onEndReached();
+              }
+            } else {
+              endZoneArmed = true;
             }
           }
 

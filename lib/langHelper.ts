@@ -54,24 +54,32 @@ export const ISO_639_3_TO_2: Record<string, LanguageCode> = {
   jpn: 'ja',
   kor: 'ko',
   zho: 'zh',
+  cmn: 'zh',
+  wuu: 'zh',
   ara: 'ar',
+  arb: 'ar',
   hin: 'hi',
   ukr: 'uk',
+  swe: 'sv',
+  dan: 'da',
+  fin: 'fi',
+  nor: 'no',
+  nob: 'no',
+  nno: 'no',
 };
 
+export const isBookLanguage = (lang: string): lang is LanguageCode => lang in BOOK_LANGUAGE;
+
 export const normalizeLanguageCode = (lang?: string): LanguageCode | null => {
-  if (!lang) return 'en';
+  if (!lang) return FALLBACK_LANGUAGE;
 
   const normalized = lang.toLowerCase().trim();
 
-  if (/^[a-z]{2}$/.test(normalized)) return normalized as LanguageCode;
+  const candidate = /^[a-z]{3}$/.test(normalized)
+    ? ISO_639_3_TO_2[normalized]
+    : normalized.split(/[-_]/)[0];
 
-  if (/^[a-z]{3}$/.test(normalized)) return ISO_639_3_TO_2[normalized] || normalized;
-
-  const twoLetterCode = normalized.split(/[-_]/)[0];
-  if (/^[a-z]{2}$/.test(twoLetterCode)) return twoLetterCode as LanguageCode;
-
-  return null;
+  return candidate && isBookLanguage(candidate) ? candidate : FALLBACK_LANGUAGE;
 };
 
 export const FALLBACK_LANGUAGE: AppLanguageCode = 'en';

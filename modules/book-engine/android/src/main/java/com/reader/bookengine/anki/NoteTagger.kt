@@ -20,7 +20,7 @@ class NoteTagger(
         val resolver = context.contentResolver
 
         val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-        val cursor = resolver.query(noteUri, arrayOf("tags", "flds", "mid"), null, null, null)
+        val cursor = resolver.query(noteUri, arrayOf("tags", "flds"), null, null, null)
 
         var currentTagsStr = ""
         var word = ""
@@ -30,10 +30,8 @@ class NoteTagger(
             if (cursor.moveToFirst()) {
                 currentTagsStr = cursor.getString(0) ?: ""
                 val flds = cursor.getString(1) ?: ""
-                val mid = cursor.getLong(2).toString()
 
-                val activeMapping = AnkiUtils.selectActiveMapping(mid, mapping, mirroredMapping)
-                word = AnkiUtils.extractWord(flds, activeMapping)
+                word = AnkiUtils.extractWord(flds, mapping, mirroredMapping)
             }
             cursor.close()
         }
@@ -89,15 +87,13 @@ class NoteTagger(
 
         for (noteId in noteIds) {
             val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
-            val cursor = resolver.query(noteUri, arrayOf("flds", "mid"), null, null, null)
+            val cursor = resolver.query(noteUri, arrayOf("flds"), null, null, null)
 
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     val flds = cursor.getString(0) ?: ""
-                    val mid = cursor.getLong(1).toString()
 
-                    val activeMapping = AnkiUtils.selectActiveMapping(mid, mapping, mirroredMapping)
-                    val word = AnkiUtils.extractWord(flds, activeMapping)
+                    val word = AnkiUtils.extractWord(flds, mapping, mirroredMapping)
 
                     if (word.isNotEmpty()) {
                         val (tier, zipf) =
