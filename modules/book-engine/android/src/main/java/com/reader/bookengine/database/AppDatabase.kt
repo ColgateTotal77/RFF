@@ -3,7 +3,7 @@ package com.reader.bookengine.database
 import androidx.room.*
 import androidx.room.OnConflictStrategy
 
-@Entity(tableName = "word_forms", primaryKeys = ["input_word", "word_lang_code"])
+@Entity(tableName = "word_forms", primaryKeys = ["lemma", "word_lang_code", "input_word"])
 data class WordFormEntity(
     @ColumnInfo(name = "input_word") val inputWord: String,
     @ColumnInfo(name = "word_lang_code") val wordLangCode: String,
@@ -94,7 +94,7 @@ abstract class FreqDatabase : RoomDatabase() {
         BlockEntity::class,
         WordFreqEntity::class,
     ],
-    version = 3,
+    version = 4,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun wordFormDao(): WordFormDao

@@ -7,6 +7,7 @@ import { getWordForms, langMap } from './utils.ts';
 import { getCardData } from './getCardData.ts';
 import { saveCardInDB } from './saveCardInDB.ts';
 import { getLemma } from './getLemma.ts';
+import { saveWordFormsInDB } from './saveWordFormsInDB.ts';
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
 
     const inputWord = word.trim().toLowerCase();
 
-    if (typeof word !== 'string' || inputWord.length === 0 || inputWord.length > 50) {
+    if (inputWord.length === 0 || inputWord.length > 50) {
       return jsonResponse({ error: 'Word is incorrect' }, 400);
     }
 
@@ -62,6 +63,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Failed to process word via AI provider' }, 502);
     }
 
+    await saveWordFormsInDB(supabase, inputWord, word_lang_code, lemma);
+
     const cachedResult = await checkWordInDB(
       supabase,
       lemma,
@@ -81,13 +84,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Failed to process word via AI provider' }, 502);
     }
 
-    const newWord = await saveCardInDB(
-      supabase,
-      inputWord,
-      cardData,
-      word_lang_code,
-      translation_lang_code
-    );
+    const newWord = await saveCardInDB(supabase, cardData, word_lang_code, translation_lang_code);
 
     const wordForms = await getWordForms(supabase, newWord.word, word_lang_code);
 
@@ -95,7 +92,9 @@ Deno.serve(async (req) => {
       ...newWord,
       wordForms: [
         newWord.word,
-        ...wordForms.map((w) => w.input_word).filter((w: string) => w !== newWord.word),
+        ...wordForms
+          .map((w) => w.input_word)
+          .filter((w: string) => w !== newWord.word.toLowerCase()),
       ],
     };
 

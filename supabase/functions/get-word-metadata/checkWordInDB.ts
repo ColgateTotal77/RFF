@@ -30,7 +30,7 @@ export const checkWordInDB = async (
         cachedWord.word,
         ...(wordForms
           ?.map((w: WordForm) => w.input_word)
-          .filter((w: string) => w !== cachedWord.word) || []),
+          .filter((w: string) => w !== cachedWord.word.toLowerCase()) || []),
       ],
     };
   }

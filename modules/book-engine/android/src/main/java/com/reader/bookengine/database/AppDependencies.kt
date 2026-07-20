@@ -1,6 +1,8 @@
 package com.reader.bookengine.database
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.reader.bookengine.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -35,7 +37,17 @@ object AppDependencies {
                     )
                     // TODO(33): document or narrow destructive migration — avoid silent user data wipe
                     .fallbackToDestructiveMigration()
-                    .build()
+                    .addCallback(
+                        object : RoomDatabase.Callback() {
+                            override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
+                                context
+                                    .getSharedPreferences("DictionaryPrefs", Context.MODE_PRIVATE)
+                                    .edit()
+                                    .clear()
+                                    .apply()
+                            }
+                        },
+                    ).build()
 
             databaseInstance = instance
             instance

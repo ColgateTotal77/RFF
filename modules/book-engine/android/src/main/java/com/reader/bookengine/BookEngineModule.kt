@@ -83,28 +83,41 @@ class BookEngineModule : Module() {
 
             android.util.Log.d("BookEngine", "Found ${expandedForms.size} expanded forms in Room DB for lang: $langCode")
 
-            val finalWords = ArrayList<String>(uniqueLemmas.size + expandedForms.size)
-            val finalNoteIds = ArrayList<LongArray>(uniqueLemmas.size + expandedForms.size)
-            val finalColors = ArrayList<Int>(uniqueLemmas.size + expandedForms.size)
+            val merged = LinkedHashMap<String, Pair<MutableSet<Long>, Int>>(uniqueLemmas.size + expandedForms.size)
+
+            fun mergeWord(
+                word: String,
+                noteIds: LongArray,
+                colorCode: Int,
+            ) {
+                val existing = merged[word]
+                if (existing == null) {
+                    merged[word] = Pair(noteIds.toMutableSet(), colorCode)
+                } else {
+                    existing.first.addAll(noteIds.asList())
+                    if (existing.second == 0 && colorCode != 0) {
+                        merged[word] = Pair(existing.first, colorCode)
+                    }
+                }
+            }
 
             for ((lemma, data) in ankiBaseMap) {
-                finalWords.add(lemma)
-                finalNoteIds.add(data.first)
-                finalColors.add(data.second)
+                mergeWord(lemma, data.first, data.second)
             }
 
             for (form in expandedForms) {
-                val inputWordLower = form.inputWord.lowercase()
-                val lemmaLower = form.lemma.lowercase()
+                val baseAnkiData = ankiBaseMap[form.lemma.lowercase()] ?: continue
+                mergeWord(form.inputWord.lowercase(), baseAnkiData.first, baseAnkiData.second)
+            }
 
-                if (inputWordLower == lemmaLower) continue
+            val finalWords = ArrayList<String>(merged.size)
+            val finalNoteIds = ArrayList<LongArray>(merged.size)
+            val finalColors = ArrayList<Int>(merged.size)
 
-                val baseAnkiData = ankiBaseMap[lemmaLower]
-                if (baseAnkiData != null) {
-                    finalWords.add(inputWordLower)
-                    finalNoteIds.add(baseAnkiData.first)
-                    finalColors.add(baseAnkiData.second)
-                }
+            for ((word, data) in merged) {
+                finalWords.add(word)
+                finalNoteIds.add(data.first.toLongArray())
+                finalColors.add(data.second)
             }
 
             val t2 = System.currentTimeMillis()

@@ -3,7 +3,8 @@ import { Database } from '../../types.ts';
 
 export type Supabase = SupabaseClient<Database>;
 
-export const getWordForms = async (supabase: Supabase, lemma: string, wordLangCode: string) => {
+export const getWordForms = async (supabase: Supabase, rawlemma: string, wordLangCode: string) => {
+  const lemma = rawlemma.toLowerCase();
   const { data: wordForms, error: wordFormsError } = await supabase
     .from('word_forms')
     .select('input_word')

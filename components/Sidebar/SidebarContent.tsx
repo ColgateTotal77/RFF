@@ -4,6 +4,7 @@ import { Drawer, Text, useTheme } from 'react-native-paper';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
+import { DrawerItem } from 'components/ui/DrawerItem';
 
 export const SidebarContent = (props: DrawerContentComponentProps) => {
   const theme = useTheme();
@@ -19,35 +20,32 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
       </View>
 
       <Drawer.Section className="flex gap-2 px-2">
-        <Drawer.Item
+        <DrawerItem
           label={t('readingNow')}
           icon="home"
           active={activeRouteName === 'Reading Now'}
           onPress={() => {
             props.navigation.navigate('Reading Now');
           }}
-          className="rounded-lg"
         />
-        <Drawer.Item
+        <DrawerItem
           label={t('haveRead')}
           icon="book"
           active={activeRouteName === 'Have Read'}
           onPress={() => {
             props.navigation.navigate('Have Read');
           }}
-          className="rounded-lg"
         />
       </Drawer.Section>
 
       <Drawer.Section showDivider={false} className="px-2">
-        <Drawer.Item
+        <DrawerItem
           label={t('settings')}
           icon="cog"
           active={activeRouteName === 'Settings'}
           onPress={() => {
             props.navigation.navigate('Settings');
           }}
-          className="rounded-lg"
         />
       </Drawer.Section>
 
