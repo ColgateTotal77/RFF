@@ -9,6 +9,11 @@ add_library(book_engine_native SHARED
     src/main/jni/utf8proc/utf8proc.c
 )
 
+target_compile_options(book_engine_native PRIVATE
+    $<$<CONFIG:Release>:-O3 -fvisibility=hidden -fomit-frame-pointer>
+)
+set_property(TARGET book_engine_native PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+
 find_library(log-lib log)
 target_link_libraries(book_engine_native ${log-lib})
 

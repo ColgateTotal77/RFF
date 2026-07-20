@@ -58,6 +58,11 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
             crunchPngs enablePngCrunchInRelease.toBoolean()
+
+            packagingOptions {
+                exclude '**/libbarhopper_v3.so'
+                exclude '**/libimage_processing_util_jni.so'
+            }
         }
     }
     packagingOptions {

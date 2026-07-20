@@ -1,8 +1,5 @@
 {
-  "platforms": ["apple", "android", "web"],
-  "apple": {
-    "modules": ["BookEngineModule"]
-  },
+  "platforms": ["android"],
   "android": {
     "modules": ["com.reader.bookengine.BookEngineModule", "com.reader.bookengine.AnkiModule"]
   }

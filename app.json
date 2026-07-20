@@ -4,9 +4,7 @@
     "slug": "RFF",
     "scheme": "rff",
     "version": "1.0.0",
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "platforms": ["android"],
     "experiments": {
       "tsconfigPaths": true
     },
@@ -20,10 +18,6 @@
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": ["**/*"],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.colgatetotal77.RFF"
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
