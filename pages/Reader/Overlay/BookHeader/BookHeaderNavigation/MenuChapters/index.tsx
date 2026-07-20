@@ -1,24 +1,37 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { FlatList } from 'react-native';
 import { ChapterCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuChapters/ChapterCard';
 import { TocItem } from 'types';
 import { calculateBookProgress } from 'lib/utils';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useAppStore } from 'stores/useAppStore';
+import { FlashList } from '@shopify/flash-list';
+import { View } from 'react-native';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const currentBook = useCurrentBook();
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
-  const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const loadWindow = useWebViewStore((state) => state.loadWindow);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
-  const chapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;
-  const currentChapter = currentBook.mapping.tocByChapterId[chapterId]?.[0] ?? null;
+  const currentChapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;
+  const currentTocChapter = currentBook.mapping.tocByChapterId[currentChapterId]?.[0] ?? null;
+  const [expandedParents, setExpandedParents] = useState<string[]>(() => {
+    if (!currentTocChapter) return [];
+
+    const parentsToExpand: string[] = [];
+    let currentParent = currentTocChapter.parentId;
+
+    while (currentParent) {
+      parentsToExpand.push(currentParent);
+      currentParent = currentBook.mapping.tocById[currentParent].parentId;
+    }
+
+    return parentsToExpand;
+  });
 
   const parentIdsSet = useMemo(() => {
     const ids = new Set<string>();
@@ -33,20 +46,6 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
       (item) => !item.parentId || expandedParents.includes(item.parentId)
     );
   }, [expandedParents, currentBook.toc]);
-
-  useEffect(() => {
-    if (!currentChapter) return;
-
-    const parentsToExpand: string[] = [];
-    let currentParent = currentChapter.parentId;
-
-    while (currentParent) {
-      parentsToExpand.push(currentParent);
-      currentParent = currentBook.mapping.tocById[currentParent].parentId;
-    }
-
-    setExpandedParents(parentsToExpand);
-  }, [currentChapter]);
 
   const onPress = (tocItem: TocItem) => {
     addToBackStack({
@@ -79,7 +78,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
 
   const renderChapter = ({ item }: { item: TocItem }) => {
     const hasChildren = parentIdsSet.has(item.id);
-    const isCurrentChapter = item.chapterId === chapterId;
+    const isCurrentChapter = item.chapterId === currentChapterId;
 
     return (
       <ChapterCard
@@ -93,13 +92,16 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
     );
   };
 
+  const currentChapterIndex = visibleToc.findIndex((item) => item.id === currentTocChapter?.id);
+
   return (
-    <FlatList
+    <FlashList
       data={visibleToc}
       keyExtractor={(item) => item.id}
       renderItem={renderChapter}
-      contentContainerClassName="gap-4 p-4"
-      initialNumToRender={15}
+      contentContainerStyle={{ padding: 16 }}
+      ItemSeparatorComponent={() => <View className="h-4" />}
+      initialScrollIndex={Math.max(0, currentChapterIndex - 3)}
     />
   );
 };
