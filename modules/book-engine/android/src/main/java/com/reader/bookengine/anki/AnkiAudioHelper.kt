@@ -7,11 +7,11 @@ import android.net.Uri
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.FileProvider
+import com.reader.bookengine.tts.TtsVoiceHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
 import kotlin.coroutines.resume
 
 class AnkiAudioHelper(
@@ -19,12 +19,12 @@ class AnkiAudioHelper(
 ) {
     suspend fun generateAudio(
         text: String,
-        language: String = "en",
+        language: String,
     ): String? {
         val audioDir = File(context.filesDir, "anki_audio")
         if (!audioDir.exists()) audioDir.mkdirs()
 
-        val fileName = "audio_gen_${text.hashCode()}.wav"
+        val fileName = "audio_gen_${language}_${text.hashCode()}.wav"
         val audioFile = File(audioDir, fileName)
 
         if (audioFile.exists() && audioFile.length() > 0) return audioFile.absolutePath
@@ -35,9 +35,14 @@ class AnkiAudioHelper(
                 val utteranceId = "audio_gen_${System.currentTimeMillis()}"
 
                 tts =
-                    TextToSpeech(context) { status ->
+                    TextToSpeech(context) init@{ status ->
                         if (status == TextToSpeech.SUCCESS) {
-                            tts?.language = Locale(language)
+                            if (tts?.let { TtsVoiceHelper.hasUsableVoice(it, language) } != true) {
+                                tts?.shutdown()
+                                continuation.resume(null)
+                                return@init
+                            }
+
                             tts?.setSpeechRate(1.0f)
 
                             tts?.setOnUtteranceProgressListener(
@@ -51,7 +56,7 @@ class AnkiAudioHelper(
 
                                     @Deprecated("Deprecated in Java")
                                     override fun onError(utteranceId: String?) {
-                                        android.util.Log.e("BookEngine", "TTS synthesis failed")
+                                        android.util.Log.e("BookEngine", "TTS synthesis failed for language: $language")
                                         tts?.shutdown()
                                         continuation.resume(null)
                                     }

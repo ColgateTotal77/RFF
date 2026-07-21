@@ -107,6 +107,7 @@
     "failedToAddCard": "Failed to add card",
     "failedToUpdateCard": "Failed to update card",
     "failedToOpenTranslator": "Failed to open translator",
-    "failedToDeleteNote": "Failed to delete note"
+    "failedToDeleteNote": "Failed to delete note",
+    "installTtsVoice": "Tap to install {{lang}} voice — cards have no audio without it"
   }
 }

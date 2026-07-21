@@ -1,3 +1,8 @@
+import {
+  normalizeLanguageCode,
+  FALLBACK_BOOK_LANGUAGE,
+  bookLanguageToLocaleTag,
+} from 'lib/langHelper';
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
@@ -12,6 +17,7 @@ import { useTempStore } from './useTempStore';
 import { Toast } from 'components/ui/Toast';
 import { Directory } from 'expo-file-system';
 import i18n from 'i18n';
+import { BOOK_LANGUAGE } from 'lib/languagesMappings';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -69,7 +75,11 @@ export const useBookStore = create<Store>()(
         get().closeBook();
 
         try {
-          const book = await parseBook(uri, useAppStore.getState().settings.targetLang);
+          const targetLang =
+            normalizeLanguageCode(useAppStore.getState().settings.targetLang) ??
+            FALLBACK_BOOK_LANGUAGE;
+
+          const book = await parseBook(uri, targetLang);
 
           set((state) => ({
             books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
@@ -146,6 +156,22 @@ export const useBookStore = create<Store>()(
           }
 
           useAppStore.getState().navigate('Reader');
+
+          if (
+            bookSettings.fieldMapping.audio != null ||
+            bookSettings.mirroredFieldMapping.audio != null
+          ) {
+            const hasTTSModel = await BookEngine.hasTTSDownloaded(
+              bookLanguageToLocaleTag(bookSettings.bookLang)
+            );
+            if (hasTTSModel) return;
+
+            const neededLang = BOOK_LANGUAGE[bookSettings.bookLang];
+
+            Toast.show(i18n.t('toast.installTtsVoice', { lang: neededLang }), 'error', () =>
+              BookEngine.openTTSSettings()
+            );
+          }
         } catch (e) {
           useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
           console.error('❌ Failed to open book:', e);

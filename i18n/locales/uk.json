@@ -107,6 +107,7 @@
     "failedToAddCard": "Не вдалося додати картку",
     "failedToUpdateCard": "Не вдалося оновити картку",
     "failedToOpenTranslator": "Не вдалося відкрити перекладач",
-    "failedToDeleteNote": "Не вдалося видалити нотатку"
+    "failedToDeleteNote": "Не вдалося видалити нотатку",
+    "installTtsVoice": "Натисніть, щоб встановити голос {{lang}} — без нього картки без озвучення"
   }
 }

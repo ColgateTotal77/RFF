@@ -2,6 +2,7 @@ package com.reader.bookengine
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.speech.tts.TextToSpeech
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -12,6 +13,7 @@ import com.reader.bookengine.database.BlockEntity
 import com.reader.bookengine.database.FrequencyDatabase
 import com.reader.bookengine.database.WordFormEntity
 import com.reader.bookengine.database.syncWordFormsFromSupabase
+import com.reader.bookengine.tts.TtsVoiceHelper
 import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -214,6 +216,29 @@ class BookEngineModule : Module() {
                 } catch (e: ActivityNotFoundException) {
                     android.util.Log.e("BookEngine", "Failed to open any translator", e)
                     throw Exception("No translation app is installed.")
+                }
+            }
+
+            AsyncFunction("hasTTSDownloaded") Coroutine { langCode: String ->
+              TtsVoiceHelper.isVoiceAvailable(moduleContext, langCode)
+            }
+
+            AsyncFunction("openTTSSettings") { ->
+                val activity =
+                    appContext.activityProvider?.currentActivity
+                        ?: throw Exception("No current activity found")
+
+                try {
+                    activity.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA))
+                    true
+                } catch (e: ActivityNotFoundException) {
+                  try {
+                      activity.startActivity(Intent("com.android.settings.TTS_SETTINGS"))
+                      true
+                  } catch (e2: ActivityNotFoundException) {
+                      android.util.Log.e("BookEngine", "No TTS install or settings screen available", e2)
+                      throw Exception("No text-to-speech settings screen is available.")
+                  }
                 }
             }
 

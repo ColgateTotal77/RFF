@@ -10,6 +10,7 @@ class FieldArrayMapper(
     suspend fun convertFieldsToArray(
         fields: Map<String, String>,
         mapping: Map<String, Any?>,
+        audioLang: String,
     ): Array<String> {
         val fieldCount = (mapping["fieldCount"] as? Number)?.toInt() ?: 0
         val result = Array(fieldCount) { "" }
@@ -19,7 +20,7 @@ class FieldArrayMapper(
         val word = fields["word"]
 
         if (audioIndex != null && word != null) {
-            val localAudioPath = audio.generateAudio(word)
+            val localAudioPath = audio.generateAudio(word, audioLang)
             if (localAudioPath != null) finalAnkiAudioName = audio.importToAnkiMedia(File(localAudioPath))
         }
 

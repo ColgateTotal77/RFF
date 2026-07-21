@@ -4,7 +4,7 @@ import { BookEngine } from 'modules/book-engine';
 import { splitHtmlIntoBlocks } from 'lib/ParseBook/splitHtmlIntoBlocks';
 import { processChapterBlocks } from 'lib/ParseBook/processChapterBlock';
 import { detectLanguage } from 'lib/ParseBook/detectLang';
-import { LanguageCode } from 'lib/langHelper';
+import { LanguageCode, FALLBACK_BOOK_LANGUAGE } from 'lib/langHelper';
 import { epubParser } from 'lib/ParseBook/EpubParser';
 import { fb2Parser } from 'lib/ParseBook/Fb2Parser';
 import { detectBookFormat } from 'lib/ParseBook/detectFormat';
@@ -36,11 +36,12 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
     let globalBlockId = 0;
     let totalCharCount = 0;
     let langSample = '';
+    const sampleStart = Math.floor(chapters.length / 3);
 
-    for (const chapter of chapters) {
+    for (const [index, chapter] of chapters.entries()) {
       const blockContents = splitHtmlIntoBlocks(chapter.html, globalBlockId);
 
-      if (langSample.length < 2000) {
+      if (index >= sampleStart && langSample.length < 2000) {
         for (const blockHtml of blockContents.blocks) {
           const textOnly = blockHtml
             .replace(/<[^>]*>/g, ' ')
@@ -113,7 +114,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
       unzippedPath: unzippedPath,
       cssPaths,
       settings: {
-        bookLang: detectedLanguage || bookLanguage || 'en',
+        bookLang: detectedLanguage || bookLanguage || FALLBACK_BOOK_LANGUAGE,
         targetLang,
       },
       chapters: outChapters,

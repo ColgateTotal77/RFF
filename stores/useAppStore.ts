@@ -6,7 +6,7 @@ import { Theme, Settings, DeepPartial, DrawerTab } from 'types';
 import { navigationRef } from 'lib/navigation';
 import { useWebViewStore } from './useWebViewStore';
 import i18n from 'i18n';
-import { LanguageCode, BOOK_LANGUAGE_OPTIONS, FALLBACK_LANGUAGE } from 'lib/langHelper';
+import { appLanguageToBookLanguage } from 'lib/langHelper';
 import { DEFAULT_FONT_FAMILY } from 'lib/constants';
 import { deepMerge } from 'lib/utils';
 import * as DocumentPicker from 'expo-document-picker';
@@ -44,10 +44,7 @@ export const useAppStore = create<Store>()(
         mirroredFieldMappings: {},
         isTwoSided: false,
         autoCardOnDoubleTap: false,
-        targetLang:
-          i18n.language in BOOK_LANGUAGE_OPTIONS
-            ? (i18n.language as LanguageCode)
-            : FALLBACK_LANGUAGE,
+        targetLang: appLanguageToBookLanguage(i18n.language),
         font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
       },
       globalLoading: { isLoading: false, message: '' },

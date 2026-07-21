@@ -5,6 +5,7 @@ import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { Toast } from 'components/ui/Toast';
 import { useTranslation } from 'react-i18next';
+import { bookLanguageToLocaleTag } from 'lib/langHelper';
 
 interface UpdateWordTag {
   noteIds: string;
@@ -57,7 +58,8 @@ export const useWordAction = () => {
         fields,
         bookSettings.fieldMapping,
         bookSettings.mirroredFieldMapping,
-        isTwoSided
+        isTwoSided,
+        bookLanguageToLocaleTag(bookSettings.bookLang)
       );
 
       if (noteIdsArray && noteIdsArray.length > 0) {

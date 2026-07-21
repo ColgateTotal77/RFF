@@ -26,6 +26,7 @@ export const MiscTab = () => {
         value={targetLang}
         options={BOOK_LANGUAGE_OPTIONS}
         onSelect={(value) => updateSettings({ targetLang: value })}
+        searchable={true}
       />
 
       <Dropdown
@@ -33,6 +34,7 @@ export const MiscTab = () => {
         value={i18n.language}
         options={APP_LANGUAGE_OPTIONS}
         onSelect={(value) => changeLanguage(value)}
+        searchable={true}
       />
 
       <List.Item

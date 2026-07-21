@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../../types.ts';
 import { corsHeaders } from '../../corsHeaders.ts';
 import { checkWordInDB } from './checkWordInDB.ts';
-import { getWordForms, langMap } from './utils.ts';
+import { getWordForms } from './utils.ts';
+import { langMap } from './languagesMappings.ts';
 import { getCardData } from './getCardData.ts';
 import { saveCardInDB } from './saveCardInDB.ts';
 import { getLemma } from './getLemma.ts';
@@ -65,12 +66,7 @@ Deno.serve(async (req) => {
 
     await saveWordFormsInDB(supabase, inputWord, word_lang_code, lemma);
 
-    const cachedResult = await checkWordInDB(
-      supabase,
-      lemma,
-      word_lang_code,
-      translation_lang_code
-    );
+    const cachedResult = await checkWordInDB(supabase, lemma, word_lang_code, translation_lang_code);
 
     if (cachedResult) {
       return jsonResponse(cachedResult);

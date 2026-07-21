@@ -1,3 +1,5 @@
+import { BOOK_LANGUAGE, ISO_639_1_TO_3 } from 'lib/languagesMappings';
+
 export const APP_LANGUAGE = {
   en: 'English',
   uk: 'Українська',
@@ -9,77 +11,37 @@ export const APP_LANGUAGE_OPTIONS = Object.entries(APP_LANGUAGE).map(([code, nam
   name,
 }));
 
-export const BOOK_LANGUAGE = {
-  ...APP_LANGUAGE,
-  es: 'Español',
-  fr: 'Français',
-  de: 'Deutsch',
-  it: 'Italiano',
-  pt: 'Português',
-  nl: 'Nederlands',
-  pl: 'Polski',
-  tr: 'Türkçe',
-  ja: '日本語',
-  ko: '한국어',
-  zh: '中文',
-  ar: 'العربية',
-  hi: 'हिन्दी',
-  sv: 'Svenska',
-  da: 'Dansk',
-  no: 'Norsk',
-  fi: 'Suomi',
-} as const;
 export type LanguageCode = keyof typeof BOOK_LANGUAGE;
-export const BOOK_LANGUAGE_OPTIONS = Object.entries(BOOK_LANGUAGE).map(([code, name]) => ({
-  id: code as LanguageCode,
-  name,
-}));
+export const BOOK_LANGUAGE_OPTIONS = Object.entries(BOOK_LANGUAGE)
+  .map(([code, name]) => ({ id: code as LanguageCode, name }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
-const RTL_LANGUAGES: LanguageCode[] = ['ar'];
-export const checkIsRTL = (lang: string): boolean => {
-  return RTL_LANGUAGES.includes(lang as LanguageCode);
-};
+export const FALLBACK_APP_LANGUAGE: AppLanguageCode = 'en';
+export const FALLBACK_BOOK_LANGUAGE: LanguageCode = 'eng';
 
-export const ISO_639_3_TO_2: Record<string, LanguageCode> = {
-  eng: 'en',
-  spa: 'es',
-  fra: 'fr',
-  deu: 'de',
-  rus: 'ru',
-  ita: 'it',
-  por: 'pt',
-  nld: 'nl',
-  pol: 'pl',
-  tur: 'tr',
-  jpn: 'ja',
-  kor: 'ko',
-  zho: 'zh',
-  cmn: 'zh',
-  wuu: 'zh',
-  ara: 'ar',
-  arb: 'ar',
-  hin: 'hi',
-  ukr: 'uk',
-  swe: 'sv',
-  dan: 'da',
-  fin: 'fi',
-  nor: 'no',
-  nob: 'no',
-  nno: 'no',
+const APP_TO_BOOK_LANGUAGE: Record<AppLanguageCode, LanguageCode> = {
+  en: 'eng',
+  uk: 'ukr',
+  ru: 'rus',
 };
+export const appLanguageToBookLanguage = (lang: string): LanguageCode =>
+  APP_TO_BOOK_LANGUAGE[lang as AppLanguageCode] ?? FALLBACK_BOOK_LANGUAGE;
+
+const RTL_APP_LANGUAGES: AppLanguageCode[] = [];
+export const checkIsRTL = (lang: AppLanguageCode): boolean => RTL_APP_LANGUAGES.includes(lang);
+
+const ISO_639_3_TO_1: Record<string, string> = Object.fromEntries(
+  Object.entries(ISO_639_1_TO_3).map(([two, three]) => [three, two])
+);
+export const bookLanguageToLocaleTag = (lang: LanguageCode): string => ISO_639_3_TO_1[lang] ?? lang;
 
 export const isBookLanguage = (lang: string): lang is LanguageCode => lang in BOOK_LANGUAGE;
 
 export const normalizeLanguageCode = (lang?: string): LanguageCode | null => {
-  if (!lang) return FALLBACK_LANGUAGE;
+  if (!lang) return null;
 
-  const normalized = lang.toLowerCase().trim();
+  const base = lang.toLowerCase().trim().split(/[-_]/)[0];
+  const candidate = base.length === 2 ? ISO_639_1_TO_3[base] : base;
 
-  const candidate = /^[a-z]{3}$/.test(normalized)
-    ? ISO_639_3_TO_2[normalized]
-    : normalized.split(/[-_]/)[0];
-
-  return candidate && isBookLanguage(candidate) ? candidate : FALLBACK_LANGUAGE;
+  return candidate && isBookLanguage(candidate) ? candidate : null;
 };
-
-export const FALLBACK_LANGUAGE: AppLanguageCode = 'en';

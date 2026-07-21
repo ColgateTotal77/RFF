@@ -20,6 +20,7 @@ class NoteUpserter(
         mapping: Map<String, Any?>,
         mirroredMapping: Map<String, Any?>,
         isTwoSided: Boolean,
+        audioLang: String,
     ): List<Long> {
         val word = fields["word"] ?: throw Exception("Word field is missing")
         val modelId = (mapping["modalId"] as? String)?.toLong() ?: throw Exception("modalId is missing")
@@ -30,7 +31,7 @@ class NoteUpserter(
         return if (existing != null) {
             retagPair(existing.id, word, deckId, tier, mapping, mirroredMapping, isTwoSided)
         } else {
-            createPair(word, zipf, tier, deckId, modelId, fields, mapping, mirroredMapping, isTwoSided)
+            createPair(word, zipf, tier, deckId, modelId, fields, mapping, mirroredMapping, isTwoSided, audioLang)
         }
     }
 
@@ -80,12 +81,13 @@ class NoteUpserter(
         mapping: Map<String, Any?>,
         mirroredMapping: Map<String, Any?>,
         isTwoSided: Boolean,
+        audioLang: String,
     ): List<Long> {
         val noteFields = buildNoteFields(fields, word, zipf)
         val tags = setOf("Lookups_1", tier)
 
         val mainId =
-            ankiApi.addNote(modelId, deckId, fieldMapper.convertFieldsToArray(noteFields, mapping), tags)
+            ankiApi.addNote(modelId, deckId, fieldMapper.convertFieldsToArray(noteFields, mapping, audioLang), tags)
                 ?: throw Exception("Failed to create main note for $word")
 
         val createdIds = mutableListOf(mainId)
@@ -94,7 +96,7 @@ class NoteUpserter(
             val mirroredModelId =
                 (mirroredMapping["modalId"] as? String)?.toLong() ?: throw Exception("mirrored modalId is missing")
             val mirroredId =
-                ankiApi.addNote(mirroredModelId, deckId, fieldMapper.convertFieldsToArray(noteFields, mirroredMapping), tags)
+                ankiApi.addNote(mirroredModelId, deckId, fieldMapper.convertFieldsToArray(noteFields, mirroredMapping, audioLang), tags)
                     ?: throw Exception("Failed to create mirrored note for $word")
             createdIds.add(mirroredId)
         }

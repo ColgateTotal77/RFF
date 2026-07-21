@@ -18,30 +18,6 @@ export const getWordForms = async (supabase: Supabase, rawlemma: string, wordLan
   return wordForms;
 };
 
-export const langMap: Record<string, string> = {
-  en: 'English',
-  ru: 'Russian',
-  uk: 'Ukrainian',
-  es: 'Spanish',
-  fr: 'French',
-  de: 'German',
-  it: 'Italian',
-  pt: 'Portuguese',
-  nl: 'Dutch',
-  sv: 'Swedish',
-  no: 'Norwegian',
-  da: 'Danish',
-  fi: 'Finnish',
-  pl: 'Polish',
-  tr: 'Turkish',
-  ja: 'Japanese',
-  ko: 'Korean',
-  zh: 'Chinese',
-  ar: 'Arabic',
-  hi: 'Hindi',
-  cs: 'Czech',
-};
-
 export const dedupeArray = (array: string[]): string[] => {
   const seen = new Set<string>();
   const deduplicatedArray: string[] = [];

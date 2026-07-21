@@ -4,7 +4,7 @@ import * as Localization from 'expo-localization';
 import { createMMKV } from 'react-native-mmkv';
 import { I18nManager } from 'react-native';
 import * as Updates from 'expo-updates';
-import { checkIsRTL, AppLanguageCode, APP_LANGUAGE, FALLBACK_LANGUAGE } from 'lib/langHelper';
+import { checkIsRTL, AppLanguageCode, APP_LANGUAGE, FALLBACK_APP_LANGUAGE } from 'lib/langHelper';
 
 import en from './locales/en.json';
 import uk from './locales/uk.json';
@@ -28,10 +28,10 @@ const languageDetectorPlugin = {
         return deviceLanguage as AppLanguageCode;
       }
 
-      return FALLBACK_LANGUAGE;
+      return FALLBACK_APP_LANGUAGE;
     } catch (error) {
       console.log('Error reading language from i18n storage', error);
-      return FALLBACK_LANGUAGE;
+      return FALLBACK_APP_LANGUAGE;
     }
   },
   cacheUserLanguage: function (language: AppLanguageCode) {
@@ -67,7 +67,7 @@ i18n
       uk: { translation: uk },
       ru: { translation: ru },
     },
-    fallbackLng: FALLBACK_LANGUAGE,
+    fallbackLng: FALLBACK_APP_LANGUAGE,
     interpolation: {
       escapeValue: false,
     },

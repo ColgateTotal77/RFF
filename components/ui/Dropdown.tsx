@@ -1,7 +1,11 @@
 import { useState, useRef, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, useTheme, Divider, Icon } from 'react-native-paper';
 import { View, Modal, TouchableOpacity, FlatList, StyleSheet, Dimensions } from 'react-native';
 import { Button } from 'components/ui/Button';
+import { SearchInput } from 'components/ui/SearchInput';
+
+const SEARCH_BAR_HEIGHT = 56;
 
 interface DropdownOption<T extends string> {
   id: T;
@@ -17,6 +21,7 @@ interface Props<T extends string> {
   isGrayed?: boolean;
   labelRight?: ReactNode;
   closeOnSelect?: boolean;
+  searchable?: boolean;
   onSelect: (id: T) => void;
   onOpen?: () => void;
   onClose?: () => void;
@@ -32,35 +37,44 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
     isGrayed,
     labelRight,
     closeOnSelect = true,
+    searchable = false,
     onSelect,
     onOpen,
     onClose,
   } = props;
 
+  const { t } = useTranslation('common');
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const [dropdownLayout, setDropdownLayout] = useState({
     x: 0,
     y: 0,
     width: 0,
     height: 0,
     shouldPositionAbove: false,
-    dropdownHeight: 0,
   });
   const buttonRef = useRef<View>(null);
 
   const selectedOption = options.find((o) => o.id === value);
   const displayLabel = selectedOption ? selectedOption.name : placeholder;
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions =
+    searchable && normalizedQuery
+      ? options.filter((o) => o.name.toLowerCase().includes(normalizedQuery))
+      : options;
+
   const handleOpen = () => {
     buttonRef.current?.measureInWindow((x, y, width, height) => {
       const screenHeight = Dimensions.get('window').height;
-      const estimatedDropdownHeight = Math.min(options.length * 52, 400);
+      const estimatedDropdownHeight =
+        Math.min(options.length * 52, 400) + (searchable ? SEARCH_BAR_HEIGHT : 0);
       const spaceBelow = screenHeight - (y + height + 4);
       const shouldPositionAbove = spaceBelow < estimatedDropdownHeight;
-      const dropdownHeight = shouldPositionAbove ? estimatedDropdownHeight : 0;
 
-      setDropdownLayout({ x, y, width, height, shouldPositionAbove, dropdownHeight });
+      setQuery('');
+      setDropdownLayout({ x, y, width, height, shouldPositionAbove });
       onOpen?.();
       setIsOpen(true);
     });
@@ -107,8 +121,11 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
           style={{
             position: 'absolute',
             top: dropdownLayout.shouldPositionAbove
-              ? dropdownLayout.y - dropdownLayout.dropdownHeight - 4
+              ? undefined
               : dropdownLayout.y + dropdownLayout.height + 4,
+            bottom: dropdownLayout.shouldPositionAbove
+              ? Dimensions.get('window').height - dropdownLayout.y + 4
+              : undefined,
             left: dropdownLayout.x,
             width: dropdownLayout.width,
             backgroundColor: theme.colors.elevation.level3,
@@ -118,11 +135,34 @@ export const Dropdown = <T extends string>(props: Props<T>) => {
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,
-            maxHeight: 400,
+            maxHeight: 400 + (searchable ? SEARCH_BAR_HEIGHT : 0),
             overflow: 'hidden',
           }}>
+          {searchable && (
+            <View style={{ padding: 8 }}>
+              <SearchInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t('search')}
+                autoFocus
+              />
+            </View>
+          )}
+
           <FlatList
-            data={options}
+            data={filteredOptions}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <Text
+                variant="bodyMedium"
+                style={{
+                  color: theme.colors.onSurfaceVariant,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                }}>
+                {t('noResults')}
+              </Text>
+            }
             keyExtractor={(item) => item.id}
             ItemSeparatorComponent={() => <Divider />}
             renderItem={({ item }) => {
