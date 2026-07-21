@@ -28,6 +28,7 @@ export const IconButtonWithBorder = ({
           borderRadius: 8,
           borderWidth: 1,
           borderColor: theme.colors.outline,
+          margin: 0,
         },
         style,
       ]}

@@ -83,20 +83,20 @@ export const AnkiTab = () => {
         <>
           <Text className="text-green-700">{t('connected')}</Text>
 
-          <View className="flex-row items-center gap-4">
-            <Dropdown
-              label={t('decksLabel')}
-              value={ankiDeckId}
-              options={decks}
-              onSelect={handleDeckChange}
-            />
-            <IconButtonWithBorder
-              icon="plus"
-              style={{ marginTop: 36, height: 54, width: 54 }}
-              onPress={() => setDialogVisible(true)}
-              accessibilityLabel="Create new deck"
-            />
-          </View>
+          <Dropdown
+            label={t('decksLabel')}
+            value={ankiDeckId}
+            options={decks}
+            onSelect={handleDeckChange}
+            rightComponent={
+              <IconButtonWithBorder
+                icon="plus"
+                style={{ height: 54, width: 54 }}
+                onPress={() => setDialogVisible(true)}
+                accessibilityLabel="Create new deck"
+              />
+            }
+          />
 
           <Dropdown
             label={t('modelLabel')}
