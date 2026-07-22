@@ -9,26 +9,43 @@ import java.util.Locale
 import kotlin.coroutines.resume
 
 object TtsVoiceHelper {
+    private const val LEGACY_VOICE_FEATURE = "legacySetLanguageVoice"
+
     fun hasUsableVoice(
         tts: TextToSpeech,
         language: String,
     ): Boolean {
-        val langResult = tts.setLanguage(Locale.forLanguageTag(language))
-        if (langResult == TextToSpeech.LANG_MISSING_DATA ||
-            langResult == TextToSpeech.LANG_NOT_SUPPORTED
-        ) {
+        val locale = Locale.forLanguageTag(language)
+        if (tts.setLanguage(locale) < TextToSpeech.LANG_AVAILABLE) {
             android.util.Log.e("BookEngine", "TTS has no voice for language: $language")
             return false
         }
 
-        val voice = tts.voice
-        if (voice == null ||
-            voice.features?.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) == true
-        ) {
+        val country = tts.voice?.locale?.country
+        val voice =
+            runCatching { tts.voices }
+                .getOrNull()
+                .orEmpty()
+                .filter {
+                    it.locale.language.equals(locale.language, true) &&
+                        it.features.orEmpty().none { feature ->
+                            feature == TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED ||
+                                feature == LEGACY_VOICE_FEATURE
+                        }
+                }.maxWithOrNull(
+                    compareBy(
+                        { it.locale.country.equals(country, true) },
+                        { !it.isNetworkConnectionRequired },
+                        { it.quality },
+                    ),
+                )
+
+        if (voice == null) {
             android.util.Log.e("BookEngine", "TTS voice not installed for language: $language")
             return false
         }
 
+        tts.setVoice(voice)
         return true
     }
 
