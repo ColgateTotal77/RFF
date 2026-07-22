@@ -60,7 +60,7 @@ interface DropdownProps<T extends string> {
 }
 
 const DropdownEmptyState = () => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation('translation', { keyPrefix: 'search' });
   const theme = useTheme();
 
   return (
@@ -93,7 +93,6 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
     onClose,
   } = props;
 
-  const { t } = useTranslation('common');
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -156,7 +155,7 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
           }}>
           {searchable && (
             <View style={{ padding: 8 }}>
-              <SearchInput value={query} onChangeText={setQuery} placeholder={t('search')} />
+              <SearchInput value={query} onChangeText={setQuery} />
             </View>
           )}
 

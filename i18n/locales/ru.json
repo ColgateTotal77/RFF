@@ -5,6 +5,10 @@
     "create": "Создать",
     "delete": "Удалить"
   },
+  "search": {
+    "placeholder": "Поиск...",
+    "noResults": "Ничего не найдено"
+  },
   "ankiTab": {
     "title": "Интеграция с Anki",
     "connect": "Подключиться к AnkiDroid",
@@ -61,8 +65,6 @@
     }
   },
   "bookHeader": {
-    "searchPlaceholder": "поиск...",
-    "noResults": "Ничего не найдено",
     "bookSettings": "Настройки книги",
     "other": {
       "switchTheme": "Сменить тему",
@@ -81,8 +83,7 @@
     "brand": "RFF",
     "readingNow": "Читаю сейчас",
     "haveRead": "Прочитано",
-    "settings": "Настройки",
-    "searchPlaceholder": "Поиск книг..."
+    "settings": "Настройки"
   },
   "bookLists": {
     "setupAnkiTitle": "Настройте AnkiDroid для начала работы",
@@ -91,7 +92,6 @@
     "goToSettings": "Перейти в настройки",
     "noBooks": "Здесь пока нет книг",
     "addBook": "Добавить книгу",
-    "noSearchResults": "Книги по вашему запросу не найдены",
     "pages": "~{{count}} стр.",
     "deleteDialog": {
       "title": "Удалить книгу?",

@@ -26,7 +26,7 @@ export const MenuSearch = ({ onClose }: Props) => {
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const isSearchLoading = useTempStore((state) => state.isSearchLoading);
   const searchQuery = useTempStore((state) => state.searchQuery);
-  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
+  const { t } = useTranslation('translation', { keyPrefix: 'search' });
   const theme = useTheme();
 
   const onPress = (searchResult: SearchResult) => {

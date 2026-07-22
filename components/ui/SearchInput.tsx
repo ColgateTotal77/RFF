@@ -1,11 +1,12 @@
 import { Ref } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { Icon, useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   value: string;
   onChangeText: (text: string) => void;
-  placeholder: string;
+  placeholder?: string;
   accessibilityLabel?: string;
   autoFocus?: boolean;
   onSubmitEditing?: () => void;
@@ -22,6 +23,7 @@ export const SearchInput = ({
   inputRef,
 }: Props) => {
   const theme = useTheme();
+  const { t } = useTranslation('translation', { keyPrefix: 'search' });
 
   return (
     <View
@@ -38,7 +40,7 @@ export const SearchInput = ({
         ref={inputRef}
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('placeholder')}
         placeholderTextColor={theme.colors.onSurfaceVariant}
         style={{
           flex: 1,

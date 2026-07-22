@@ -5,6 +5,10 @@
     "create": "Create",
     "delete": "Delete"
   },
+  "search": {
+    "placeholder": "Search...",
+    "noResults": "No results found"
+  },
   "ankiTab": {
     "title": "Anki Integration",
     "connect": "Connect to AnkiDroid",
@@ -61,8 +65,6 @@
     }
   },
   "bookHeader": {
-    "searchPlaceholder": "search...",
-    "noResults": "No results found",
     "bookSettings": "Book Settings",
     "other": {
       "switchTheme": "Switch Theme",
@@ -81,8 +83,7 @@
     "brand": "RFF",
     "readingNow": "Reading Now",
     "haveRead": "Have Read",
-    "settings": "Settings",
-    "searchPlaceholder": "Search books..."
+    "settings": "Settings"
   },
   "bookLists": {
     "setupAnkiTitle": "Set up AnkiDroid to get started",
@@ -91,7 +92,6 @@
     "goToSettings": "Go to Settings",
     "noBooks": "No books here yet",
     "addBook": "Add Book",
-    "noSearchResults": "No books match your search",
     "pages": "~{{count}} pages",
     "deleteDialog": {
       "title": "Delete book?",

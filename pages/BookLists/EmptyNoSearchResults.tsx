@@ -3,11 +3,11 @@ import { Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 
 export const EmptyNoSearchResults = () => {
-  const { t } = useTranslation('translation', { keyPrefix: 'bookLists' });
+  const { t } = useTranslation('translation', { keyPrefix: 'search' });
 
   return (
     <View className="flex-1 items-center justify-center">
-      <Text variant="titleLarge">{t('noSearchResults')}</Text>
+      <Text variant="titleLarge">{t('noResults')}</Text>
     </View>
   );
 };

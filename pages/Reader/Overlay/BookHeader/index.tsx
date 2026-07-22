@@ -23,7 +23,6 @@ const BookSearchInput = ({
 }) => {
   const setTempSearchQuery = useTempStore((state) => state.setTempSearchQuery);
   const tempSearchQuery = useTempStore((state) => state.tempSearchQuery);
-  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   return (
     <View style={{ flex: 1 }}>
@@ -31,7 +30,6 @@ const BookSearchInput = ({
         inputRef={inputRef}
         value={tempSearchQuery}
         onChangeText={setTempSearchQuery}
-        placeholder={t('searchPlaceholder')}
         accessibilityLabel="Search in book"
         onSubmitEditing={() => onSubmit(tempSearchQuery)}
       />

@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { Animated } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { SearchInput } from 'components/ui/SearchInput';
 import { useTempStore } from 'stores/useTempStore';
@@ -14,7 +13,6 @@ export const SearchAction = ({ leftContent }: Props) => {
   const [showSearch, setShowSearch] = useState(false);
   const bookListQuery = useTempStore((state) => state.bookListQuery);
   const setBookListQuery = useTempStore((state) => state.setBookListQuery);
-  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
 
   const titleAnim = useRef(new Animated.Value(1)).current;
   const searchAnim = useRef(new Animated.Value(0)).current;
@@ -47,7 +45,6 @@ export const SearchAction = ({ leftContent }: Props) => {
           <SearchInput
             value={bookListQuery}
             onChangeText={setBookListQuery}
-            placeholder={t('searchPlaceholder')}
             autoFocus
           />
         </Animated.View>
