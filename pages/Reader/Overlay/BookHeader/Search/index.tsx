@@ -8,6 +8,7 @@ import { useAppStore } from 'stores/useAppStore';
 import { Loading } from 'components/ui/Loading';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
+import { loadWindow } from 'stores/actions';
 
 interface Props {
   onClose: () => void;
@@ -20,7 +21,6 @@ export const MenuSearch = ({ onClose }: Props) => {
   const currentBook = useCurrentBook();
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);

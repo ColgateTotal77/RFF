@@ -8,6 +8,7 @@ import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useAppStore } from 'stores/useAppStore';
+import { loadWindow } from 'stores/actions';
 
 interface Props {
   onClose: () => void;
@@ -20,7 +21,6 @@ export const MenuBookmarks = ({ onClose }: Props) => {
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const [renamingBookmark, setRenamingBookmark] = useState<Bookmark | null>(null);

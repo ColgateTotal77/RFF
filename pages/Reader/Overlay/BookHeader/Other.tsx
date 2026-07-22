@@ -1,7 +1,7 @@
 import { DropdownMenu } from 'components/ui/DropdownMenu';
 import { useTranslation } from 'react-i18next';
 import { AppbarAction } from 'components/ui/AppbarAction';
-import { useAppStore } from 'stores/useAppStore';
+import { toggleTheme } from 'stores/actions';
 
 interface Props {
   isOpen: boolean;
@@ -13,7 +13,6 @@ interface Props {
 export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose, onBookSettingsOpen } = props;
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.other' });
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   return (
     <DropdownMenu

@@ -9,6 +9,7 @@ import { EmptyNoAnki } from 'pages/BookLists/EmptyNoAnki';
 import { EmptyNoSearchResults } from 'pages/BookLists/EmptyNoSearchResults';
 import { DeleteBookDialog } from 'pages/BookLists/DeleteBookDialog';
 import { EmptyNoBooks } from 'pages/BookLists/EmptyNoBooks';
+import { openBook } from 'stores/actions';
 
 interface BookListScreenProps {
   filterFn: (book: Book) => boolean;
@@ -17,7 +18,6 @@ interface BookListScreenProps {
 
 export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) => {
   const books = useBookStore((state) => state.books);
-  const openBook = useBookStore((state) => state.openBook);
   const removeBook = useBookStore((state) => state.removeBook);
   const decks = useAnkiStore((state) => state.decks);
   const bookListQuery = useTempStore((state) => state.bookListQuery);

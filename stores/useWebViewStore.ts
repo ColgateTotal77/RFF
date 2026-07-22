@@ -1,11 +1,5 @@
-import { BookEngine } from 'modules/book-engine';
 import { Theme } from 'types';
 import { create } from 'zustand';
-import { useBookStore } from './useBookStore';
-import { useAppStore } from './useAppStore';
-import { useTempStore } from './useTempStore';
-import { Toast } from 'components/ui/Toast';
-import i18n from 'i18n';
 
 export type QueueAction =
   | { type: 'instantScroll'; targetBlockId: number; blockScrollPercent?: number }
@@ -35,10 +29,10 @@ type Store = {
   setReactTag: (reactTag: number | null) => void;
 
   setIsWebViewReady: (isWebViewReady: boolean) => void;
+  setWebViewSource: (webViewSource: { uri: string } | null) => void;
   setPostLoadQueue: (postLoadQueue: QueueAction[]) => void;
   addToPostLoadQueue: (step: QueueAction) => void;
   resetWebView: () => void;
-  loadWindow: (jumpTo: number, blockScrollPercent: number) => Promise<void>;
 
   injectScript?: (script: string) => void;
   registerWebViewAction: (injectScript: (script: string) => void) => void;
@@ -57,88 +51,11 @@ export const useWebViewStore = create<Store>()((set, get) => ({
   setReactTag: (reactTag) => set({ reactTag }),
 
   setIsWebViewReady: (isWebViewReady) => set({ isWebViewReady }),
+  setWebViewSource: (webViewSource) => set({ webViewSource }),
   setPostLoadQueue: (postLoadQueue) => set({ postLoadQueue }),
   addToPostLoadQueue: (step) => set((state) => ({ postLoadQueue: [...state.postLoadQueue, step] })),
 
   resetWebView: () => set({ webViewSource: null, isWebViewReady: false, postLoadQueue: [] }),
-
-  loadWindow: async (targetBlockId: number, blockScrollPercent: number) => {
-    const { jumpToBlock, getBookSettings } = useBookStore.getState();
-
-    if (targetBlockId !== -1) jumpToBlock(targetBlockId);
-
-    try {
-      const currentBook = useBookStore.getState().currentBook;
-      if (!currentBook) return;
-
-      const settings = getBookSettings();
-
-      const { currentBlocks, blocks } = currentBook;
-      const paths = currentBlocks.map((index) => blocks[index].fullPath);
-
-      const currentSearchResult = useTempStore.getState().currentSearchResult;
-
-      useTempStore.getState().setIsOverlayVisible(false);
-
-      if (get().postLoadQueue.length === 0) {
-        get().addToPostLoadQueue({
-          type: 'scrollToBlock',
-          blockId: currentBook.currentBlock,
-          scrollPercent: blockScrollPercent,
-          instant: true,
-        });
-      }
-
-      if (currentSearchResult.id !== -1) {
-        get().setPostLoadQueue([
-          {
-            type: 'highlightAll',
-            query: currentSearchResult.query,
-          },
-          ...(get().postLoadQueue ?? []),
-        ]);
-      }
-
-      const generatedFileUrl = await BookEngine.loadInitialHtml(
-        paths,
-        currentBlocks,
-        currentBook.cssPaths,
-        {
-          fontSize: settings.font.fontSize,
-          fontFamily: settings.font.fontFamily,
-          theme: useAppStore.getState().theme,
-        }
-      );
-
-      const reactTag = await new Promise((resolve) => {
-        const currentTag = useWebViewStore.getState().reactTag;
-        if (currentTag !== null) {
-          return resolve(currentTag);
-        }
-
-        const unsubscribe = useWebViewStore.subscribe((state) => {
-          if (state.reactTag !== null) {
-            unsubscribe();
-            resolve(state.reactTag);
-          }
-        });
-      });
-
-      setTimeout(async () => {
-        await BookEngine.setupBookBridge(
-          reactTag,
-          currentBook.blocks.map((b) => b.fullPath),
-          currentBook.currentBlocks
-        );
-
-        set({ webViewSource: { uri: generatedFileUrl } });
-      }, 0);
-    } catch (e) {
-      console.error('Failed to prepare initial blocks:', e);
-      Toast.show(i18n.t('toast.failedToLoadReader'), 'error');
-      useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
-    }
-  },
 
   registerWebViewAction: (injectScript) => set({ injectScript }),
 

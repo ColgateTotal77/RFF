@@ -8,13 +8,13 @@ import { useTempStore } from 'stores/useTempStore';
 import { useAppStore } from 'stores/useAppStore';
 import { FlashList } from '@shopify/flash-list';
 import { View } from 'react-native';
+import { loadWindow } from 'stores/actions';
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const currentBook = useCurrentBook();
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const currentChapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;

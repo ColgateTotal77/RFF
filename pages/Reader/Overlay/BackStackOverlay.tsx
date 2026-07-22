@@ -8,6 +8,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
 import { calculateBookProgress } from 'lib/utils';
+import { loadWindow } from 'stores/actions';
 
 export const BackStackOverlay = () => {
   const backStack = useTempStore((state) => state.backStack);
@@ -18,7 +19,6 @@ export const BackStackOverlay = () => {
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const { colors } = useTheme();
   const { t } = useTranslation('translation', { keyPrefix: 'reader.footer' });

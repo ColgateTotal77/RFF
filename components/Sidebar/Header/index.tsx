@@ -6,7 +6,7 @@ import type { ParamListBase } from '@react-navigation/native';
 import { AppbarAction } from 'components/ui/AppbarAction';
 import { useAnkiStore } from 'stores/useAnkiStore';
 import { SearchAction } from 'components/Sidebar/Header/SearchAction';
-import { useAppStore } from 'stores/useAppStore';
+import { pickDocument } from 'stores/actions';
 
 interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -17,7 +17,6 @@ interface Props {
 export const Header = ({ navigation, title, routeName }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const decks = useAnkiStore((state) => state.decks);
-  const pickDocument = useAppStore((state) => state.pickDocument);
 
   const isBookListRoute = routeName === 'Reading Now' || routeName === 'Have Read';
 

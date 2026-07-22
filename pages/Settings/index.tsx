@@ -6,6 +6,7 @@ import { SegmentedButtons } from 'components/ui/SegmentedButtons';
 import { useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { useFocusEffect } from '@react-navigation/native';
+import { openBook } from 'stores/actions';
 
 type TabKey = 'anki' | 'misc';
 
@@ -19,7 +20,7 @@ export const SettingsScreen = () => {
       return () => {
         console.log('SettingsScreen blurred (navigated away)');
 
-        const { books, closeBook, openBook, isAnkiConfigStale } = useBookStore.getState();
+        const { books, closeBook, isAnkiConfigStale } = useBookStore.getState();
         const book = books?.[0];
 
         if (book && isAnkiConfigStale(book)) {

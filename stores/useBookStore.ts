@@ -1,23 +1,13 @@
-import {
-  normalizeLanguageCode,
-  FALLBACK_BOOK_LANGUAGE,
-  bookLanguageToLocaleTag,
-} from 'lib/langHelper';
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import { Book, Bookmark, BookSettings, CurrentCTree, DeepPartial, FieldMapping, Misc } from 'types';
-import { buildBookMapping, deepMerge } from 'lib/utils';
+import { deepMerge } from 'lib/utils';
 import { BookEngine } from 'modules/book-engine';
-import { parseBook } from 'lib/ParseBook';
-import { useAnkiStore } from './useAnkiStore';
 import { useWebViewStore } from './useWebViewStore';
 import { useAppStore } from './useAppStore';
 import { useTempStore } from './useTempStore';
-import { Toast } from 'components/ui/Toast';
 import { Directory } from 'expo-file-system';
-import i18n from 'i18n';
-import { BOOK_LANGUAGE } from 'lib/languagesMappings';
 
 const mmkvStorage = createMMKV({
   id: 'book-storage',
@@ -41,8 +31,6 @@ type Store = {
   currentBook: Book | null;
   currentCTree: CurrentCTree | null;
 
-  loadBook: (uri: string) => Promise<void>;
-  openBook: (basePath: string) => Promise<void>;
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
   setCurrentBlock: (currentBlock: number) => void;
@@ -70,114 +58,6 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       currentCTree: null,
-
-      loadBook: async (uri: string) => {
-        get().closeBook();
-
-        try {
-          const targetLang =
-            normalizeLanguageCode(useAppStore.getState().settings.targetLang) ??
-            FALLBACK_BOOK_LANGUAGE;
-
-          const book = await parseBook(uri, targetLang);
-
-          set((state) => ({
-            books: [book, ...state.books.filter((b) => b.basePath !== book.basePath)],
-          }));
-
-          get().openBook(book.basePath);
-        } catch (e) {
-          console.error('❌ Failed to load book:', e);
-          Toast.show(
-            e instanceof Error && e.message ? e.message : i18n.t('toast.failedToLoadBook'),
-            'error'
-          );
-          useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
-        }
-      },
-
-      openBook: async (basePath: string) => {
-        const { currentBook, books } = get();
-
-        const bookToOpen = books.find((book) => book.basePath === basePath);
-        if (!bookToOpen) return;
-
-        const bookSettings = get().getBookSettings(bookToOpen);
-        const configStale = get().isAnkiConfigStale(bookToOpen);
-        const needsDictionaryReload = !!bookSettings.ankiDeckId && configStale;
-        const needsBookReload = currentBook?.basePath !== bookToOpen.basePath;
-
-        try {
-          if (needsDictionaryReload || needsBookReload) {
-            useAppStore
-              .getState()
-              .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
-
-            get().closeBook();
-
-            if (needsDictionaryReload) {
-              console.log('Loading Anki dictionary for book');
-
-              set(() => ({
-                currentCTree: {
-                  langCode: bookSettings.bookLang,
-                  deckId: bookSettings.ankiDeckId!,
-                  fieldMapping: bookSettings.fieldMapping,
-                  mirroredFieldMapping: bookSettings.mirroredFieldMapping,
-                },
-              }));
-
-              await BookEngine.loadAnkiDictionary(
-                bookSettings.bookLang,
-                bookSettings.ankiDeckId,
-                bookSettings.fieldMapping,
-                bookSettings.mirroredFieldMapping
-              );
-            }
-
-            console.log('Opening book');
-
-            const { loadFieldsInto } = useAnkiStore.getState();
-            loadFieldsInto(bookSettings.ankiModelId!, 'bookFields');
-            loadFieldsInto(bookSettings.mirroredAnkiModelId!, 'bookMirroredFields');
-
-            bookToOpen.mapping = buildBookMapping(bookToOpen);
-
-            set((state) => ({
-              currentBook: bookToOpen,
-              books: [bookToOpen, ...state.books.filter((b) => b.basePath !== basePath)],
-            }));
-
-            useWebViewStore
-              .getState()
-              .loadWindow(bookToOpen.currentBlock, bookToOpen.misc.currentBlockScrollPercent);
-          } else {
-            useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
-          }
-
-          useAppStore.getState().navigate('Reader');
-
-          if (
-            bookSettings.fieldMapping.audio != null ||
-            bookSettings.mirroredFieldMapping.audio != null
-          ) {
-            const hasTTSModel = await BookEngine.hasTTSDownloaded(
-              bookLanguageToLocaleTag(bookSettings.bookLang)
-            );
-            if (hasTTSModel) return;
-
-            const neededLang = BOOK_LANGUAGE[bookSettings.bookLang];
-
-            Toast.show(i18n.t('toast.installTtsVoice', { lang: neededLang }), 'error', () =>
-              BookEngine.openTTSSettings()
-            );
-          }
-        } catch (e) {
-          useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
-          console.error('❌ Failed to open book:', e);
-          Toast.show(i18n.t('toast.failedToOpenBook'), 'error');
-        }
-      },
 
       setCurrentCTree: (treeData: CurrentCTree) =>
         set((state) => ({

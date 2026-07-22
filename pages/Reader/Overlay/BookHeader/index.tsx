@@ -12,6 +12,7 @@ import { AppbarAction } from 'components/ui/AppbarAction';
 import { SearchInput } from 'components/ui/SearchInput';
 import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { openBook } from 'stores/actions';
 
 const BookSearchInput = ({
   onSubmit,
@@ -45,7 +46,6 @@ export const BookHeader = () => {
   const toggleIsSearchModuleOpen = useTempStore((state) => state.toggleIsSearchModuleOpen);
   const setSearchResults = useTempStore((state) => state.setSearchResults);
   const isSearchModuleOpen = useTempStore((state) => state.isSearchModuleOpen);
-  const openBook = useBookStore((state) => state.openBook);
   const isAnkiConfigStale = useBookStore((state) => state.isAnkiConfigStale);
   const resetSearch = useTempStore((state) => state.resetSearch);
   const setIsSearchLoading = useTempStore((state) => state.setIsSearchLoading);

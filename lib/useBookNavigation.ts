@@ -3,6 +3,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
+import { loadWindow } from 'stores/actions';
 
 export const useJumpToNextSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
@@ -13,7 +14,6 @@ export const useJumpToNextSearchResult = () => {
   const updateMisc = useBookStore((state) => state.updateMisc);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const currentBook = useCurrentBook();
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return () => {
@@ -59,7 +59,6 @@ export const useJumpToPrevSearchResult = () => {
   const updateMisc = useBookStore((state) => state.updateMisc);
   const currentBook = useCurrentBook();
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return () => {
@@ -98,7 +97,6 @@ export const useJumpToPrevSearchResult = () => {
 export const useProcessBookLinks = () => {
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
-  const loadWindow = useWebViewStore((state) => state.loadWindow);
   const currentBook = useCurrentBook();
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);

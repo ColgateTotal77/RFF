@@ -5,13 +5,13 @@ import i18n, { changeLanguage } from 'i18n';
 import { APP_LANGUAGE_OPTIONS, BOOK_LANGUAGE_OPTIONS } from 'lib/langHelper';
 import { View } from 'react-native';
 import { useAppStore } from 'stores/useAppStore';
+import { toggleTheme } from 'stores/actions';
 
 export const MiscTab = () => {
   const autoCardOnDoubleTap = useAppStore((state) => state.settings.autoCardOnDoubleTap);
   const targetLang = useAppStore((state) => state.settings.targetLang);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const theme = useAppStore((state) => state.theme);
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   const { t } = useTranslation('translation', { keyPrefix: 'miscTab' });
 
