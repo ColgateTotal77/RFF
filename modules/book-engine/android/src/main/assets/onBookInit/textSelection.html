@@ -48,6 +48,20 @@
     return { start: spacedStart, end: spacedEnd, unspaced };
   };
 
+  const charOffsetAt = (node, offset, x) => {
+    if (offset <= 0) return offset;
+
+    const prev = node.textContent[offset - 1];
+    if (!prev || /\s/.test(prev)) return offset;
+
+    const range = document.createRange();
+    range.setStart(node, offset - 1);
+    range.setEnd(node, offset);
+
+    const rect = range.getClientRects()[0];
+    return rect && x >= rect.left && x <= rect.right ? offset - 1 : offset;
+  };
+
   const getTextOffset = (ancestor, node, offset) => {
     const walker = document.createTreeWalker(ancestor, NodeFilter.SHOW_TEXT);
     let total = 0;
@@ -174,6 +188,13 @@
   let tapCount = 0;
   let tapTimer = null;
   let lastTapText = '';
+  const resetTap = () => {
+    clearTimeout(tapTimer);
+    tapTimer = null;
+    tapCount = 0;
+    lastTapText = '';
+  };
+
   const TAP_DELAY = 230;
   const SCROLL_THRESHOLD = 8;
   const LONG_PRESS_THRESHOLD = 400;
@@ -183,6 +204,11 @@
   let touchStartTime = 0;
 
   document.addEventListener('touchstart', (event) => {
+    if(event.touches.length > 1) {
+      resetTap();
+      return;
+    }
+
     const touch = event.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -190,15 +216,26 @@
   }, { passive: true });
 
   document.addEventListener('touchend', (event) => {
+    if(event.touches.length > 0) {
+      resetTap();
+      return;
+    }
+
     const touch = event.changedTouches[0];
     const dx = Math.abs(touch.clientX - touchStartX);
     const dy = Math.abs(touch.clientY - touchStartY);
     const duration = event.timeStamp - touchStartTime;
 
-    if (dx > SCROLL_THRESHOLD || dy > SCROLL_THRESHOLD) return;
-    if (duration > LONG_PRESS_THRESHOLD) return;
+    if (dx > SCROLL_THRESHOLD || dy > SCROLL_THRESHOLD) {
+      resetTap();
+      return;
+    }
+    if (duration > LONG_PRESS_THRESHOLD) {
+      resetTap();
+      return;
+    }
 
-    const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+    const range = document.caretRangeFromPoint(touchStartX, touchStartY);
 
     if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) {
       if (lastTapText !== '') {
@@ -221,7 +258,7 @@
 
     const textNode = range.startContainer;
     const text = textNode.textContent;
-    const offset = range.startOffset;
+    const offset = charOffsetAt(textNode, range.startOffset, touchStartX);
 
     const { start, end: rawEnd, unspaced } = resolveWordBounds(text, offset);
     const rawWord = text.substring(start, rawEnd);
@@ -234,7 +271,10 @@
         : resolveTappedWord(rawWord, offset - start);
     const selectedText = rawSelection.trim().replace(PUNCTUATION_REGEX, '');
 
-    if (!selectedText) return;
+    if (!selectedText) {
+      resetTap();
+      return;
+    }
 
     const noteIds = highlightedElement?.dataset.noteIds || null;
     const colorCode = highlightedElement?.dataset.flag || null;
