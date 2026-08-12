@@ -1,4 +1,4 @@
-import { resolvePath } from 'lib/utils';
+import { encodePathSegments, resolvePath } from 'lib/utils';
 
 interface Props {
   chapterId: number;
@@ -67,13 +67,21 @@ export const processChapterDom = ({
     })
   );
 
-  return withLinks.replace(/<(?:img|image)\b[^>]*>/gi, (tag) =>
+  const withImages = withLinks.replace(/<(?:img|image)\b[^>]*>/gi, (tag) =>
     rewriteFirstAttr(tag, ['src', 'href', 'xlink:href'], (src) => {
       if (!src || SCHEME_RE.test(src)) return null;
 
       const decodedSrc = decodeURIComponent(src);
-      const resolvedSrc = resolvePath(chapterBasePath, decodedSrc);
+      const resolvedSrc = encodePathSegments(resolvePath(chapterBasePath, decodedSrc));
       return `file:///${resolvedSrc}`;
     })
   );
+
+  let headingSeq = 0;
+  return withImages.replace(/<h([1-6])\b([^>]*)>/gi, (tag, level, attrs) => {
+    headingSeq++;
+    return /\bid\s*=/i.test(attrs)
+      ? tag
+      : `<h${level}${attrs} id="rff-h${chapterId}-${headingSeq}">`;
+  });
 };

@@ -38,7 +38,7 @@ export const useAppStore = create<Store>()(
         mirroredAnkiModelId: '',
         mirroredFieldMappings: {},
         isTwoSided: false,
-        autoCardOnDoubleTap: false,
+        autoSuspendNewCards: false,
         targetLang: appLanguageToBookLanguage(i18n.language),
         font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
       },

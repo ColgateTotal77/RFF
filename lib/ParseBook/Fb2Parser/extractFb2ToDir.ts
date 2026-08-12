@@ -5,7 +5,8 @@ import { detectXmlEncoding, decodeCp1251 } from 'lib/ParseBook/Fb2Parser/decodeX
 export const extractFb2ToDir = async (uri: string, isZipped = false) => {
   try {
     const rawName = uri.split('/').at(-1) || 'unknown_book';
-    const fileName = rawName.replace(/\.fb2\.zip$|\.fb2$|\.zip$/i, '') || 'unknown_book';
+    const fileName =
+      rawName.replace(/\.fb2\.zip$|\.fb2$|\.zip$/i, '').replace(/[^\w.-]+/g, '_') || 'unknown_book';
     const timestamp = Date.now();
 
     const booksDir = new Directory(Paths.document, 'books');

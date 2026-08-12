@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { ScrollView } from 'react-native';
 import { AnkiTab } from 'pages/Reader/Overlay/BookHeader/BookSettings/tabs/AnkiTab';
 import { MiscTab } from 'pages/Reader/Overlay/BookHeader/BookSettings/tabs/MiscTab';
 import { SegmentedButtons } from 'components/ui/SegmentedButtons';
+import { ScrollViewWithScrollControl } from 'components/ui/ScrollViewWithScrollControl';
 
 type TabKey = 'anki' | 'misc';
 
@@ -21,10 +21,10 @@ export const BookSettings = () => {
         style={{ marginHorizontal: 16, marginBottom: 16 }}
       />
 
-      <ScrollView>
+      <ScrollViewWithScrollControl>
         {activeTab === 'anki' && <AnkiTab />}
         {activeTab === 'misc' && <MiscTab />}
-      </ScrollView>
+      </ScrollViewWithScrollControl>
     </>
   );
 };

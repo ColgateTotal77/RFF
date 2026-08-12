@@ -19,7 +19,6 @@ export const ReaderScreen = () => {
   const webViewSource = useWebViewStore((state) => state.webViewSource);
   const selectionMenu = useTempStore((state) => state.selectionMenu);
   const setReactTag = useWebViewStore((state) => state.setReactTag);
-  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
   const theme = useAppStore((state) => state.theme);
   const { top, bottom } = useSafeAreaInsets();
 
@@ -86,7 +85,7 @@ export const ReaderScreen = () => {
         mixedContentMode="always"
       />
 
-      {isOverlayVisible && <Overlay />}
+      <Overlay />
 
       {selectionMenu.visible && <SelectionMenu selectionMenu={selectionMenu} />}
     </View>

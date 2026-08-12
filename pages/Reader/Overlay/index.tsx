@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const Overlay = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
+  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
+
   const setOverlayHeaderOffset = useTempStore((state) => state.setOverlayHeaderOffset);
   const { top } = useSafeAreaInsets();
 
@@ -22,14 +24,20 @@ export const Overlay = () => {
 
   return (
     <>
-      <View className="absolute left-0 right-0 top-0 z-50" onLayout={onHeaderLayout}>
-        <BookHeader />
-      </View>
-      <BookMarkButton />
-      <View className="absolute bottom-8 left-0 right-0 items-center gap-2">
-        <BackStackOverlay />
-        {currentSearchResult.blockId > -1 ? <SearchOverlay /> : <BookProgressOverlay />}
-      </View>
+      {isOverlayVisible && (
+        <>
+          <View className="absolute left-0 right-0 top-0 z-50" onLayout={onHeaderLayout}>
+            <BookHeader />
+          </View>
+          <BookMarkButton />
+        </>
+      )}
+      {(isOverlayVisible || currentSearchResult.blockId > -1) && (
+        <View className="absolute bottom-8 left-0 right-0 items-center gap-2">
+          <BackStackOverlay />
+          {currentSearchResult.blockId > -1 ? <SearchOverlay /> : <BookProgressOverlay />}
+        </View>
+      )}
     </>
   );
 };

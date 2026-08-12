@@ -13,6 +13,7 @@ class NoteUpserter(
     private val noteFinder = NoteFinder(context)
     private val noteTagger = NoteTagger(context, freqDatabase)
     private val fieldMapper = FieldArrayMapper(context, AnkiAudioHelper(context))
+    private val cardSuspender = CardSuspender(context)
 
     suspend fun addOrUpdate(
         deckId: Long,
@@ -21,6 +22,7 @@ class NoteUpserter(
         mirroredMapping: Map<String, Any?>,
         isTwoSided: Boolean,
         audioLang: String,
+        autoSuspend: Boolean,
     ): List<Long> {
         val word = fields["word"] ?: throw Exception("Word field is missing")
         val modelId = (mapping["modalId"] as? String)?.toLong() ?: throw Exception("modalId is missing")
@@ -31,7 +33,19 @@ class NoteUpserter(
         return if (existing != null) {
             retagPair(existing.id, word, deckId, tier, mapping, mirroredMapping, isTwoSided)
         } else {
-            createPair(word, zipf, tier, deckId, modelId, fields, mapping, mirroredMapping, isTwoSided, audioLang)
+            createPair(
+                word,
+                zipf,
+                tier,
+                deckId,
+                modelId,
+                fields,
+                mapping,
+                mirroredMapping,
+                isTwoSided,
+                audioLang,
+                autoSuspend,
+            )
         }
     }
 
@@ -82,6 +96,7 @@ class NoteUpserter(
         mirroredMapping: Map<String, Any?>,
         isTwoSided: Boolean,
         audioLang: String,
+        autoSuspend: Boolean,
     ): List<Long> {
         val noteFields = buildNoteFields(fields, word, zipf)
         val tags = setOf("Lookups_1", tier)
@@ -100,6 +115,8 @@ class NoteUpserter(
                     ?: throw Exception("Failed to create mirrored note for $word")
             createdIds.add(mirroredId)
         }
+
+        if (autoSuspend) cardSuspender.suspendCardsOfNotes(createdIds)
 
         upsertToDictionary(word, createdIds.toLongArray(), 1)
         return createdIds

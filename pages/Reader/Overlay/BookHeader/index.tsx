@@ -72,9 +72,8 @@ export const BookHeader = () => {
 
   const onBookSettingsClose = () => {
     setIsBookSettingsOpen(false);
-    if (isAnkiConfigStale(currentBook)) {
-      openBook(currentBook.basePath);
-    }
+    if (!isAnkiConfigStale(currentBook)) return;
+    openBook(currentBook.basePath);
   };
 
   const searchInputRef = useRef<NativeTextInput>(null);

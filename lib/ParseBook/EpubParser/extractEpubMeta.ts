@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import { XMLParser } from 'fast-xml-parser';
 import { LanguageCode, normalizeLanguageCode } from 'lib/langHelper';
+import { encodePathSegments } from 'lib/utils';
 
 interface Response {
   title: string;
@@ -33,7 +34,7 @@ export const extractEpubMeta = async (unzippedPath: string): Promise<Response> =
 
   const rootFilePath = containerData.container.rootfiles.rootfile['@_full-path'];
 
-  const opfFile = new File(unzippedPath, rootFilePath);
+  const opfFile = new File(`${unzippedPath}${encodePathSegments(rootFilePath)}`);
   const opfXml = await opfFile.text();
   const opfData = parser.parse(opfXml);
   const packageData = opfData.package;
@@ -73,14 +74,15 @@ export const extractEpubMeta = async (unzippedPath: string): Promise<Response> =
   if (coverMeta) {
     const coverId = coverMeta['@_content'];
     const coverHref = manifestMap[coverId];
-    if (coverHref) coverPath = `file://${absoluteBasePath}/${coverHref}`;
+    if (coverHref) coverPath = `file://${absoluteBasePath}/${encodePathSegments(coverHref)}`;
   }
 
   if (!coverPath) {
     const epub3CoverItem = manifestItems.find((item: any) =>
       (item['@_properties'] || '').split(/\s+/).includes('cover-image')
     );
-    if (epub3CoverItem) coverPath = `file://${absoluteBasePath}/${epub3CoverItem['@_href']}`;
+    if (epub3CoverItem)
+      coverPath = `file://${absoluteBasePath}/${encodePathSegments(epub3CoverItem['@_href'])}`;
   }
 
   let language = normalizeLanguageCode(
@@ -89,7 +91,7 @@ export const extractEpubMeta = async (unzippedPath: string): Promise<Response> =
 
   const cssPaths = manifestItems
     .filter((item: any) => item['@_media-type'] === 'text/css')
-    .map((item: any) => `file://${absoluteBasePath}/${item['@_href']}`);
+    .map((item: any) => `file://${absoluteBasePath}/${encodePathSegments(item['@_href'])}`);
 
   const navItem = manifestItems.find((item: any) =>
     (item['@_properties'] || '').split(/\s+/).includes('nav')

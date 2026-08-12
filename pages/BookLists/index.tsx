@@ -1,5 +1,5 @@
-import { FlatList } from 'react-native';
-import { useState } from 'react';
+import { View } from 'react-native';
+import { useState, useMemo } from 'react';
 import { useBookStore } from 'stores/useBookStore';
 import { Book } from 'types';
 import { BookCard } from 'pages/BookLists/BookCard';
@@ -10,11 +10,32 @@ import { EmptyNoSearchResults } from 'pages/BookLists/EmptyNoSearchResults';
 import { DeleteBookDialog } from 'pages/BookLists/DeleteBookDialog';
 import { EmptyNoBooks } from 'pages/BookLists/EmptyNoBooks';
 import { openBook } from 'stores/actions';
+import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
 
 interface BookListScreenProps {
   filterFn: (book: Book) => boolean;
   toggleLabel: string;
 }
+
+type BookExtra = {
+  toggleLabel: string;
+  onDeletePress: (book: Book) => void;
+};
+
+const Separator = () => <View className="h-4" />;
+
+const renderBook = ({ item, extraData }: ListRenderItemInfo<Book>) => {
+  const { toggleLabel, onDeletePress } = extraData as BookExtra;
+
+  return (
+    <BookCard
+      book={item}
+      onPress={() => openBook(item.basePath)}
+      toggleLabel={toggleLabel}
+      onDeletePress={() => onDeletePress(item)}
+    />
+  );
+};
 
 export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) => {
   const books = useBookStore((state) => state.books);
@@ -23,6 +44,11 @@ export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) =
   const bookListQuery = useTempStore((state) => state.bookListQuery);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
+  const extraData = useMemo<BookExtra>(
+    () => ({ toggleLabel, onDeletePress: setBookToDelete }),
+    [toggleLabel]
+  );
+
   const filteredBooks = books.filter(filterFn);
 
   if (books.length === 0 && !decks.length) return <EmptyNoAnki />;
@@ -30,22 +56,14 @@ export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) =
     return bookListQuery !== '' ? <EmptyNoSearchResults /> : <EmptyNoBooks />;
   }
 
-  const renderBook = ({ item }: { item: Book }) => (
-    <BookCard
-      book={item}
-      onPress={() => openBook(item.basePath)}
-      toggleLabel={toggleLabel}
-      onDeletePress={() => setBookToDelete(item)}
-    />
-  );
-
   return (
     <>
-      <FlatList
+      <FlashList
         data={filteredBooks}
-        keyExtractor={(book) => book.basePath}
+        extraData={extraData}
         renderItem={renderBook}
-        contentContainerClassName="p-4 gap-4"
+        contentContainerClassName="p-4"
+        ItemSeparatorComponent={Separator}
       />
       <DeleteBookDialog
         isOpen={bookToDelete !== null}

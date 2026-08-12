@@ -1,44 +1,35 @@
 import { Theme } from 'types';
 import { create } from 'zustand';
 
-export type QueueAction =
-  | { type: 'instantScroll'; targetBlockId: number; blockScrollPercent?: number }
+export type WebViewAction =
   | { type: 'scrollToBlock'; blockId: number; scrollPercent?: number; instant?: boolean }
   | { type: 'scrollToFragment'; fragmentId: string }
   | { type: 'highlightAll'; query: string }
   | { type: 'jumpToSearch'; blockId: number; occurrenceIndex: number }
   | { type: 'clearSearch' }
-  | { type: 'setTheme'; theme: Theme };
-
-export type ImmediateAction =
-  | { type: 'scrollToBlock'; blockId: number; scrollPercent?: number }
-  | { type: 'scrollToFragment'; fragmentId: string }
-  | { type: 'highlightAll'; query: string }
-  | { type: 'jumpToSearch'; blockId: number; occurrenceIndex: number }
   | { type: 'setTheme'; theme: Theme }
   | { type: 'updateFont'; fontSize?: number; fontFamily?: string }
-  | { type: 'updateTag'; word: string | string[] | null; noteIds: string; colorCode: string }
-  | { type: 'clearSearch' };
+  | { type: 'updateTag'; word: string | string[] | null; noteIds: string; colorCode: string };
 
 type Store = {
   isWebViewReady: boolean;
   webViewSource: { uri: string } | null;
-  postLoadQueue: QueueAction[];
+  postLoadQueue: WebViewAction[];
   reactTag: number | null;
 
   setReactTag: (reactTag: number | null) => void;
 
   setIsWebViewReady: (isWebViewReady: boolean) => void;
   setWebViewSource: (webViewSource: { uri: string } | null) => void;
-  setPostLoadQueue: (postLoadQueue: QueueAction[]) => void;
-  addToPostLoadQueue: (step: QueueAction) => void;
+  setPostLoadQueue: (postLoadQueue: WebViewAction[]) => void;
+  addToPostLoadQueue: (step: WebViewAction) => void;
   resetWebView: () => void;
 
   injectScript?: (script: string) => void;
   registerWebViewAction: (injectScript: (script: string) => void) => void;
   runScript: (script: string) => void;
 
-  executeImmediateActions: (actions: ImmediateAction[]) => void;
+  executeImmediateActions: (actions: WebViewAction[]) => void;
   executeQueueActions: () => void;
 };
 

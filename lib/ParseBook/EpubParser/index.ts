@@ -28,17 +28,15 @@ export const epubParser = async (bookUri: string): Promise<ParsedSource> => {
     absoluteBasePath
   );
 
-  const toc =
-    manifestMap[tocId] || navHref
-      ? await extractToc({
-          tocId,
-          unzippedPath,
-          opfDirName,
-          manifestMap,
-          mapHrefChapterId,
-          navHref,
-        })
-      : [];
+  const toc = await extractToc({
+    tocId,
+    unzippedPath,
+    opfDirName,
+    manifestMap,
+    mapHrefChapterId,
+    chapters,
+    navHref,
+  });
 
   return {
     title,

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { FlatList } from 'react-native';
+import { View } from 'react-native';
 import { Bookmark } from 'types';
 import { BookmarkCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuBookmarks/BookmarkCard';
 import { RenameBookmarkDialog } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuBookmarks/RenameBookmarkDialog';
@@ -9,10 +9,26 @@ import { useWebViewStore } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useAppStore } from 'stores/useAppStore';
 import { loadWindow } from 'stores/actions';
+import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
 
 interface Props {
   onClose: () => void;
 }
+
+type BookmarkExtra = {
+  onPress: (bookmark: Bookmark) => void;
+  onRename: (bookmark: Bookmark) => void;
+};
+
+const Separator = () => <View className="h-4" />;
+
+const renderBookmarkCard = ({ item, extraData }: ListRenderItemInfo<Bookmark>) => {
+  const { onPress, onRename } = extraData as BookmarkExtra;
+
+  return (
+    <BookmarkCard bookmark={item} onPress={() => onPress(item)} onRename={() => onRename(item)} />
+  );
+};
 
 export const MenuBookmarks = ({ onClose }: Props) => {
   const currentBook = useCurrentBook();
@@ -25,54 +41,63 @@ export const MenuBookmarks = ({ onClose }: Props) => {
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const [renamingBookmark, setRenamingBookmark] = useState<Bookmark | null>(null);
 
-  const onPress = (bookmark: Bookmark) => {
-    addToBackStack({
-      blockId: currentBook.currentBlock,
-      scrollPercent: currentBook.misc.currentBlockScrollPercent,
-    });
+  const onPress = useCallback(
+    (bookmark: Bookmark) => {
+      addToBackStack({
+        blockId: currentBook.currentBlock,
+        scrollPercent: currentBook.misc.currentBlockScrollPercent,
+      });
 
-    if (currentBook.currentBlocks.includes(bookmark.blockId)) {
-      setCurrentBlock(bookmark.blockId);
-      executeImmediateActions([
-        {
+      if (currentBook.currentBlocks.includes(bookmark.blockId)) {
+        setCurrentBlock(bookmark.blockId);
+        executeImmediateActions([
+          {
+            type: 'scrollToBlock',
+            blockId: bookmark.blockId,
+            scrollPercent: bookmark.scrollPercent,
+          },
+        ]);
+      } else {
+        addToPostLoadQueue({
           type: 'scrollToBlock',
           blockId: bookmark.blockId,
           scrollPercent: bookmark.scrollPercent,
-        },
-      ]);
-    } else {
-      addToPostLoadQueue({
-        type: 'scrollToBlock',
-        blockId: bookmark.blockId,
-        scrollPercent: bookmark.scrollPercent,
+        });
+        setGlobalLoading({ isLoading: true, message: 'Opening bookmark…' });
+        loadWindow(bookmark.blockId, 0);
+      }
+
+      updateMisc({
+        percent: calculateBookProgress(currentBook, bookmark.scrollPercent, bookmark.blockId),
       });
-      setGlobalLoading({ isLoading: true, message: 'Opening bookmark…' });
-      loadWindow(bookmark.blockId, 0);
-    }
 
-    updateMisc({
-      percent: calculateBookProgress(currentBook, bookmark.scrollPercent, bookmark.blockId),
-    });
+      onClose();
+    },
+    [
+      currentBook,
+      addToBackStack,
+      setCurrentBlock,
+      executeImmediateActions,
+      addToPostLoadQueue,
+      setGlobalLoading,
+      updateMisc,
+      onClose,
+    ]
+  );
 
-    onClose();
-  };
-
-  const renderBookmarkCard = ({ item }: { item: Bookmark }) => (
-    <BookmarkCard
-      bookmark={item}
-      onPress={() => onPress(item)}
-      onRename={() => setRenamingBookmark(item)}
-    />
+  const extraData = useMemo<BookmarkExtra>(
+    () => ({ onPress, onRename: setRenamingBookmark }),
+    [onPress]
   );
 
   return (
     <>
-      <FlatList
-        data={currentBook.bookmarks || []}
-        keyExtractor={(bookmark) => bookmark.id.toString()}
+      <FlashList
+        data={currentBook.bookmarks}
+        extraData={extraData}
         renderItem={renderBookmarkCard}
-        contentContainerClassName="gap-4 p-4"
-        initialNumToRender={15}
+        contentContainerClassName="p-4"
+        ItemSeparatorComponent={Separator}
       />
 
       <RenameBookmarkDialog

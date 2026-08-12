@@ -59,7 +59,8 @@ export const useWordAction = () => {
         bookSettings.fieldMapping,
         bookSettings.mirroredFieldMapping,
         isTwoSided,
-        bookLanguageToLocaleTag(bookSettings.bookLang)
+        bookLanguageToLocaleTag(bookSettings.bookLang),
+        bookSettings.autoSuspendNewCards
       );
 
       if (noteIdsArray && noteIdsArray.length > 0) {

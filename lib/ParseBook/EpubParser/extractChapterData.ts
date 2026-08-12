@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import { processChapterDom } from 'lib/ParseBook/EpubParser/processChapterDom';
 import { SourceChapter } from 'lib/ParseBook/types';
+import { encodePathSegments } from 'lib/utils';
 
 interface Response {
   chapters: SourceChapter[];
@@ -21,7 +22,7 @@ export const extractChapterData = async (
     if (!href) continue;
 
     try {
-      const file = new File(`file://${absoluteBasePath}/${href}`);
+      const file = new File(`file://${absoluteBasePath}/${encodePathSegments(href)}`);
       let html = await file.text();
 
       const chapterDir = href.includes('/') ? href.substring(0, href.lastIndexOf('/')) : '';

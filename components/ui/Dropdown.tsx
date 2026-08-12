@@ -1,10 +1,11 @@
-import { useState, ReactNode } from 'react';
+import { useState, useMemo, useCallback, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, useTheme, Divider, Icon } from 'react-native-paper';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, LayoutChangeEvent } from 'react-native';
 import { Button } from 'components/ui/Button';
 import { SearchInput } from 'components/ui/SearchInput';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
+import { useScrollIntoView } from 'components/ui/ScrollViewWithScrollControl';
 
 interface DropdownItemProps {
   isSelected: boolean;
@@ -59,6 +60,34 @@ interface DropdownProps<T extends string> {
   onClose?: () => void;
 }
 
+type OptionExtra<T extends string> = {
+  value: any | undefined;
+  onSelect: (id: T) => void;
+  onSelected: () => void;
+};
+
+const Separator = () => <Divider />;
+
+const renderOption = <T extends string>({
+  item,
+  extraData,
+}: ListRenderItemInfo<DropdownOption<T>>) => {
+  const { value, onSelect, onSelected } = extraData as OptionExtra<T>;
+  const isSelected = item.id === value;
+
+  return (
+    <DropdownItem
+      isSelected={isSelected}
+      onPress={() => {
+        if (isSelected) return;
+        onSelect(item.id);
+        onSelected();
+      }}
+      itemName={item.name}
+    />
+  );
+};
+
 const DropdownEmptyState = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'search' });
   const theme = useTheme();
@@ -96,6 +125,9 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const dropdownContentRef = useRef<View>(null);
+  const lastHeight = useRef(0);
+  const scrollIntoView = useScrollIntoView();
 
   const selectedOption = options.find((o) => o.id === value);
   const displayLabel = selectedOption ? selectedOption.name : placeholder;
@@ -110,11 +142,29 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
     setQuery('');
     onOpen?.();
     setIsOpen(true);
+    lastHeight.current = 0;
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose?.();
     setIsOpen(false);
+    lastHeight.current = 0;
+  }, [onClose]);
+
+  const extraData = useMemo<OptionExtra<T>>(
+    () => ({
+      value,
+      onSelect,
+      onSelected: () => closeOnSelect && handleClose(),
+    }),
+    [value, onSelect, closeOnSelect, handleClose]
+  );
+
+  const onLayout = (event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout;
+    if (height === lastHeight.current) return;
+    lastHeight.current = height;
+    scrollIntoView?.(dropdownContentRef.current);
   };
 
   return (
@@ -146,6 +196,8 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
 
       {isOpen && (
         <View
+          ref={dropdownContentRef}
+          onLayout={onLayout}
           style={{
             backgroundColor: theme.colors.elevation.level1,
             borderColor: theme.colors.outline,
@@ -165,23 +217,9 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
             ListEmptyComponent={<DropdownEmptyState />}
-            keyExtractor={(item) => item.id}
-            ItemSeparatorComponent={() => <Divider />}
-            extraData={value}
-            renderItem={({ item, extraData }) => {
-              const isSelected = item.id === extraData;
-              return (
-                <DropdownItem
-                  isSelected={isSelected}
-                  onPress={() => {
-                    if (isSelected) return;
-                    onSelect(item.id);
-                    if (closeOnSelect) handleClose();
-                  }}
-                  itemName={item.name}
-                />
-              );
-            }}
+            ItemSeparatorComponent={Separator}
+            extraData={extraData}
+            renderItem={renderOption}
           />
         </View>
       )}

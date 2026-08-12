@@ -47,12 +47,12 @@ export const MiscTab = () => {
       />
 
       <List.Item
-        title={t('autoCardTitle')}
-        description={t('autoCardDescription')}
+        title={t('autoSuspendTitle')}
+        description={t('autoSuspendDescription')}
         right={() => (
           <Switch
-            value={settings.autoCardOnDoubleTap}
-            onValueChange={(value) => updateBookSettings({ autoCardOnDoubleTap: value })}
+            value={settings.autoSuspendNewCards}
+            onValueChange={(value) => updateBookSettings({ autoSuspendNewCards: value })}
           />
         )}
       />

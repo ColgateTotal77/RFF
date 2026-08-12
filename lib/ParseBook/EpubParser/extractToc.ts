@@ -2,6 +2,9 @@ import { File } from 'expo-file-system';
 import { TocItem } from 'types';
 import { XMLParser } from 'fast-xml-parser';
 import { parse } from 'node-html-parser';
+import { encodePathSegments } from 'lib/utils';
+import { extractHeadingToc } from 'lib/ParseBook/EpubParser/extractHeadingToc';
+import { SourceChapter } from 'lib/ParseBook/types';
 
 interface Props {
   tocId: string;
@@ -9,6 +12,7 @@ interface Props {
   opfDirName: string;
   manifestMap: Record<string, string>;
   mapHrefChapterId: Record<string, number>;
+  chapters: SourceChapter[];
   navHref?: string;
 }
 
@@ -19,7 +23,7 @@ const parser = new XMLParser({
 });
 
 const resolveFile = (unzippedPath: string, opfDirName: string, href: string) =>
-  new File(unzippedPath, `${opfDirName ? opfDirName + '/' : ''}${href}`);
+  new File(`${unzippedPath}${encodePathSegments(`${opfDirName ? opfDirName + '/' : ''}${href}`)}`);
 
 const parseNcxNavPoints = (
   points: any[],
@@ -117,7 +121,8 @@ const extractNavToc = async (
 };
 
 export const extractToc = async (props: Props): Promise<TocItem[]> => {
-  const { tocId, unzippedPath, opfDirName, manifestMap, mapHrefChapterId, navHref } = props;
+  const { tocId, unzippedPath, opfDirName, manifestMap, mapHrefChapterId, chapters, navHref } =
+    props;
 
   let toc: TocItem[] = [];
   try {
@@ -135,6 +140,11 @@ export const extractToc = async (props: Props): Promise<TocItem[]> => {
     } catch (navError) {
       console.warn('Failed to parse EPUB3 NAV TOC:', navError);
     }
+  }
+
+  if (toc.length <= 1) {
+    const headingToc = extractHeadingToc(chapters);
+    if (headingToc.length > toc.length) toc = headingToc;
   }
 
   return toc;

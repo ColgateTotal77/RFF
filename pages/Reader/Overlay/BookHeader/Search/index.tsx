@@ -1,18 +1,39 @@
 import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { FlatList, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { SearchResult } from 'types';
 import { SearchCard } from 'pages/Reader/Overlay/BookHeader/Search/SearchCard';
-import { ImmediateAction, useWebViewStore } from 'stores/useWebViewStore';
+import { WebViewAction, useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
 import { Loading } from 'components/ui/Loading';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'react-native-paper';
 import { loadWindow } from 'stores/actions';
+import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
+import { useCallback, useMemo } from 'react';
 
 interface Props {
   onClose: () => void;
 }
+
+type SearchExtra = {
+  currentSearchResultId: number;
+  onPress: (searchResult: SearchResult) => void;
+};
+
+const Separator = () => <View className="h-4" />;
+
+const renderSearchCard = ({ item, extraData }: ListRenderItemInfo<SearchResult>) => {
+  const { currentSearchResultId, onPress } = extraData as SearchExtra;
+
+  return (
+    <SearchCard
+      isCurrentSearch={item.id === currentSearchResultId}
+      searchItem={item}
+      onPress={() => onPress(item)}
+    />
+  );
+};
 
 export const MenuSearch = ({ onClose }: Props) => {
   const searchResults = useTempStore((state) => state.searchResults);
@@ -29,54 +50,64 @@ export const MenuSearch = ({ onClose }: Props) => {
   const { t } = useTranslation('translation', { keyPrefix: 'search' });
   const theme = useTheme();
 
-  const onPress = (searchResult: SearchResult) => {
-    addToBackStack({
-      blockId: currentBook.currentBlock,
-      scrollPercent: currentBook.misc.currentBlockScrollPercent,
-    });
+  const onPress = useCallback(
+    (searchResult: SearchResult) => {
+      addToBackStack({
+        blockId: currentBook.currentBlock,
+        scrollPercent: currentBook.misc.currentBlockScrollPercent,
+      });
 
-    if (!currentBook.currentBlocks.includes(searchResult.blockId)) {
-      if (!currentSearchResult.query) {
+      if (!currentBook.currentBlocks.includes(searchResult.blockId)) {
+        if (!currentSearchResult.query) {
+          addToPostLoadQueue({
+            type: 'highlightAll',
+            query: searchResult.query,
+          });
+        }
         addToPostLoadQueue({
-          type: 'highlightAll',
-          query: searchResult.query,
+          type: 'jumpToSearch',
+          blockId: searchResult.blockId,
+          occurrenceIndex: searchResult.occurrenceIndex,
         });
-      }
-      addToPostLoadQueue({
-        type: 'jumpToSearch',
-        blockId: searchResult.blockId,
-        occurrenceIndex: searchResult.occurrenceIndex,
-      });
-      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
-      loadWindow(searchResult.blockId, 0);
-    } else {
-      setCurrentBlock(searchResult.blockId);
-      const toExecute: ImmediateAction[] = [];
-      if (!currentSearchResult.query) {
+        setGlobalLoading({ isLoading: true, message: 'Loading result…' });
+        loadWindow(searchResult.blockId, 0);
+      } else {
+        setCurrentBlock(searchResult.blockId);
+        const toExecute: WebViewAction[] = [];
+        if (!currentSearchResult.query) {
+          toExecute.push({
+            type: 'highlightAll',
+            query: searchResult.query,
+          });
+        }
         toExecute.push({
-          type: 'highlightAll',
-          query: searchResult.query,
+          type: 'jumpToSearch',
+          blockId: searchResult.blockId,
+          occurrenceIndex: searchResult.occurrenceIndex,
         });
+        executeImmediateActions(toExecute);
       }
-      toExecute.push({
-        type: 'jumpToSearch',
-        blockId: searchResult.blockId,
-        occurrenceIndex: searchResult.occurrenceIndex,
-      });
-      executeImmediateActions(toExecute);
-    }
 
-    setCurrentSearchResult(searchResult);
+      setCurrentSearchResult(searchResult);
 
-    onClose();
-  };
+      onClose();
+    },
+    [
+      currentBook,
+      currentSearchResult.query,
+      addToBackStack,
+      addToPostLoadQueue,
+      setCurrentBlock,
+      executeImmediateActions,
+      setGlobalLoading,
+      setCurrentSearchResult,
+      onClose,
+    ]
+  );
 
-  const renderSearchCard = ({ item }: { item: SearchResult }) => (
-    <SearchCard
-      isCurrentSearch={item.id === currentSearchResult.id}
-      searchItem={item}
-      onPress={() => onPress(item)}
-    />
+  const extraData = useMemo<SearchExtra>(
+    () => ({ currentSearchResultId: currentSearchResult.id, onPress }),
+    [currentSearchResult.id, onPress]
   );
 
   const EmptyState = () =>
@@ -89,12 +120,12 @@ export const MenuSearch = ({ onClose }: Props) => {
   return (
     <>
       {!isSearchLoading && searchQuery && (
-        <FlatList
-          data={Object.values(searchResults)}
-          keyExtractor={(item) => item.id.toString()}
+        <FlashList
+          data={searchResults}
+          extraData={extraData}
           renderItem={renderSearchCard}
-          contentContainerClassName="p-4 gap-4"
-          initialNumToRender={15}
+          ItemSeparatorComponent={Separator}
+          contentContainerClassName="p-4"
           ListEmptyComponent={EmptyState}
         />
       )}

@@ -49,11 +49,12 @@ const BookHeaderNavigation = ({
               />
             </View>
 
-            <View className={`flex-1 ${activeTab === 'chapters' ? 'block' : 'hidden'}`}>
-              <MenuChapters onClose={onClose} />
-            </View>
-            <View className={`flex-1 ${activeTab === 'bookmarks' ? 'block' : 'hidden'}`}>
-              <MenuBookmarks onClose={onClose} />
+            <View className="flex-1">
+              {activeTab === 'chapters' ? (
+                <MenuChapters onClose={onClose} />
+              ) : (
+                <MenuBookmarks onClose={onClose} />
+              )}
             </View>
           </View>
         </View>

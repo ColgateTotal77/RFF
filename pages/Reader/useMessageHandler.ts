@@ -42,10 +42,6 @@ export const useMessageHandler = () => {
             });
             break;
 
-          case 'SELECTION_CLEARED':
-            closeMenu();
-            break;
-
           case 'SCROLL_POSITION_CHANGED':
             if (!currentBook) return;
 

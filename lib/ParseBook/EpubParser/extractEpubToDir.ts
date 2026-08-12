@@ -3,7 +3,12 @@ import { unzip } from 'react-native-zip-archive';
 
 export const extractEpubToDir = async (uri: string) => {
   try {
-    const fileName = uri.split('/').pop()?.replace('.epub', '') || 'unknown_book';
+    const fileName =
+      uri
+        .split('/')
+        .pop()
+        ?.replace('.epub', '')
+        .replace(/[^\w.-]+/g, '_') || 'unknown_book';
     const timestamp = Date.now();
 
     const booksDir = new Directory(Paths.document, 'books');

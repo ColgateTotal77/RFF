@@ -125,63 +125,56 @@
       const selectedText = selection.toString().trim();
 
       if (selectedText === lastSelectionText) return;
+      if (selectedText.length <= 0) return;
+
       lastSelectionText = selectedText;
 
-      if (selectedText.length > 0) {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-        const menuX = rect.left + rect.width / 2;
-        const menuY = rect.top;
-        const commonAncestor = range.commonAncestorContainer;
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const menuX = rect.left + rect.width / 2;
+      const menuY = rect.top;
+      const commonAncestor = range.commonAncestorContainer;
 
-        let noteIds = null;
-        let colorCode = null;
+      let noteIds = null;
+      let colorCode = null;
 
-        const baseElement =
-          commonAncestor.nodeType === Node.TEXT_NODE
-            ? commonAncestor.parentElement
-            : commonAncestor;
+      const baseElement =
+        commonAncestor.nodeType === Node.TEXT_NODE
+          ? commonAncestor.parentElement
+          : commonAncestor;
 
-        const highlightedElement = baseElement.closest('.anki-word');
+      const highlightedElement = baseElement.closest('.anki-word');
 
-        if (highlightedElement) {
-          noteIds = highlightedElement.getAttribute('data-note-ids');
-          colorCode = highlightedElement.getAttribute('data-flag');
-        }
-
-        const sentenceContainer = baseElement.closest(SENTENCE_CONTAINER_SELECTOR) || baseElement;
-        const startOffset = getTextOffset(sentenceContainer, range.startContainer, range.startOffset);
-        const endOffset = getTextOffset(sentenceContainer, range.endContainer, range.endOffset);
-        const sentence = extractSentence(sentenceContainer, startOffset, endOffset);
-
-        window.ReactNativeWebView.postMessage(
-          JSON.stringify({
-            type: 'TEXT_SELECTED',
-            text: selectedText,
-            sentence,
-            top: menuY,
-            bottom: rect.bottom,
-            left: menuX,
-            noteIds: noteIds ? noteIds : null,
-            colorCode: colorCode ? colorCode : null,
-          })
-        );
-
-        window.log(
-          'TEXT_SELECTED: "' +
-          selectedText.substring(0, 20) +
-          (selectedText.length > 20 ? '...' : '') +
-          '"'
-        );
-      } else {
-        window.ReactNativeWebView.postMessage(
-          JSON.stringify({
-            type: 'SELECTION_CLEARED',
-          })
-        );
-        lastSelectionText = '';
+      if (highlightedElement) {
+        noteIds = highlightedElement.getAttribute('data-note-ids');
+        colorCode = highlightedElement.getAttribute('data-flag');
       }
+
+      const sentenceContainer = baseElement.closest(SENTENCE_CONTAINER_SELECTOR) || baseElement;
+      const startOffset = getTextOffset(sentenceContainer, range.startContainer, range.startOffset);
+      const endOffset = getTextOffset(sentenceContainer, range.endContainer, range.endOffset);
+      const sentence = extractSentence(sentenceContainer, startOffset, endOffset);
+
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: 'TEXT_SELECTED',
+          text: selectedText,
+          sentence,
+          top: menuY,
+          bottom: rect.bottom,
+          left: menuX,
+          noteIds: noteIds ? noteIds : null,
+          colorCode: colorCode ? colorCode : null,
+        })
+      );
+
+      window.log(
+        'TEXT_SELECTED: "' +
+        selectedText.substring(0, 20) +
+        (selectedText.length > 20 ? '...' : '') +
+        '"'
+      );
     });
   });
 
@@ -248,11 +241,9 @@
 
       window.log(`TAP: non-text surface, count=${tapCount}`);
 
-      tapTimer = setTimeout(() => {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
-        lastSelectionText = '';
-        tapCount = 0;
-      }, TAP_DELAY);
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
+      lastSelectionText = '';
+      tapCount = 0;
       return;
     }
 
@@ -276,8 +267,11 @@
       return;
     }
 
-    const noteIds = highlightedElement?.dataset.noteIds || null;
-    const colorCode = highlightedElement?.dataset.flag || null;
+    if (lastSelectionText) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
+      lastSelectionText = '';
+      return;
+    }
 
     if (selectedText !== lastTapText) {
       tapCount = 0;
@@ -288,6 +282,9 @@
     clearTimeout(tapTimer);
 
     window.log(`TAP: word="${selectedText}", count=${tapCount}`);
+
+    const noteIds = highlightedElement?.dataset.noteIds || null;
+    const colorCode = highlightedElement?.dataset.flag || null;
 
     if (tapCount === 3) {
       const sentenceContainer =

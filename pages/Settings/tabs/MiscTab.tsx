@@ -8,7 +8,7 @@ import { useAppStore } from 'stores/useAppStore';
 import { toggleTheme } from 'stores/actions';
 
 export const MiscTab = () => {
-  const autoCardOnDoubleTap = useAppStore((state) => state.settings.autoCardOnDoubleTap);
+  const autoSuspendNewCards = useAppStore((state) => state.settings.autoSuspendNewCards);
   const targetLang = useAppStore((state) => state.settings.targetLang);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const theme = useAppStore((state) => state.theme);
@@ -38,12 +38,12 @@ export const MiscTab = () => {
       />
 
       <List.Item
-        title={t('autoCardTitle')}
-        description={t('autoCardDescription')}
+        title={t('autoSuspendTitle')}
+        description={t('autoSuspendDescription')}
         right={() => (
           <Switch
-            value={autoCardOnDoubleTap}
-            onValueChange={(value) => updateSettings({ autoCardOnDoubleTap: value })}
+            value={autoSuspendNewCards}
+            onValueChange={(value) => updateSettings({ autoSuspendNewCards: value })}
           />
         )}
       />

@@ -294,6 +294,8 @@ export const useBookStore = create<Store>()(
           ankiModelId,
           mirroredAnkiModelId,
           isTwoSided: currentBookSettings.isTwoSided || settings.isTwoSided,
+          autoSuspendNewCards:
+            currentBookSettings.autoSuspendNewCards || settings.autoSuspendNewCards,
           fieldMapping: deepMerge(
             settings.fieldMappings?.[`${ankiDeckId}:${ankiModelId}`] || {},
             currentBookSettings.fieldMapping || {}
@@ -306,8 +308,6 @@ export const useBookStore = create<Store>()(
             fontFamily: currentBookSettings?.font?.fontFamily || settings.font.fontFamily,
             fontSize: currentBookSettings?.font?.fontSize || settings.font.fontSize,
           },
-          autoCardOnDoubleTap:
-            currentBookSettings.autoCardOnDoubleTap || settings.autoCardOnDoubleTap,
         };
       },
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { MiscTab } from 'pages/Settings/tabs/MiscTab';
 import { AnkiTab } from 'pages/Settings/tabs/AnkiTab';
 import { SegmentedButtons } from 'components/ui/SegmentedButtons';
@@ -7,6 +7,7 @@ import { useTheme } from 'react-native-paper';
 import { useBookStore } from 'stores/useBookStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { openBook } from 'stores/actions';
+import { ScrollViewWithScrollControl } from 'components/ui/ScrollViewWithScrollControl';
 
 type TabKey = 'anki' | 'misc';
 
@@ -19,17 +20,13 @@ export const SettingsScreen = () => {
       console.log('SettingsScreen focused');
       return () => {
         console.log('SettingsScreen blurred (navigated away)');
+        const { currentBook, isAnkiConfigStale } = useBookStore.getState();
 
-        const { books, closeBook, isAnkiConfigStale } = useBookStore.getState();
-        const book = books?.[0];
+        if (!currentBook) return;
+        if (!isAnkiConfigStale(currentBook)) return;
 
-        if (book && isAnkiConfigStale(book)) {
-          const basePath = book.basePath;
-          closeBook();
-          setTimeout(() => {
-            openBook(basePath);
-          }, 0);
-        }
+        const basePath = currentBook.basePath;
+        openBook(basePath);
       };
     }, [])
   );
@@ -46,10 +43,10 @@ export const SettingsScreen = () => {
         style={{ marginHorizontal: 16, marginBottom: 16 }}
       />
 
-      <ScrollView>
+      <ScrollViewWithScrollControl>
         {activeTab === 'anki' && <AnkiTab />}
         {activeTab === 'misc' && <MiscTab />}
-      </ScrollView>
+      </ScrollViewWithScrollControl>
     </View>
   );
 };

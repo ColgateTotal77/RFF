@@ -125,3 +125,6 @@ export const copyUriToCache = async (uri: string): Promise<string> => {
   await LegacyFS.copyAsync({ from: uri, to: dest.uri });
   return dest.uri;
 };
+
+export const encodePathSegments = (path: string) =>
+  path.split('/').map(encodeURIComponent).join('/');

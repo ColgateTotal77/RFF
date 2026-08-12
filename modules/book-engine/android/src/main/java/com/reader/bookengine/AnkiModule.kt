@@ -101,11 +101,20 @@ class AnkiModule : Module() {
                     mirroredMapping: Map<String, Any?>,
                     isTwoSided: Boolean,
                     audioLang: String,
+                    autoSuspend: Boolean,
                     ->
                     withContext(Dispatchers.IO) {
                         try {
                             NoteUpserter(moduleContext, freqDatabase, ::upsertWordToAnkiDictionary)
-                                .addOrUpdate(deckIdString.toLong(), fields, mapping, mirroredMapping, isTwoSided, audioLang)
+                                .addOrUpdate(
+                                    deckIdString.toLong(),
+                                    fields,
+                                    mapping,
+                                    mirroredMapping,
+                                    isTwoSided,
+                                    audioLang,
+                                    autoSuspend,
+                                )
                         } catch (e: Exception) {
                             throw Exception("Failed to add/update Anki note: ${e.message}", e)
                         }

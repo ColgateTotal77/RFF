@@ -36,6 +36,7 @@ export interface TocItem {
   chapterId: number;
   level: number;
   parentId?: string;
+  anchorId?: string;
 }
 
 export interface Mapping {
@@ -124,7 +125,7 @@ export interface BookSettings {
   mirroredAnkiModelId?: string;
   mirroredFieldMapping?: FieldMapping;
   isTwoSided?: boolean;
-  autoCardOnDoubleTap?: boolean;
+  autoSuspendNewCards?: boolean;
   bookLang: LanguageCode;
   targetLang: LanguageCode;
   font?: Font;
@@ -137,7 +138,7 @@ export interface Settings {
   mirroredAnkiModelId: string;
   mirroredFieldMappings: Record<string, FieldMapping>;
   isTwoSided: boolean;
-  autoCardOnDoubleTap: boolean;
+  autoSuspendNewCards: boolean;
   targetLang: LanguageCode;
   font: Font;
 }

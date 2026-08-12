@@ -47,9 +47,9 @@ class BookBridge(
             for (i in 0 until arr.length()) {
                 currentBlocks.add(arr.getInt(i))
             }
-            android.util.Log.d("BookBridge", "Block window updated: $currentBlocks")
+            android.util.Log.d("BookEngine", "Block window updated: $currentBlocks")
         } catch (e: Exception) {
-            android.util.Log.e("BookBridge", "Failed to parse block window", e)
+            android.util.Log.e("BookEngine", "Failed to parse block window", e)
         }
     }
 
@@ -62,10 +62,15 @@ class BookBridge(
             runOnWebView("window.isFetching = false; true;")
             return
         }
+        val t1 = System.currentTimeMillis()
 
         val html = module.extractBlockHtmlPublic(path)
+
+        val t2 = System.currentTimeMillis()
+        android.util.Log.d("BookEngine", "C parsed new block for: ${t2-t1} ms")
+
         if (html == null) {
-            android.util.Log.e("BookBridge", "Failed to extract block HTML from $path")
+            android.util.Log.e("BookEngine", "Failed to extract block HTML from $path")
             runOnWebView("window.isFetching = false; true;")
             return
         }
@@ -78,7 +83,7 @@ class BookBridge(
     private fun runOnWebView(js: String) {
         webView?.post {
             webView?.evaluateJavascript(js) { _ ->
-                android.util.Log.d("BookBridge", "JavaScript execution done")
+                android.util.Log.d("BookEngine", "JavaScript execution done")
             }
         }
     }
