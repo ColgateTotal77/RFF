@@ -41,3 +41,4 @@ modules/book-engine/android/cmake-build-debug/
 /modules/book-engine/android/.gradle/
 /scripts/
 .history/
+!/android/app/src/main/res/values

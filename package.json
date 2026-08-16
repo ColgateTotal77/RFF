@@ -6,9 +6,7 @@
     "start": "expo start",
     "prebuild": "expo prebuild",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json,html,css}\"",
-    "format": "prettier \"**/*.{js,jsx,ts,tsx,json,html,css}\" --write",
-    "ktlint:format": "cd android && ./gradlew :book-engine:ktlintFormat",
-    "ktlint:check": "./android/gradlew -p modules/book-engine/android ktlintCheck"
+    "format": "prettier \"**/*.{js,jsx,ts,tsx,json,html,css}\" --write"
   },
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.16.3",
