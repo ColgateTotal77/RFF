@@ -4,7 +4,7 @@ import { Sidebar } from 'components/Sidebar';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from 'lib/navigation';
 import { BookEngine } from 'modules/book-engine';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from 'stores/useAppStore';
 
 import './global.css';
@@ -12,6 +12,7 @@ import { useAnkiStore } from 'stores/useAnkiStore';
 import { AppToast } from 'components/ui/Toast';
 import { GlobalLoading } from 'components/ui/GlobalLoading';
 import { useOpenFileIntent } from 'lib/hooks/useOpenFileIntent';
+import { AppState } from 'react-native';
 
 function AppContent() {
   useOpenFileIntent();
@@ -28,6 +29,7 @@ export default function App() {
   const isDarkMode = useAppStore((state) => state.theme === 'dark');
   const checkAnkiPermission = useAnkiStore((state) => state.checkPermission);
   const checkIsAnkiInstalled = useAnkiStore((state) => state.checkIsAnkiInstalled);
+  const appStateRef = useRef(AppState.currentState);
 
   useEffect(() => {
     try {
@@ -39,6 +41,17 @@ export default function App() {
     checkAnkiPermission();
     checkIsAnkiInstalled();
   }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        checkAnkiPermission();
+        checkIsAnkiInstalled();
+      }
+      appStateRef.current = nextState;
+    });
+    return () => sub.remove();
+  }, [checkAnkiPermission, checkIsAnkiInstalled]);
 
   return (
     <SafeAreaProvider>
