@@ -13,6 +13,8 @@ import { AppToast } from 'components/ui/Toast';
 import { GlobalLoading } from 'components/ui/GlobalLoading';
 import { useOpenFileIntent } from 'lib/hooks/useOpenFileIntent';
 import { AppState } from 'react-native';
+import { ErrorBoundary } from 'components/ErrorBoundary';
+import { CrashScreen } from 'pages/CrashScreen';
 
 function AppContent() {
   useOpenFileIntent();
@@ -57,8 +59,10 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer ref={navigationRef}>
         <PaperProvider theme={isDarkMode ? MD3DarkTheme : DefaultTheme}>
-          <AppContent />
-          <GlobalLoading />
+          <ErrorBoundary fallback={<CrashScreen />}>
+            <AppContent />
+            <GlobalLoading />
+          </ErrorBoundary>
         </PaperProvider>
       </NavigationContainer>
     </SafeAreaProvider>
