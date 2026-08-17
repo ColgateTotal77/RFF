@@ -40,6 +40,13 @@ class AnkiModule : Module() {
         ModuleDefinition {
             Name("Anki")
 
+            AsyncFunction("isInstalled") { ->
+                moduleContext.packageManager
+                    ?.getPackageInfo("com.ichi2.anki", 0)
+                    ?: false
+                true
+            }
+
             AsyncFunction("getDecks") Coroutine { ->
                 withContext(Dispatchers.IO) {
                     try {

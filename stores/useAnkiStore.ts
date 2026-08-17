@@ -12,8 +12,10 @@ type FieldsSlot = 'fields' | 'mirroredFields' | 'bookFields' | 'bookMirroredFiel
 
 type Store = {
   hasPermission: boolean;
+  isInstalled: boolean;
   checkPermission: () => Promise<void>;
   requestPermission: () => Promise<void>;
+  checkIsAnkiInstalled: () => Promise<void>;
   loadAnkiData: () => Promise<void>;
   loadFieldsInto: (modelId: string, slot: FieldsSlot) => Promise<number>;
   applyDefaultModel: (deckId: string) => Promise<void>;
@@ -29,6 +31,7 @@ type Store = {
 
 export const useAnkiStore = create<Store>()((set, get) => ({
   hasPermission: false,
+  isInstalled: false,
   decks: [],
   models: [],
   fields: [],
@@ -43,6 +46,18 @@ export const useAnkiStore = create<Store>()((set, get) => ({
     if (isGranted) {
       set({ hasPermission: true });
       get().loadAnkiData();
+    } else {
+      // Permission revoked or not yet granted — reflect it so the UI
+      // (e.g. the banner) doesn't keep showing a stale "connected" state.
+      set({ hasPermission: false });
+    }
+  },
+
+  checkIsAnkiInstalled: async () => {
+    try {
+      set({ isInstalled: await Anki.isInstalled() });
+    } catch {
+      set({ isInstalled: false });
     }
   },
 

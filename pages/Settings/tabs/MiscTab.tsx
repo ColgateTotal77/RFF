@@ -38,6 +38,12 @@ export const MiscTab = () => {
       />
 
       <List.Item
+        title={t('themeTitle')}
+        description={t('themeDescription')}
+        right={() => <Switch value={theme === 'dark'} onValueChange={() => toggleTheme()} />}
+      />
+
+      <List.Item
         title={t('autoSuspendTitle')}
         description={t('autoSuspendDescription')}
         right={() => (
@@ -46,12 +52,6 @@ export const MiscTab = () => {
             onValueChange={(value) => updateSettings({ autoSuspendNewCards: value })}
           />
         )}
-      />
-
-      <List.Item
-        title={t('themeTitle')}
-        description={t('themeDescription')}
-        right={() => <Switch value={theme === 'dark'} onValueChange={() => toggleTheme()} />}
       />
     </View>
   );

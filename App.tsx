@@ -27,6 +27,7 @@ function AppContent() {
 export default function App() {
   const isDarkMode = useAppStore((state) => state.theme === 'dark');
   const checkAnkiPermission = useAnkiStore((state) => state.checkPermission);
+  const checkIsAnkiInstalled = useAnkiStore((state) => state.checkIsAnkiInstalled);
 
   useEffect(() => {
     try {
@@ -36,6 +37,7 @@ export default function App() {
     }
 
     checkAnkiPermission();
+    checkIsAnkiInstalled();
   }, []);
 
   return (

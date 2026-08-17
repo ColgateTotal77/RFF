@@ -3,7 +3,8 @@
     "cancel": "Скасувати",
     "save": "Зберегти",
     "create": "Створити",
-    "delete": "Видалити"
+    "delete": "Видалити",
+    "dismiss": "Сховати"
   },
   "search": {
     "placeholder": "Пошук...",
@@ -90,6 +91,10 @@
     "setupAnkiBody": "RFF створює картки безпосередньо в AnkiDroid. Встановіть застосунок із Play Store, а потім оберіть колоду в Налаштуваннях.",
     "installAnki": "Встановити AnkiDroid",
     "goToSettings": "Перейти до налаштувань",
+    "installBannerMessage": "Підключіть AnkiDroid, щоб зберігати слова у картки",
+    "installBannerAction": "Встановити",
+    "permissionBannerMessage": "Надайте доступ до AnkiDroid та оберіть колоду в Налаштуваннях, щоб зберігати слова у картки",
+    "permissionBannerAction": "Налаштування",
     "noBooks": "Тут поки немає книг",
     "addBook": "Додати книгу",
     "pages": "~{{count}} стор.",

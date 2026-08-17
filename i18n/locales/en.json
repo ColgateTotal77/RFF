@@ -3,7 +3,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "create": "Create",
-    "delete": "Delete"
+    "delete": "Delete",
+    "dismiss": "Dismiss"
   },
   "search": {
     "placeholder": "Search...",
@@ -90,6 +91,10 @@
     "setupAnkiBody": "RFF creates flashcards directly in AnkiDroid. Install it from the Play Store, then configure a deck in Settings.",
     "installAnki": "Install AnkiDroid",
     "goToSettings": "Go to Settings",
+    "installBannerMessage": "Connect AnkiDroid to save words as flashcards",
+    "installBannerAction": "Install",
+    "permissionBannerMessage": "Allow AnkiDroid access and set up your deck in Settings to save words as flashcards",
+    "permissionBannerAction": "Settings",
     "noBooks": "No books here yet",
     "addBook": "Add Book",
     "pages": "~{{count}} pages",

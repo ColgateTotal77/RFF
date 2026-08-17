@@ -21,9 +21,11 @@ type Store = {
   theme: Theme;
   settings: Settings;
   globalLoading: { isLoading: boolean; message: string };
+  ankiBannerDismissed: boolean;
   setTheme: (theme: Theme) => void;
   updateSettings: (toUpdate: DeepPartial<Settings>) => void;
   setGlobalLoading: (globalLoading: { isLoading: boolean; message: string }) => void;
+  dismissAnkiBanner: () => void;
   navigate: (route: DrawerTab) => void;
 };
 
@@ -43,6 +45,7 @@ export const useAppStore = create<Store>()(
         font: { fontSize: 30, fontFamily: DEFAULT_FONT_FAMILY },
       },
       globalLoading: { isLoading: false, message: '' },
+      ankiBannerDismissed: false,
 
       updateSettings: (toUpdate) =>
         set((state) => ({
@@ -52,6 +55,8 @@ export const useAppStore = create<Store>()(
       setTheme: (theme) => set({ theme }),
 
       setGlobalLoading: (globalLoading) => set({ globalLoading }),
+
+      dismissAnkiBanner: () => set({ ankiBannerDismissed: true }),
 
       navigate: (route) => {
         if (navigationRef.isReady()) navigationRef.navigate(route);
@@ -63,6 +68,7 @@ export const useAppStore = create<Store>()(
       partialize: (state) => ({
         theme: state.theme,
         settings: state.settings,
+        ankiBannerDismissed: state.ankiBannerDismissed,
       }),
     }
   )
