@@ -107,12 +107,14 @@
     "failedToLoadBook": "Failed to load book",
     "failedToOpenBook": "Failed to open book",
     "failedToRequestAnkiPermission": "Failed to request Anki permission",
+    "ankiDroidNotInstalled": "AnkiDroid is needed to grant permission, tap to install it first",
+    "ankiPermissionDenied": "Permission not granted. Allow Anki access in Settings to connect.",
     "failedToLoadReader": "Failed to load reader",
     "configureAnkiDeck": "Configure Anki deck in settings",
     "failedToAddCard": "Failed to add card",
     "failedToUpdateCard": "Failed to update card",
     "failedToOpenTranslator": "Failed to open translator",
     "failedToDeleteNote": "Failed to delete note",
-    "installTtsVoice": "Tap to install {{lang}} voice — cards have no audio without it"
+    "installTtsVoice": "Tap to install {{lang}} voice, cards have no audio without it"
   }
 }

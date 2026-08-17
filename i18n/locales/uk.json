@@ -107,12 +107,14 @@
     "failedToLoadBook": "Не вдалося завантажити книгу",
     "failedToOpenBook": "Не вдалося відкрити книгу",
     "failedToRequestAnkiPermission": "Не вдалося запросити дозвіл Anki",
+    "ankiDroidNotInstalled": "Для надання дозволу потрібен AnkiDroid, натисніть, щоб встановити",
+    "ankiPermissionDenied": "Дозвіл не надано. Надайте доступ до Anki в налаштуваннях, щоб підключитися.",
     "failedToLoadReader": "Не вдалося завантажити читалку",
     "configureAnkiDeck": "Налаштуйте колоду Anki в налаштуваннях",
     "failedToAddCard": "Не вдалося додати картку",
     "failedToUpdateCard": "Не вдалося оновити картку",
     "failedToOpenTranslator": "Не вдалося відкрити перекладач",
     "failedToDeleteNote": "Не вдалося видалити нотатку",
-    "installTtsVoice": "Натисніть, щоб встановити голос {{lang}} — без нього картки без озвучення"
+    "installTtsVoice": "Натисніть, щоб встановити голос {{lang}}, без нього картки без озвучення"
   }
 }

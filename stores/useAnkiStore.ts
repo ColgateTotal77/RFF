@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Alert, PermissionsAndroid } from 'react-native';
+import { Alert, Linking, PermissionsAndroid } from 'react-native';
 import { Anki } from 'modules/book-engine';
 import { updateNestedMapping } from 'lib/utils';
 import { useAppStore } from './useAppStore';
@@ -128,6 +128,13 @@ export const useAnkiStore = create<Store>()((set, get) => ({
 
   requestPermission: async () => {
     try {
+      if (!get().isInstalled) {
+        Toast.show(i18n.t('toast.ankiDroidNotInstalled'), 'error', () =>
+          Linking.openURL('market://details?id=com.ichi2.anki')
+        );
+        return;
+      }
+
       const granted = await PermissionsAndroid.request(ANKI_PERMISSION as never, {
         title: 'Anki Integration',
         message: 'Allow this app to send flashcards directly to your Anki database.',
@@ -139,7 +146,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
         set({ hasPermission: true });
         get().loadAnkiData();
       } else {
-        Alert.alert('Permission Denied', 'Cannot connect to Anki without permission.');
+        Toast.show(i18n.t('toast.ankiPermissionDenied'), 'error');
       }
     } catch (err) {
       console.warn(err);
