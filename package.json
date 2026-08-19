@@ -6,7 +6,8 @@
     "start": "expo start",
     "prebuild": "expo prebuild",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json,html,css}\"",
-    "format": "prettier \"**/*.{js,jsx,ts,tsx,json,html,css}\" --write"
+    "format": "prettier \"**/*.{js,jsx,ts,tsx,json,html,css}\" --write",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.16.3",
@@ -22,6 +23,7 @@
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.21",
     "expo-localization": "~17.0.8",
+    "expo-splash-screen": "~31.0.13",
     "expo-updates": "~29.0.17",
     "fast-xml-parser": "^5.3.6",
     "franc": "^6.2.0",

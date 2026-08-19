@@ -8,7 +8,20 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": ["expo-localization"],
+    "plugins": [
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#121212"
+          }
+        }
+      ]
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
