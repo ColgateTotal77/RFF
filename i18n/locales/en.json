@@ -84,7 +84,72 @@
     "brand": "RFF",
     "readingNow": "Reading Now",
     "haveRead": "Have Read",
-    "settings": "Settings"
+    "settings": "Settings",
+    "guide": "Guide"
+  },
+  "guide": {
+    "firstBookHint": "Tap this notification to open the Guide and learn all the features.",
+    "gestures": {
+      "title": "Gestures",
+      "oneTap": {
+        "title": "Single tap",
+        "body": "Tap once to show or hide the toolbar."
+      },
+      "twoTaps": {
+        "title": "Two taps — translate",
+        "body": "Double-tap any word to open it in the system translator."
+      },
+      "threeTaps": {
+        "title": "Three taps — add a card",
+        "body": "Triple-tap a word to create a new Anki card for it right away."
+      }
+    },
+    "selection": {
+      "title": "Selecting words",
+      "longPress": {
+        "title": "Long press",
+        "body": "Press and hold any word to select it and open the quick menu."
+      },
+      "translate": {
+        "title": "Translate",
+        "body": "Open the selected word in the system translator."
+      },
+      "copy": {
+        "title": "Copy",
+        "body": "Copy the selected word (or its whole sentence) to the clipboard."
+      },
+      "addCard": {
+        "title": "Add to Anki",
+        "body": "Add the selected word as a new card with its translation, examples and definition."
+      },
+      "wordExists": {
+        "title": "Word already in Anki",
+        "body": "The add button turns into an increase flag button (+F)."
+      },
+      "more": {
+        "title": "Three dots",
+        "body": "Open the menu with Decrease flag and Delete note."
+      },
+      "increaseFlag": {
+        "title": "Increase flag",
+        "body": "Raise the flag one step every time you come across a word you don't know."
+      },
+      "decreaseFlag": {
+        "title": "Decrease flag",
+        "body": "Lower the flag if you increased it by mistake."
+      },
+      "delete": {
+        "title": "Delete note",
+        "body": "Remove the note from Anki if you added it by mistake."
+      }
+    },
+    "flags": {
+      "title": "How flags work",
+      "description": "Every time you meet a word you don't know while reading, you raise its flag.",
+      "meaning": "The flag shows how many times you have faced an unknown word.",
+      "range": "Each saved word carries a flag from 1 to 8.",
+      "usage": "Keep raising the flag on words you keep stumbling on; words you handle easily can stay low."
+    }
   },
   "bookLists": {
     "setupAnkiTitle": "Set up AnkiDroid to get started",

@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useTempStore } from 'stores/useTempStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
+import { GuideScreen } from 'pages/GuideScreen';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
@@ -64,6 +65,7 @@ export const Sidebar = () => {
         component={HaveReadScreen}
         options={{ title: t('haveRead') }}
       />
+      <Drawer.Screen name="Guide" component={GuideScreen} options={{ title: t('guide') }} />
       <Drawer.Screen
         name="Settings"
         component={SettingsScreen}

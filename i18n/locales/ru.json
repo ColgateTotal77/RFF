@@ -84,7 +84,8 @@
     "brand": "RFF",
     "readingNow": "Читаю сейчас",
     "haveRead": "Прочитано",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "guide": "Гид"
   },
   "bookLists": {
     "setupAnkiTitle": "Настройте AnkiDroid для начала работы",

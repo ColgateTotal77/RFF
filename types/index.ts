@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Settings: undefined;
   Reader: undefined;
   'Have Read': undefined;
+  Guide: undefined;
 };
 export type DrawerTab = keyof RootStackParamList;
 export type RootDrawerNavigationProp = DrawerNavigationProp<RootStackParamList>;

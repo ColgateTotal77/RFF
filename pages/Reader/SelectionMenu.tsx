@@ -84,7 +84,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
     selectionMenu.text.length <= 50 && (
       <>
         <IconButton
-          icon="plus-circle"
+          icon="cards-outline"
           onPress={onAddNewCardPress}
           accessibilityLabel="Add Anki card"
         />

@@ -27,6 +27,8 @@ type Store = {
   setGlobalLoading: (globalLoading: { isLoading: boolean; message: string }) => void;
   dismissAnkiBanner: () => void;
   navigate: (route: DrawerTab) => void;
+  hasSeenFirstBookHint: boolean;
+  dismissFirstBookHint: () => void;
 };
 
 export const useAppStore = create<Store>()(
@@ -46,6 +48,7 @@ export const useAppStore = create<Store>()(
       },
       globalLoading: { isLoading: false, message: '' },
       ankiBannerDismissed: false,
+      hasSeenFirstBookHint: false,
 
       updateSettings: (toUpdate) =>
         set((state) => ({
@@ -58,6 +61,8 @@ export const useAppStore = create<Store>()(
 
       dismissAnkiBanner: () => set({ ankiBannerDismissed: true }),
 
+      dismissFirstBookHint: () => set({ hasSeenFirstBookHint: true }),
+
       navigate: (route) => {
         if (navigationRef.isReady()) navigationRef.navigate(route);
       },
@@ -69,6 +74,7 @@ export const useAppStore = create<Store>()(
         theme: state.theme,
         settings: state.settings,
         ankiBannerDismissed: state.ankiBannerDismissed,
+        hasSeenFirstBookHint: state.hasSeenFirstBookHint,
       }),
     }
   )

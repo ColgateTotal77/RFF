@@ -100,6 +100,13 @@ export const loadWindow = async (targetBlockId: number, blockScrollPercent: numb
       );
 
       useWebViewStore.getState().setWebViewSource({ uri: generatedFileUrl });
+
+      if (!useAppStore.getState().hasSeenFirstBookHint) {
+        useAppStore.getState().dismissFirstBookHint();
+        Toast.show(i18n.t('guide.firstBookHint'), 'default', () =>
+          useAppStore.getState().navigate('Guide')
+        );
+      }
     }, 0);
   } catch (e) {
     console.error('Failed to prepare initial blocks:', e);

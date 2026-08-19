@@ -38,7 +38,15 @@ export const SidebarContent = (props: DrawerContentComponentProps) => {
         />
       </Drawer.Section>
 
-      <Drawer.Section showDivider={false} className="px-2">
+      <Drawer.Section showDivider={false} className="flex gap-2 px-2">
+        <DrawerItem
+          label={t('guide')}
+          icon="help-circle-outline"
+          active={activeRouteName === 'Guide'}
+          onPress={() => {
+            props.navigation.navigate('Guide');
+          }}
+        />
         <DrawerItem
           label={t('settings')}
           icon="cog"

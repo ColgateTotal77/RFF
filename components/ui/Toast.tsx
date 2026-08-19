@@ -64,7 +64,14 @@ export const AppToast = () => {
     <Animated.View
       className="absolute right-4 top-32 z-50 max-w-[75%] rounded-xl"
       style={{ backgroundColor: bg, transform: [{ translateX }] }}>
-      <Pressable onPress={onPress} disabled={!onPress} className="px-4 py-3">
+      <Pressable
+        onPress={() => {
+          if (!onPress) return;
+          onPress();
+          hide();
+        }}
+        disabled={!onPress}
+        className="px-4 py-3">
         <Text style={{ color: fg }} variant="bodyMedium">
           {message}
         </Text>
