@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useBookStore } from 'stores/useBookStore';
 import { Book } from 'types';
 import { BookCard } from 'pages/BookLists/BookCard';
@@ -42,10 +42,7 @@ export const BookListScreen = ({ filterFn, toggleLabel }: BookListScreenProps) =
   const removeBook = useBookStore((state) => state.removeBook);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
-  const extraData = useMemo<BookExtra>(
-    () => ({ toggleLabel, onDeletePress: setBookToDelete }),
-    [toggleLabel]
-  );
+  const extraData: BookExtra = { toggleLabel, onDeletePress: setBookToDelete };
 
   const filteredBooks = books.filter(filterFn);
 

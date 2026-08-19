@@ -1,4 +1,4 @@
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
@@ -13,10 +13,11 @@ export const useJumpToNextSearchResult = () => {
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return () => {
+    if (!currentBook) return;
     const newSearchResult = searchResults.find(
       (result) => result.id === currentSearchResult.id + 1
     );
@@ -57,11 +58,12 @@ export const useJumpToPrevSearchResult = () => {
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const updateMisc = useBookStore((state) => state.updateMisc);
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return () => {
+    if (!currentBook) return;
     const newSearchResult = searchResults.find(
       (result) => result.id === currentSearchResult.id - 1
     );
@@ -97,11 +99,12 @@ export const useJumpToPrevSearchResult = () => {
 export const useProcessBookLinks = () => {
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
   return (chapterId: number, fragmentId: string) => {
+    if (!currentBook) return;
     const chapter = currentBook.mapping.chapterById[chapterId];
 
     if (!fragmentId) {

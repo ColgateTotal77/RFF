@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useState } from 'react';
+import { useBookStore } from 'stores/useBookStore';
 import { View } from 'react-native';
 import { Bookmark } from 'types';
 import { BookmarkCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuBookmarks/BookmarkCard';
@@ -31,7 +31,7 @@ const renderBookmarkCard = ({ item, extraData }: ListRenderItemInfo<Bookmark>) =
 };
 
 export const MenuBookmarks = ({ onClose }: Props) => {
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const updateBookmark = useBookStore((state) => state.updateBookmark);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
@@ -41,54 +41,44 @@ export const MenuBookmarks = ({ onClose }: Props) => {
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
   const [renamingBookmark, setRenamingBookmark] = useState<Bookmark | null>(null);
 
-  const onPress = useCallback(
-    (bookmark: Bookmark) => {
-      addToBackStack({
-        blockId: currentBook.currentBlock,
-        scrollPercent: currentBook.misc.currentBlockScrollPercent,
-      });
+  if (!currentBook) return;
 
-      if (currentBook.currentBlocks.includes(bookmark.blockId)) {
-        setCurrentBlock(bookmark.blockId);
-        executeImmediateActions([
-          {
-            type: 'scrollToBlock',
-            blockId: bookmark.blockId,
-            scrollPercent: bookmark.scrollPercent,
-          },
-        ]);
-      } else {
-        addToPostLoadQueue({
+  const onPress = (bookmark: Bookmark) => {
+    addToBackStack({
+      blockId: currentBook.currentBlock,
+      scrollPercent: currentBook.misc.currentBlockScrollPercent,
+    });
+
+    if (currentBook.currentBlocks.includes(bookmark.blockId)) {
+      setCurrentBlock(bookmark.blockId);
+      executeImmediateActions([
+        {
           type: 'scrollToBlock',
           blockId: bookmark.blockId,
           scrollPercent: bookmark.scrollPercent,
-        });
-        setGlobalLoading({ isLoading: true, message: 'Opening bookmark…' });
-        loadWindow(bookmark.blockId, 0);
-      }
-
-      updateMisc({
-        percent: calculateBookProgress(currentBook, bookmark.scrollPercent, bookmark.blockId),
+        },
+      ]);
+    } else {
+      addToPostLoadQueue({
+        type: 'scrollToBlock',
+        blockId: bookmark.blockId,
+        scrollPercent: bookmark.scrollPercent,
       });
+      setGlobalLoading({ isLoading: true, message: 'Opening bookmark…' });
+      loadWindow(bookmark.blockId, 0);
+    }
 
-      onClose();
-    },
-    [
-      currentBook,
-      addToBackStack,
-      setCurrentBlock,
-      executeImmediateActions,
-      addToPostLoadQueue,
-      setGlobalLoading,
-      updateMisc,
-      onClose,
-    ]
-  );
+    updateMisc({
+      percent: calculateBookProgress(currentBook, bookmark.scrollPercent, bookmark.blockId),
+    });
 
-  const extraData = useMemo<BookmarkExtra>(
-    () => ({ onPress, onRename: setRenamingBookmark }),
-    [onPress]
-  );
+    onClose();
+  };
+
+  const extraData: BookmarkExtra = {
+    onPress,
+    onRename: setRenamingBookmark,
+  };
 
   return (
     <>

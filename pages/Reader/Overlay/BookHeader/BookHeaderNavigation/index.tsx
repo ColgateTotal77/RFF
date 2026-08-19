@@ -1,4 +1,4 @@
-import { Modal, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 import { useState } from 'react';
 import { Appbar, Portal, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,11 +50,26 @@ const BookHeaderNavigation = ({
             </View>
 
             <View className="flex-1">
-              {activeTab === 'chapters' ? (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    opacity: activeTab === 'chapters' ? 1 : 0,
+                    pointerEvents: activeTab === 'chapters' ? 'auto' : 'none',
+                  },
+                ]}>
                 <MenuChapters onClose={onClose} />
-              ) : (
+              </View>
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    opacity: activeTab === 'bookmarks' ? 1 : 0,
+                    pointerEvents: activeTab === 'bookmarks' ? 'auto' : 'none',
+                  },
+                ]}>
                 <MenuBookmarks onClose={onClose} />
-              )}
+              </View>
             </View>
           </View>
         </View>

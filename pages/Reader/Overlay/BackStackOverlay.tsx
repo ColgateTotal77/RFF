@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { IconButton } from 'components/ui/IconButton';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useBookStore } from 'stores/useBookStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
@@ -14,7 +14,7 @@ export const BackStackOverlay = () => {
   const backStack = useTempStore((state) => state.backStack);
   const removeLastFromBackStack = useTempStore((state) => state.removeLastFromBackStack);
   const clearBackStack = useTempStore((state) => state.clearBackStack);
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
@@ -26,6 +26,7 @@ export const BackStackOverlay = () => {
   if (backStack.length === 0) return null;
 
   const onBack = () => {
+    if (!currentBook) return;
     const target = backStack[backStack.length - 1];
     removeLastFromBackStack();
 

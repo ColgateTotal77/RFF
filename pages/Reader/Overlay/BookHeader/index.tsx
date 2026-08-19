@@ -1,7 +1,7 @@
 import { Appbar, Portal, useTheme } from 'react-native-paper';
 import { Other } from 'pages/Reader/Overlay/BookHeader/Other';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
-import { View, Modal, Animated, TextInput as NativeTextInput } from 'react-native';
+import { useBookStore } from 'stores/useBookStore';
+import { Animated, Modal, TextInput as NativeTextInput, View } from 'react-native';
 import { useTempStore } from 'stores/useTempStore';
 import { BookEngine } from 'modules/book-engine';
 import { BookSettings } from 'pages/Reader/Overlay/BookHeader/BookSettings';
@@ -47,12 +47,27 @@ export const BookHeader = () => {
   const isAnkiConfigStale = useBookStore((state) => state.isAnkiConfigStale);
   const resetSearch = useTempStore((state) => state.resetSearch);
   const setIsSearchLoading = useTempStore((state) => state.setIsSearchLoading);
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookSettingsOpen, setIsBookSettingsOpen] = useState(false);
   const [isBookHeaderNavigationOpen, setIsBookHeaderNavigationOpen] = useState(false);
   const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
   const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
+  const searchInputRef = useRef<NativeTextInput>(null);
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    return useTempStore.subscribe((state) => {
+      Animated.timing(opacityAnim, {
+        toValue: state.isBookSettingsTransparent ? 0.7 : 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [opacityAnim]);
+
+  if (!isOverlayVisible) return null;
+  if (!currentBook) return;
 
   const onSearchSubmit = async (localQuery: string) => {
     const cleanedQuery = localQuery.trim();
@@ -75,22 +90,6 @@ export const BookHeader = () => {
     if (!isAnkiConfigStale(currentBook)) return;
     openBook(currentBook.basePath);
   };
-
-  const searchInputRef = useRef<NativeTextInput>(null);
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const unsubscribe = useTempStore.subscribe((state) => {
-      Animated.timing(opacityAnim, {
-        toValue: state.isBookSettingsTransparent ? 0.7 : 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    });
-
-    return unsubscribe;
-  }, [opacityAnim]);
-
-  if (!isOverlayVisible) return null;
 
   return (
     <>

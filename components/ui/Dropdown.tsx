@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, ReactNode, useRef } from 'react';
+import { useState, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, useTheme, Divider, Icon } from 'react-native-paper';
 import { View, TouchableOpacity, LayoutChangeEvent } from 'react-native';
@@ -145,20 +145,17 @@ export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
     lastHeight.current = 0;
   };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     onClose?.();
     setIsOpen(false);
     lastHeight.current = 0;
-  }, [onClose]);
+  };
 
-  const extraData = useMemo<OptionExtra<T>>(
-    () => ({
-      value,
-      onSelect,
-      onSelected: () => closeOnSelect && handleClose(),
-    }),
-    [value, onSelect, closeOnSelect, handleClose]
-  );
+  const extraData: OptionExtra<T> = {
+    value,
+    onSelect,
+    onSelected: () => closeOnSelect && handleClose(),
+  };
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;

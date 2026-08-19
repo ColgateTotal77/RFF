@@ -334,8 +334,3 @@ export const useBookStore = create<Store>()(
     }
   )
 );
-
-export const useCurrentBook = () => {
-  const book = useBookStore((state) => state.currentBook);
-  return book!;
-};

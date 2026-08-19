@@ -1,5 +1,5 @@
 import { LayoutChangeEvent, View } from 'react-native';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { useTempStore } from 'stores/useTempStore';
 import { SearchOverlay } from 'pages/Reader/Overlay/SearchOverlay';
 import { BookMarkButton } from 'pages/Reader/Overlay/BookMarkButton';
@@ -15,12 +15,9 @@ export const Overlay = () => {
   const setOverlayHeaderOffset = useTempStore((state) => state.setOverlayHeaderOffset);
   const { top } = useSafeAreaInsets();
 
-  const onHeaderLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      setOverlayHeaderOffset(Math.round(e.nativeEvent.layout.height - top));
-    },
-    [setOverlayHeaderOffset]
-  );
+  const onHeaderLayout = (e: LayoutChangeEvent) => {
+    setOverlayHeaderOffset(Math.round(e.nativeEvent.layout.height - top));
+  };
 
   return (
     <>

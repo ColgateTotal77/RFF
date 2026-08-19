@@ -112,10 +112,6 @@ export const openBook = async (basePath: string) => {
   const { currentBook, books, closeBook, getBookSettings, isAnkiConfigStale } =
     useBookStore.getState();
 
-  Toast.show(i18n.t('toast.ankiDroidNotInstalled'), 'error', () =>
-    Linking.openURL('market://details?id=com.ichi2.anki')
-  );
-
   const bookToOpen = books.find((book) => book.basePath === basePath);
   if (!bookToOpen) return;
 

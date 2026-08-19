@@ -1,7 +1,7 @@
 import { Text, Switch, List } from 'react-native-paper';
 import { Dropdown } from 'components/ui/Dropdown';
 import { useTranslation } from 'react-i18next';
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useBookStore } from 'stores/useBookStore';
 import { View } from 'react-native';
 import { BOOK_LANGUAGE_OPTIONS } from 'lib/langHelper';
 import { useWebViewStore } from 'stores/useWebViewStore';
@@ -11,9 +11,7 @@ import { Slider } from 'components/ui/Slider';
 import { FONT_FAMILY_OPTIONS } from 'lib/constants';
 
 export const MiscTab = () => {
-  const {
-    settings: { bookLang, targetLang },
-  } = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const getBookSettings = useBookStore((state) => state.getBookSettings);
   const { updateBookSettings } = useBookStore();
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
@@ -24,6 +22,8 @@ export const MiscTab = () => {
 
   const lastUpdateRef = useRef(0);
 
+  if (!currentBook) return null;
+
   return (
     <View className="gap-4 p-4">
       <Text variant="titleMedium" className="font-bold">
@@ -32,7 +32,7 @@ export const MiscTab = () => {
 
       <Dropdown
         label={t('bookLanguageLabel')}
-        value={bookLang}
+        value={currentBook.settings.bookLang}
         options={BOOK_LANGUAGE_OPTIONS}
         onSelect={(value) => updateBookSettings({ bookLang: value })}
         searchable={true}
@@ -40,7 +40,7 @@ export const MiscTab = () => {
 
       <Dropdown
         label={t('targetLanguageLabel')}
-        value={targetLang}
+        value={currentBook.settings.targetLang}
         options={BOOK_LANGUAGE_OPTIONS}
         onSelect={(value) => updateBookSettings({ targetLang: value })}
         searchable={true}

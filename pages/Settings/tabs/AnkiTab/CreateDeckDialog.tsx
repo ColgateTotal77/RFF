@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Dialog, Portal, TextInput, HelperText } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { Button } from 'components/ui/Button';
@@ -32,11 +32,8 @@ export const CreateDeckDialog = ({ isOpen, onConfirm, onClose }: Props) => {
   const [creating, setCreating] = useState(false);
   const trimmed = name.trim();
 
-  const error = useMemo(() => {
-    if (trimmed.length === 0) return t('errorEmpty');
-    if (isDuplicate(decks, name)) return t('errorDuplicate');
-    return null;
-  }, [trimmed, decks]);
+  const error =
+    trimmed.length === 0 ? t('errorEmpty') : isDuplicate(decks, name) ? t('errorDuplicate') : null;
 
   const handleConfirm = async () => {
     if (error) return;

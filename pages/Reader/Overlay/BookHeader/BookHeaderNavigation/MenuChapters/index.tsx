@@ -1,8 +1,8 @@
-import { useBookStore, useCurrentBook } from 'stores/useBookStore';
+import { useBookStore } from 'stores/useBookStore';
 import { ChapterCard } from 'pages/Reader/Overlay/BookHeader/BookHeaderNavigation/MenuChapters/ChapterCard';
 import { TocItem } from 'types';
 import { calculateBookProgress } from 'lib/utils';
-import { useState, useMemo, useCallback } from 'react';
+import { useState } from 'react';
 import { useWebViewStore, WebViewAction } from 'stores/useWebViewStore';
 import { useTempStore } from 'stores/useTempStore';
 import { useAppStore } from 'stores/useAppStore';
@@ -12,7 +12,7 @@ import { loadWindow } from 'stores/actions';
 
 type ChapterExtra = {
   parentIdsSet: Set<string>;
-  currentChapterId: number;
+  currentChapterId: number | undefined;
   expandedParents: string[];
   onToggle: (tocId: string) => void;
   onPress: (tocItem: TocItem) => void;
@@ -37,15 +37,20 @@ const renderChapter = ({ item, extraData }: ListRenderItemInfo<TocItem>) => {
 };
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
-  const currentBook = useCurrentBook();
+  const currentBook = useBookStore((state) => state.currentBook);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
   const addToPostLoadQueue = useWebViewStore((state) => state.addToPostLoadQueue);
   const setCurrentBlock = useBookStore((state) => state.setCurrentBlock);
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
-  const currentChapterId = currentBook.mapping.blockIndex[currentBook.currentBlock].chapterId;
-  const currentTocChapter = currentBook.mapping.tocByChapterId[currentChapterId]?.[0] ?? null;
+
+  const currentChapterId = currentBook?.mapping.blockIndex[currentBook.currentBlock]?.chapterId;
+  const currentTocChapter =
+    currentChapterId != null
+      ? (currentBook?.mapping.tocByChapterId[currentChapterId]?.[0] ?? null)
+      : null;
+
   const [expandedParents, setExpandedParents] = useState<string[]>(() => {
     if (!currentTocChapter) return [];
 
@@ -54,83 +59,71 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
 
     while (currentParent) {
       parentsToExpand.push(currentParent);
-      currentParent = currentBook.mapping.tocById[currentParent].parentId;
+      currentParent = currentBook?.mapping.tocById[currentParent].parentId;
     }
 
     return parentsToExpand;
   });
 
-  const parentIdsSet = useMemo(() => {
-    const ids = new Set<string>();
-    currentBook.toc.forEach((item) => {
-      if (item.parentId) ids.add(item.parentId);
-    });
-    return ids;
-  }, [currentBook.toc]);
+  if (!currentBook) return;
 
-  const visibleToc = useMemo(() => {
-    return currentBook.toc.filter(
-      (item) => !item.parentId || expandedParents.includes(item.parentId)
-    );
-  }, [expandedParents, currentBook.toc]);
+  const parentIdsSet = new Set<string>();
+  currentBook.toc.forEach((item) => {
+    if (item.parentId) parentIdsSet.add(item.parentId);
+  });
 
-  const onPress = useCallback(
-    (tocItem: TocItem) => {
-      addToBackStack({
-        blockId: currentBook.currentBlock,
-        scrollPercent: currentBook.misc.currentBlockScrollPercent,
-      });
-
-      const anchorId = tocItem.anchorId;
-      const anchorBlockId = anchorId
-        ? currentBook.mapping.chapterById[tocItem.chapterId]?.anchors[anchorId]
-        : undefined;
-
-      const targetBlockId =
-        anchorBlockId ?? currentBook.mapping.firstBlockByChapterId[tocItem.chapterId];
-      const scrollAction: WebViewAction = anchorId
-        ? { type: 'scrollToFragment', fragmentId: anchorId }
-        : { type: 'scrollToBlock', blockId: targetBlockId };
-
-      if (currentBook.currentBlocks.includes(targetBlockId)) {
-        setCurrentBlock(targetBlockId);
-        executeImmediateActions([scrollAction]);
-      } else {
-        if (anchorId) addToPostLoadQueue(scrollAction);
-        setGlobalLoading({ isLoading: true, message: 'Opening chapter…' });
-        loadWindow(targetBlockId, 0);
-      }
-
-      updateMisc({
-        percent: calculateBookProgress(currentBook, 0, targetBlockId),
-      });
-
-      onClose();
-    },
-    [
-      currentBook,
-      addToBackStack,
-      setCurrentBlock,
-      executeImmediateActions,
-      addToPostLoadQueue,
-      setGlobalLoading,
-      updateMisc,
-      onClose,
-    ]
+  const visibleToc = currentBook.toc.filter(
+    (item) => !item.parentId || expandedParents.includes(item.parentId)
   );
 
-  const toggleExpand = useCallback((tocId: string) => {
+  const onPress = (tocItem: TocItem) => {
+    addToBackStack({
+      blockId: currentBook.currentBlock,
+      scrollPercent: currentBook.misc.currentBlockScrollPercent,
+    });
+
+    const anchorId = tocItem.anchorId;
+    const anchorBlockId = anchorId
+      ? currentBook.mapping.chapterById[tocItem.chapterId]?.anchors[anchorId]
+      : undefined;
+
+    const targetBlockId =
+      anchorBlockId ?? currentBook.mapping.firstBlockByChapterId[tocItem.chapterId];
+    const scrollAction: WebViewAction = anchorId
+      ? { type: 'scrollToFragment', fragmentId: anchorId }
+      : { type: 'scrollToBlock', blockId: targetBlockId };
+
+    if (currentBook.currentBlocks.includes(targetBlockId)) {
+      setCurrentBlock(targetBlockId);
+      executeImmediateActions([scrollAction]);
+    } else {
+      if (anchorId) addToPostLoadQueue(scrollAction);
+      setGlobalLoading({ isLoading: true, message: 'Opening chapter…' });
+      loadWindow(targetBlockId, 0);
+    }
+
+    updateMisc({
+      percent: calculateBookProgress(currentBook, 0, targetBlockId),
+    });
+
+    onClose();
+  };
+
+  const toggleExpand = (tocId: string) => {
     setExpandedParents((prev) =>
       prev.includes(tocId) ? prev.filter((id) => id !== tocId) : [...prev, tocId]
     );
-  }, []);
+  };
 
   const currentChapterIndex = visibleToc.findIndex((item) => item.id === currentTocChapter?.id);
 
-  const extraData = useMemo<ChapterExtra>(
-    () => ({ parentIdsSet, currentChapterId, expandedParents, onToggle: toggleExpand, onPress }),
-    [parentIdsSet, currentChapterId, expandedParents, toggleExpand, onPress]
-  );
+  const extraData: ChapterExtra = {
+    parentIdsSet,
+    currentChapterId,
+    expandedParents,
+    onToggle: toggleExpand,
+    onPress,
+  };
 
   return (
     <FlashList

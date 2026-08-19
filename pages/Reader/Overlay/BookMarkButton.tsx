@@ -1,5 +1,5 @@
 import { IconButton } from 'components/ui/IconButton';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useBookStore } from 'stores/useBookStore';
 
 export const BookMarkButton = () => {
@@ -7,18 +7,13 @@ export const BookMarkButton = () => {
   const addBookmark = useBookStore((state) => state.addBookmark);
   const removeBookmark = useBookStore((state) => state.removeBookmark);
 
-  const activeBookmark = useMemo(() => {
-    if (!currentBook) return null;
-    return (currentBook.bookmarks ?? []).find(
-      (bookmark) =>
-        bookmark.blockId === currentBook.currentBlock &&
-        Math.abs(bookmark.scrollPercent - currentBook.misc.currentBlockScrollPercent) < 0.05
-    );
-  }, [
-    currentBook?.bookmarks,
-    currentBook?.currentBlock,
-    currentBook?.misc.currentBlockScrollPercent,
-  ]);
+  const activeBookmark = currentBook
+    ? (currentBook.bookmarks ?? []).find(
+        (bookmark) =>
+          bookmark.blockId === currentBook.currentBlock &&
+          Math.abs(bookmark.scrollPercent - currentBook.misc.currentBlockScrollPercent) < 0.05
+      )
+    : null;
 
   return (
     <IconButton
