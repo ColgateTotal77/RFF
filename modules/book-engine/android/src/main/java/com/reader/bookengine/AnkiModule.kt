@@ -41,10 +41,11 @@ class AnkiModule : Module() {
             Name("Anki")
 
             AsyncFunction("isInstalled") { ->
-                moduleContext.packageManager
-                    ?.getPackageInfo("com.ichi2.anki", 0)
-                    ?: false
-                true
+                try {
+                    moduleContext.packageManager?.getPackageInfo("com.ichi2.anki", 0) != null
+                } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+                    false
+                }
             }
 
             AsyncFunction("getDecks") Coroutine { ->
