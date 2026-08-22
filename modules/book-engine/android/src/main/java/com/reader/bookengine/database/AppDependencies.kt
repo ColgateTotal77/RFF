@@ -35,6 +35,7 @@ object AppDependencies {
                         AppDatabase::class.java,
                         "book_engine_database",
                     )
+                    .addMigrations(*ALL_APP_MIGRATIONS)
                     .addCallback(
                         object : RoomDatabase.Callback() {
                             override fun onDestructiveMigration(db: SupportSQLiteDatabase) {

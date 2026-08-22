@@ -101,7 +101,6 @@ export const FIELD_MAPPING_KEYS = [
   'word',
   'translation',
   'examples',
-  'zipf',
   'synonyms',
   'audio',
 ] as const;
@@ -112,7 +111,6 @@ export interface FieldMapping {
   word?: number;
   translation?: number;
   examples?: number;
-  zipf?: number;
   synonyms?: number;
   audio?: number;
   fieldCount: number;

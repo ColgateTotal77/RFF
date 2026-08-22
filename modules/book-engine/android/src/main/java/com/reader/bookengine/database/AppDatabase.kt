@@ -24,15 +24,32 @@ interface WordFormDao {
 
 @Entity(tableName = "words")
 data class WordFreqEntity(
-    @PrimaryKey val word: String,
+    @PrimaryKey val lemma: String,
+    val forms: List<String>,
     val freq_count: Int?,
-    val zipf: Double?,
+    val percentile: Double?,
 )
+
+object WordsConverters {
+    @androidx.room.TypeConverter
+    fun fromList(list: List<String>): String =
+        org.json.JSONArray(list).toString()
+
+    @androidx.room.TypeConverter
+    fun toList(value: String): List<String> {
+        if (value.isBlank()) return emptyList()
+        val arr = org.json.JSONArray(value)
+        return buildList { for (i in 0 until arr.length()) add(arr.getString(i)) }
+    }
+}
 
 @Dao
 interface WordFreqDao {
-    @Query("SELECT zipf FROM words WHERE word = :word")
-    suspend fun getZipf(word: String): Double?
+    @Query(
+        "SELECT percentile FROM words " +
+            "WHERE instr(forms, '\"' || :surfaceForm || '\"') > 0 LIMIT 1"
+    )
+    suspend fun getPercentile(surfaceForm: String): Double?
 }
 
 @Entity(
@@ -80,21 +97,23 @@ interface BlockDao {
     suspend fun delete(bookBasePath: String)
 }
 
+@TypeConverters(WordsConverters::class)
 @Database(
     entities = [WordFreqEntity::class],
-    version = 1,
+    version = 3,
 )
 abstract class FreqDatabase : RoomDatabase() {
     abstract fun wordFreqDao(): WordFreqDao
 }
 
+@TypeConverters(WordsConverters::class)
 @Database(
     entities = [
         WordFormEntity::class,
         BlockEntity::class,
         WordFreqEntity::class,
     ],
-    version = 4,
+    version = 6,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun wordFormDao(): WordFormDao

@@ -48,6 +48,7 @@ class FrequencyDatabase(
             Room
                 .databaseBuilder(context, FreqDatabase::class.java, "freq_$langCode")
                 .createFromFile(dbFile)
+                .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
 
         return true
@@ -58,19 +59,16 @@ class FrequencyDatabase(
         database = null
     }
 
-    suspend fun getFrequencyTier(word: String): Pair<String, Double> {
-        android.util.Log.d("BookEngine", "DB is null: ${database == null}, word: $word")
-        val zipf = database?.wordFreqDao()?.getZipf(word.lowercase()) ?: return Pair("Top_20000+", 0.0)
+    suspend fun getFrequencyTier(word: String): String {
+        val percentile =
+            database?.wordFreqDao()?.getPercentile(word.lowercase()) ?: return "Unknown"
 
-        val tier =
-            when {
-                zipf >= 4.5 -> "Top_1000"
-                zipf >= 3.5 -> "Top_5000"
-                zipf >= 3.0 -> "Top_10000"
-                zipf >= 2.5 -> "Top_15000"
-                else -> "Top_20000+"
-            }
-
-        return Pair(tier, zipf)
+        return when {
+            percentile >= 0.75 -> "VeryCommon"
+            percentile >= 0.50 -> "Common"
+            percentile >= 0.25 -> "Uncommon"
+            percentile >= 0.10 -> "Rare"
+            else -> "VeryRare"
+        }
     }
 }

@@ -1,0 +1,47 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "49debf1a73b33229ee1b43040ee72ced",
+    "entities": [
+      {
+        "tableName": "words",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`lemma` TEXT NOT NULL, `forms` TEXT NOT NULL, `freq_count` INTEGER, `percentile` REAL, PRIMARY KEY(`lemma`))",
+        "fields": [
+          {
+            "fieldPath": "lemma",
+            "columnName": "lemma",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "forms",
+            "columnName": "forms",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "freq_count",
+            "columnName": "freq_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "percentile",
+            "columnName": "percentile",
+            "affinity": "REAL"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "lemma"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '49debf1a73b33229ee1b43040ee72ced')"
+    ]
+  }
+}

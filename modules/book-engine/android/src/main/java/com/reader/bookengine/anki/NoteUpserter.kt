@@ -27,7 +27,7 @@ class NoteUpserter(
         val word = fields["word"] ?: throw Exception("Word field is missing")
         val modelId = (mapping["modalId"] as? String)?.toLong() ?: throw Exception("modalId is missing")
 
-        val (tier, zipf) = freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
+        val tier = freqDatabase?.getFrequencyTier(word) ?: "VeryRare"
 
         val existing = noteFinder.findByModelId(modelId, word)
         return if (existing != null) {
@@ -35,7 +35,6 @@ class NoteUpserter(
         } else {
             createPair(
                 word,
-                zipf,
                 tier,
                 deckId,
                 modelId,
@@ -87,7 +86,6 @@ class NoteUpserter(
 
     private suspend fun createPair(
         word: String,
-        zipf: Double,
         tier: String,
         deckId: Long,
         modelId: Long,
@@ -98,7 +96,7 @@ class NoteUpserter(
         audioLang: String,
         autoSuspend: Boolean,
     ): List<Long> {
-        val noteFields = buildNoteFields(fields, word, zipf)
+        val noteFields = buildNoteFields(fields, word)
         val tags = setOf("Lookups_1", tier)
 
         val mainId =
@@ -125,7 +123,6 @@ class NoteUpserter(
     private fun buildNoteFields(
         fields: Map<String, String>,
         word: String,
-        zipf: Double,
     ): Map<String, String> {
         val definition = fields["definition"] ?: ""
         val examples = fields["examples"] ?: ""
@@ -133,7 +130,6 @@ class NoteUpserter(
 
         return fields.toMutableMap().apply {
             this["word"] = word
-            this["zipf"] = zipf.toString()
             this["examples"] = combinedExamples
         }
     }

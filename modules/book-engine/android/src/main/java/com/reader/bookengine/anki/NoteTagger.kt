@@ -74,7 +74,6 @@ class NoteTagger(
         return Pair(word, colorCode)
     }
 
-    // TODO(27): batch Anki note reads + single Room IN query instead of N IPC + runBlocking per note
     fun getBestFrequencyTier(
         noteIds: LongArray,
         mapping: Map<String, Any?>,
@@ -82,8 +81,9 @@ class NoteTagger(
     ): String {
         val resolver = context.contentResolver
 
-        var bestZipf = -1.0
-        var bestTier = "Top_20000+"
+        val tierRank = listOf("VeryCommon", "Common", "Uncommon", "Rare", "VeryRare")
+        var bestIndex = tierRank.size - 1
+        var bestTier = "VeryRare"
 
         for (noteId in noteIds) {
             val noteUri = Uri.parse("content://com.ichi2.anki.flashcards/notes/$noteId")
@@ -96,13 +96,13 @@ class NoteTagger(
                     val word = AnkiUtils.extractWord(flds, mapping, mirroredMapping)
 
                     if (word.isNotEmpty()) {
-                        val (tier, zipf) =
+                        val tier =
                             runBlocking {
-                                freqDatabase?.getFrequencyTier(word) ?: Pair("Top_20000+", 0.0)
+                                freqDatabase?.getFrequencyTier(word) ?: "VeryRare"
                             }
-
-                        if (zipf > bestZipf) {
-                            bestZipf = zipf
+                        val idx = tierRank.indexOf(tier)
+                        if (idx != -1 && idx < bestIndex) {
+                            bestIndex = idx
                             bestTier = tier
                         }
                     }
