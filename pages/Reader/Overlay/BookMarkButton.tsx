@@ -1,8 +1,10 @@
 import { IconButton } from 'components/ui/IconButton';
 import React from 'react';
 import { useBookStore } from 'stores/useBookStore';
+import { useTranslation } from 'react-i18next';
 
 export const BookMarkButton = () => {
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
   const currentBook = useBookStore((state) => state.currentBook);
   const addBookmark = useBookStore((state) => state.addBookmark);
   const removeBookmark = useBookStore((state) => state.removeBookmark);
@@ -19,7 +21,7 @@ export const BookMarkButton = () => {
     <IconButton
       icon={activeBookmark ? 'bookmark' : 'bookmark-outline'}
       size={28}
-      accessibilityLabel={activeBookmark ? 'Remove bookmark' : 'Add bookmark'}
+      accessibilityLabel={activeBookmark ? t('removeBookmark') : t('addBookmark')}
       style={{
         position: 'absolute',
         top: 116,

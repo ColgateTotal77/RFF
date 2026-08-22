@@ -4,6 +4,7 @@ import { calculateBookProgress } from 'lib/utils';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
 import { loadWindow } from 'stores/actions';
+import i18n from 'i18n';
 
 export const useJumpToNextSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
@@ -30,7 +31,7 @@ export const useJumpToNextSearchResult = () => {
         blockId: newSearchResult.blockId,
         occurrenceIndex: newSearchResult.occurrenceIndex,
       });
-      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
+      setGlobalLoading({ isLoading: true, message: i18n.t('search.loadingResult') });
       loadWindow(newSearchResult.blockId, 0);
     } else {
       setCurrentBlock(newSearchResult.blockId);
@@ -76,7 +77,7 @@ export const useJumpToPrevSearchResult = () => {
         blockId: newSearchResult.blockId,
         occurrenceIndex: newSearchResult.occurrenceIndex,
       });
-      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
+      setGlobalLoading({ isLoading: true, message: i18n.t('search.loadingResult') });
       loadWindow(newSearchResult.blockId, 0);
     } else {
       setCurrentBlock(newSearchResult.blockId);
@@ -114,7 +115,7 @@ export const useProcessBookLinks = () => {
         scrollPercent: currentBook.misc.currentBlockScrollPercent,
       });
       if (!currentBook.currentBlocks.includes(blockId)) {
-        setGlobalLoading({ isLoading: true, message: 'Opening link…' });
+        setGlobalLoading({ isLoading: true, message: i18n.t('reader.openingLink') });
         loadWindow(blockId, 0);
       } else {
         executeImmediateActions([{ type: 'scrollToBlock', blockId, scrollPercent: 0 }]);
@@ -132,7 +133,7 @@ export const useProcessBookLinks = () => {
 
     if (!currentBook.currentBlocks.includes(blockId)) {
       addToPostLoadQueue({ type: 'scrollToFragment', fragmentId });
-      setGlobalLoading({ isLoading: true, message: 'Opening link…' });
+      setGlobalLoading({ isLoading: true, message: i18n.t('reader.openingLink') });
       loadWindow(blockId, 0);
     } else {
       executeImmediateActions([{ type: 'scrollToFragment', fragmentId }]);

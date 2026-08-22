@@ -106,12 +106,13 @@ const DropdownEmptyState = () => {
 };
 
 export const Dropdown = <T extends string>(props: DropdownProps<T>) => {
+  const { t } = useTranslation('translation');
   const {
     label,
     value,
     options,
     isLoading = false,
-    placeholder = 'Select an option',
+    placeholder = t('common.selectAnOption'),
     isGrayed,
     labelRight,
     closeOnSelect = true,

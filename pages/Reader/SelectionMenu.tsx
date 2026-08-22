@@ -86,7 +86,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
         <IconButton
           icon="cards-outline"
           onPress={onAddNewCardPress}
-          accessibilityLabel="Add Anki card"
+          accessibilityLabel={t('addAnkiCard')}
         />
         <VerticalDivider />
       </>
@@ -124,11 +124,11 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
       <IconButton
         icon="translate"
         onPress={async () => await openSystemTranslator(selectionMenu.text)}
-        accessibilityLabel="Translate"
+        accessibilityLabel={t('translate')}
       />
 
       <VerticalDivider />
-      <IconButton icon="content-copy" onPress={onCopy} accessibilityLabel="Copy" />
+      <IconButton icon="content-copy" onPress={onCopy} accessibilityLabel={t('copy')} />
       <VerticalDivider />
 
       {CardButton}
@@ -141,7 +141,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
             icon="dots-vertical"
             iconColor={theme.colors.primary}
             onPress={() => setIsOpen(true)}
-            accessibilityLabel="More options"
+            accessibilityLabel={t('moreOptions', { keyPrefix: 'common' })}
           />
         }
         style={{

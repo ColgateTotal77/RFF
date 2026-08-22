@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.reader.bookengine'
-version = '0.7.6'
+version = '1.0.0'
 
 def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
 apply from: expoModulesCorePlugin
@@ -35,7 +35,7 @@ android {
   namespace "com.reader.bookengine"
   defaultConfig {
     versionCode 1
-    versionName "0.7.6"
+    versionName "1.0.0"
 
     def supabaseUrl = System.getenv("EXPO_PUBLIC_SUPABASE_URL") ?: ""
     def supabaseKey = System.getenv("EXPO_PUBLIC_SUPABASE_ANON_KEY") ?: ""

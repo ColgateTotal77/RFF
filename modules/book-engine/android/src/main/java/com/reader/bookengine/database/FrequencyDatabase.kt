@@ -48,8 +48,6 @@ class FrequencyDatabase(
             Room
                 .databaseBuilder(context, FreqDatabase::class.java, "freq_$langCode")
                 .createFromFile(dbFile)
-                // TODO(33): document or narrow destructive migration for frequency DB
-                .fallbackToDestructiveMigration()
                 .build()
 
         return true

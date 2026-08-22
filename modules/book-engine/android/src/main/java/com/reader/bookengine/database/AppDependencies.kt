@@ -35,8 +35,6 @@ object AppDependencies {
                         AppDatabase::class.java,
                         "book_engine_database",
                     )
-                    // TODO(33): document or narrow destructive migration — avoid silent user data wipe
-                    .fallbackToDestructiveMigration()
                     .addCallback(
                         object : RoomDatabase.Callback() {
                             override fun onDestructiveMigration(db: SupportSQLiteDatabase) {

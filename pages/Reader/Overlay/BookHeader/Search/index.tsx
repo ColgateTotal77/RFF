@@ -69,7 +69,7 @@ export const MenuSearch = ({ onClose }: Props) => {
         blockId: searchResult.blockId,
         occurrenceIndex: searchResult.occurrenceIndex,
       });
-      setGlobalLoading({ isLoading: true, message: 'Loading result…' });
+      setGlobalLoading({ isLoading: true, message: t('loadingResult') });
       loadWindow(searchResult.blockId, 0);
     } else {
       setCurrentBlock(searchResult.blockId);

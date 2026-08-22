@@ -108,7 +108,7 @@ export const AnkiTab = () => {
                 icon="plus"
                 style={{ height: 54, width: 54 }}
                 onPress={() => setDialogVisible(true)}
-                accessibilityLabel="Create new deck"
+                accessibilityLabel={t('createNewDeck')}
               />
             }
           />

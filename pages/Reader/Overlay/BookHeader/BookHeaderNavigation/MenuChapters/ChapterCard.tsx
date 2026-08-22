@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import React from 'react';
 import { TocItem } from 'types';
 import { IconButton } from 'components/ui/IconButton';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   tocItem: TocItem;
@@ -22,6 +23,7 @@ export const ChapterCard = ({
   onToggle,
 }: Props) => {
   const theme = useTheme();
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
   const indentStyle = { marginLeft: tocItem.level * 16 };
   const backgroundColor = isCurrentChapter
     ? { backgroundColor: theme.colors.secondaryContainer }
@@ -37,7 +39,7 @@ export const ChapterCard = ({
             icon={isExpanded ? 'chevron-down' : 'chevron-right'}
             onPress={onToggle}
             size={20}
-            accessibilityLabel={isExpanded ? 'Collapse chapter' : 'Expand chapter'}
+            accessibilityLabel={isExpanded ? t('collapseChapter') : t('expandChapter')}
           />
         )}
       </View>

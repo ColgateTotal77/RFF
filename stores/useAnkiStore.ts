@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Alert, Linking, PermissionsAndroid } from 'react-native';
+import { Linking, PermissionsAndroid } from 'react-native';
 import { Anki } from 'modules/book-engine';
 import { updateNestedMapping } from 'lib/utils';
 import { useAppStore } from './useAppStore';
@@ -136,10 +136,10 @@ export const useAnkiStore = create<Store>()((set, get) => ({
       }
 
       const granted = await PermissionsAndroid.request(ANKI_PERMISSION as never, {
-        title: 'Anki Integration',
-        message: 'Allow this app to send flashcards directly to your Anki database.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Cancel',
+        title: i18n.t('ankiTab.title'),
+        message: i18n.t('ankiTab.permissionMessage'),
+        buttonPositive: i18n.t('common.allow'),
+        buttonNegative: i18n.t('common.cancel'),
       });
 
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {

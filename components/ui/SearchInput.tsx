@@ -56,7 +56,10 @@ export const SearchInput = ({
         accessibilityLabel={accessibilityLabel}
       />
       {value.length > 0 && (
-        <Pressable onPress={() => onChangeText('')} hitSlop={8} accessibilityLabel="Clear search">
+        <Pressable
+          onPress={() => onChangeText('')}
+          hitSlop={8}
+          accessibilityLabel={t('clearSearch')}>
           <Icon source="close" size={18} color={theme.colors.onSurfaceVariant} />
         </Pressable>
       )}

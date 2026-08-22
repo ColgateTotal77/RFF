@@ -10,6 +10,7 @@ import { useTempStore } from 'stores/useTempStore';
 import { useAppStore } from 'stores/useAppStore';
 import { loadWindow } from 'stores/actions';
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   onClose: () => void;
@@ -31,6 +32,7 @@ const renderBookmarkCard = ({ item, extraData }: ListRenderItemInfo<Bookmark>) =
 };
 
 export const MenuBookmarks = ({ onClose }: Props) => {
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
   const currentBook = useBookStore((state) => state.currentBook);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const updateBookmark = useBookStore((state) => state.updateBookmark);
@@ -64,7 +66,10 @@ export const MenuBookmarks = ({ onClose }: Props) => {
         blockId: bookmark.blockId,
         scrollPercent: bookmark.scrollPercent,
       });
-      setGlobalLoading({ isLoading: true, message: 'Opening bookmark…' });
+      setGlobalLoading({
+        isLoading: true,
+        message: t('openingBookmark'),
+      });
       loadWindow(bookmark.blockId, 0);
     }
 

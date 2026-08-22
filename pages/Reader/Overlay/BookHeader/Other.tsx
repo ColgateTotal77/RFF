@@ -19,7 +19,11 @@ export const Other = (props: Props) => {
       visible={isOpen}
       onDismiss={onClose}
       anchor={
-        <AppbarAction icon="dots-vertical" onPress={onOpen} accessibilityLabel="More options" />
+        <AppbarAction
+          icon="dots-vertical"
+          onPress={onOpen}
+          accessibilityLabel={t('moreOptions', { keyPrefix: 'common' })}
+        />
       }
       elevation={1}>
       <DropdownMenu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />

@@ -8,10 +8,12 @@ import { useBookStore } from 'stores/useBookStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { openBook } from 'stores/actions';
 import { ScrollViewWithScrollControl } from 'components/ui/ScrollViewWithScrollControl';
+import { useTranslation } from 'react-i18next';
 
 type TabKey = 'anki' | 'misc';
 
 export const SettingsScreen = () => {
+  const { t } = useTranslation('translation', { keyPrefix: 'settings' });
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState<TabKey>('anki');
 
@@ -37,8 +39,8 @@ export const SettingsScreen = () => {
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as TabKey)}
         buttons={[
-          { value: 'anki', label: 'Anki' },
-          { value: 'misc', label: 'Misc' },
+          { value: 'anki', label: t('tabAnki') },
+          { value: 'misc', label: t('tabMisc') },
         ]}
         style={{ marginHorizontal: 16, marginBottom: 16 }}
       />

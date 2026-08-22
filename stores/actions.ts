@@ -131,7 +131,7 @@ export const openBook = async (basePath: string) => {
     if (needsDictionaryReload || needsBookReload) {
       useAppStore
         .getState()
-        .setGlobalLoading({ isLoading: true, message: 'Processing anki deck…' });
+        .setGlobalLoading({ isLoading: true, message: i18n.t('ankiTab.processingDeck') });
 
       closeBook();
 
@@ -222,7 +222,7 @@ export const loadBook = async (uri: string) => {
 export const importBook = async (path: string) => {
   const { setGlobalLoading } = useAppStore.getState();
   try {
-    setGlobalLoading({ isLoading: true, message: 'Importing book…' });
+    setGlobalLoading({ isLoading: true, message: i18n.t('bookLists.importingBook') });
     loadBook(path);
   } catch (e) {
     console.error('Failed to import book:', e);

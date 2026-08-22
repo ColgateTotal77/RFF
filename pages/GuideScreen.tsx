@@ -20,7 +20,7 @@ const GuideItem = ({
   return (
     <View className="flex-row items-start gap-4">
       <View
-        className="h-9 min-w-9 items-center justify-center rounded-xl"
+        className="h-9 w-9 items-center justify-center rounded-xl"
         style={{ backgroundColor: theme.colors.secondaryContainer }}>
         {text ? (
           <Text variant="labelLarge" style={{ color: theme.colors.onSecondaryContainer }}>

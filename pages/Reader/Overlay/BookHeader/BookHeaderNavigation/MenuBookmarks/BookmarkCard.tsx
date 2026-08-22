@@ -4,6 +4,7 @@ import React from 'react';
 import { Bookmark } from 'types';
 import { useBookStore } from 'stores/useBookStore';
 import { IconButton } from 'components/ui/IconButton';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   bookmark: Bookmark;
@@ -13,6 +14,7 @@ interface Props {
 
 export const BookmarkCard = (props: Props) => {
   const { bookmark, onPress, onRename } = props;
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
   const removeBookmark = useBookStore((state) => state.removeBookmark);
 
   return (
@@ -22,11 +24,15 @@ export const BookmarkCard = (props: Props) => {
           <Text>{bookmark.title}</Text>
           <Text className="text-sm text-gray-500">{'[' + bookmark.blockId + ']'}</Text>
         </View>
-        <IconButton icon="pencil" onPress={onRename} accessibilityLabel="Rename bookmark" />
+        <IconButton
+          icon="pencil"
+          onPress={onRename}
+          accessibilityLabel={t('renameBookmark.title')}
+        />
         <IconButton
           icon="delete"
           onPress={() => removeBookmark(bookmark.id)}
-          accessibilityLabel="Delete bookmark"
+          accessibilityLabel={t('deleteBookmark')}
         />
       </View>
     </Card>

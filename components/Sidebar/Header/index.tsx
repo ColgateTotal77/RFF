@@ -7,6 +7,7 @@ import { AppbarAction } from 'components/ui/AppbarAction';
 import { useAnkiStore } from 'stores/useAnkiStore';
 import { SearchAction } from 'components/Sidebar/Header/SearchAction';
 import { pickDocument } from 'stores/actions';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export const Header = ({ navigation, title, routeName }: Props) => {
+  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const decks = useAnkiStore((state) => state.decks);
 
@@ -29,7 +31,7 @@ export const Header = ({ navigation, title, routeName }: Props) => {
               <AppbarAction
                 icon="menu"
                 onPress={() => navigation.openDrawer()}
-                accessibilityLabel="Open menu"
+                accessibilityLabel={t('openMenu')}
               />
               <Appbar.Content title={title} />
             </>
@@ -40,7 +42,7 @@ export const Header = ({ navigation, title, routeName }: Props) => {
           <AppbarAction
             icon="menu"
             onPress={() => navigation.openDrawer()}
-            accessibilityLabel="Open menu"
+            accessibilityLabel={t('openMenu')}
           />
           <Appbar.Content title={title} />
         </>
@@ -52,7 +54,7 @@ export const Header = ({ navigation, title, routeName }: Props) => {
             icon="plus"
             onPress={pickDocument}
             disabled={!decks.length}
-            accessibilityLabel="Add book"
+            accessibilityLabel={t('addBook')}
           />
           <Other
             isOpen={isMenuOpen}

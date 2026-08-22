@@ -23,6 +23,7 @@ const BookSearchInput = ({
 }) => {
   const setTempSearchQuery = useTempStore((state) => state.setTempSearchQuery);
   const tempSearchQuery = useTempStore((state) => state.tempSearchQuery);
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader' });
 
   return (
     <View style={{ flex: 1 }}>
@@ -30,7 +31,7 @@ const BookSearchInput = ({
         inputRef={inputRef}
         value={tempSearchQuery}
         onChangeText={setTempSearchQuery}
-        accessibilityLabel="Search in book"
+        accessibilityLabel={t('searchInBook', { keyPrefix: 'search' })}
         onSubmitEditing={() => onSubmit(tempSearchQuery)}
       />
     </View>
@@ -98,7 +99,7 @@ export const BookHeader = () => {
         <AppbarAction
           icon="magnify"
           onPress={toggleIsSearchModuleOpen}
-          accessibilityLabel="Search in book"
+          accessibilityLabel={t('searchInBook', { keyPrefix: 'search' })}
         />
         <Other
           isOpen={isMenuOpen}
@@ -110,7 +111,7 @@ export const BookHeader = () => {
         <AppbarAction
           icon="format-list-bulleted"
           onPress={() => setIsBookHeaderNavigationOpen(true)}
-          accessibilityLabel="Chapters and bookmarks"
+          accessibilityLabel={t('chaptersAndBookmarks')}
         />
       </Appbar.Header>
 
@@ -134,7 +135,7 @@ export const BookHeader = () => {
             <AppbarAction
               icon="arrow-left"
               onPress={toggleIsSearchModuleOpen}
-              accessibilityLabel="Close search"
+              accessibilityLabel={t('closeSearch', { keyPrefix: 'search' })}
             />
             <BookSearchInput inputRef={searchInputRef} onSubmit={onSearchSubmit} />
           </Appbar.Header>
@@ -159,7 +160,7 @@ export const BookHeader = () => {
               <AppbarAction
                 icon="arrow-left"
                 onPress={onBookSettingsClose}
-                accessibilityLabel="Close book settings"
+                accessibilityLabel={t('closeBookSettings')}
               />
               <Appbar.Content title={t('bookSettings')} />
             </Appbar.Header>

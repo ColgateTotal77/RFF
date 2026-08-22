@@ -1,14 +1,23 @@
 {
   "common": {
     "cancel": "Cancel",
+    "allow": "Allow",
+    "close": "Close",
     "save": "Save",
     "create": "Create",
     "delete": "Delete",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "moreOptions": "More options",
+    "selectAnOption": "Select an option"
   },
   "search": {
     "placeholder": "Search...",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "clearSearch": "Clear search",
+    "closeSearch": "Close search",
+    "searchBooks": "Search books",
+    "searchInBook": "Search in book",
+    "loadingResult": "Loading result…"
   },
   "ankiTab": {
     "title": "Anki Integration",
@@ -29,6 +38,10 @@
       "errorEmpty": "Deck name cannot be empty",
       "errorDuplicate": "A deck with this name already exists"
     },
+    "createNewDeck": "Create new deck",
+    "resetFieldMapping": "Reset field mapping",
+    "permissionMessage": "Allow this app to send flashcards directly to your Anki database.",
+    "processingDeck": "Processing anki deck…",
     "appFields": {
       "word": "Word",
       "translation": "Translation",
@@ -58,12 +71,18 @@
       "next": "Next",
       "bookProgress": "Book {{progress}}%",
       "chapterProgress": "Chapter {{progress}}%",
-      "goBack": "Go back"
+      "goBack": "Go back",
+      "clearNavigationHistory": "Clear navigation history",
+      "goingBack": "Going back…"
     },
     "selectionMenu": {
       "deleteNote": "Delete note",
-      "decreaseTag": "Decrease tag"
-    }
+      "decreaseTag": "Decrease tag",
+      "addAnkiCard": "Add Anki card",
+      "translate": "Translate",
+      "copy": "Copy"
+    },
+    "openingLink": "Opening link…"
   },
   "bookHeader": {
     "bookSettings": "Book Settings",
@@ -77,15 +96,26 @@
       "renameBookmark": {
         "title": "Rename bookmark",
         "label": "Bookmark title"
-      }
-    }
+      },
+      "deleteBookmark": "Delete bookmark",
+      "addBookmark": "Add bookmark",
+      "removeBookmark": "Remove bookmark",
+      "collapseChapter": "Collapse chapter",
+      "expandChapter": "Expand chapter",
+      "openingChapter": "Opening chapter…",
+      "openingBookmark": "Opening bookmark…"
+    },
+    "chaptersAndBookmarks": "Chapters and bookmarks",
+    "closeBookSettings": "Close book settings"
   },
   "sidebar": {
     "brand": "RFF",
     "readingNow": "Reading Now",
     "haveRead": "Have Read",
     "settings": "Settings",
-    "guide": "Guide"
+    "guide": "Guide",
+    "openMenu": "Open menu",
+    "addBook": "Add book"
   },
   "guide": {
     "firstBookHint": "Tap this notification to open the Guide and learn all the features.",
@@ -162,6 +192,7 @@
     "permissionBannerAction": "Settings",
     "noBooks": "No books here yet",
     "addBook": "Add Book",
+    "importingBook": "Importing book…",
     "pages": "~{{count}} pages",
     "deleteDialog": {
       "title": "Delete book?",
@@ -181,5 +212,9 @@
     "failedToOpenTranslator": "Failed to open translator",
     "failedToDeleteNote": "Failed to delete note",
     "installTtsVoice": "Tap to install {{lang}} voice, cards have no audio without it"
+  },
+  "settings": {
+    "tabAnki": "Anki",
+    "tabMisc": "Misc"
   }
 }

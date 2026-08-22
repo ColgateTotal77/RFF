@@ -9,6 +9,7 @@ import { useAppStore } from 'stores/useAppStore';
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
 import { View } from 'react-native';
 import { loadWindow } from 'stores/actions';
+import { useTranslation } from 'react-i18next';
 
 type ChapterExtra = {
   parentIdsSet: Set<string>;
@@ -37,6 +38,7 @@ const renderChapter = ({ item, extraData }: ListRenderItemInfo<TocItem>) => {
 };
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation.' });
   const currentBook = useBookStore((state) => state.currentBook);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);
@@ -98,7 +100,10 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
       executeImmediateActions([scrollAction]);
     } else {
       if (anchorId) addToPostLoadQueue(scrollAction);
-      setGlobalLoading({ isLoading: true, message: 'Opening chapter…' });
+      setGlobalLoading({
+        isLoading: true,
+        message: t('openingChapter'),
+      });
       loadWindow(targetBlockId, 0);
     }
 

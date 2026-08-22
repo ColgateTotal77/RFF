@@ -85,7 +85,7 @@ export const BookCard = ({ book, onPress, toggleLabel, onDeletePress }: Props) =
                   e?.stopPropagation();
                   setMenuVisible(true);
                 }}
-                accessibilityLabel="More options"
+                accessibilityLabel={t('moreOptions', { keyPrefix: 'common' })}
               />
             }>
             <DropdownMenu.Item onPress={() => toggleHaveRead(book.basePath)} title={toggleLabel} />

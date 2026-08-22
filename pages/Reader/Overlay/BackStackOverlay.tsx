@@ -41,7 +41,7 @@ export const BackStackOverlay = () => {
         blockId: target.blockId,
         scrollPercent: target.scrollPercent,
       });
-      setGlobalLoading({ isLoading: true, message: 'Going back…' });
+      setGlobalLoading({ isLoading: true, message: t('goingBack') });
       loadWindow(target.blockId, 0);
     }
 
@@ -70,7 +70,7 @@ export const BackStackOverlay = () => {
         size={20}
         onPress={clearBackStack}
         iconColor={colors.error}
-        accessibilityLabel={'Clear navigation history'}
+        accessibilityLabel={t('clearNavigationHistory')}
       />
     </View>
   );
