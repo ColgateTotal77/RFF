@@ -13,11 +13,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#ffffff",
-          "image": "./assets/splash.png",
+          "backgroundColor": "#524388",
+          "image": "./assets/icon.png",
           "resizeMode": "contain",
+          "imageWidth": 256,
           "dark": {
-            "backgroundColor": "#121212"
+            "backgroundColor": "#524388",
+            "image": "./assets/icon.png"
           }
         }
       ]
@@ -26,15 +28,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#524388"
     },
     "assetBundlePatterns": ["**/*"],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#524388"
       },
       "permissions": ["com.ichi2.anki.permission.READ_WRITE_DATABASE"],
       "package": "com.colgatetotal77.RFF"

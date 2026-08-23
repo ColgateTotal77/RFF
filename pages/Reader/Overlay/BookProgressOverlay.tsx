@@ -3,13 +3,16 @@ import React from 'react';
 import { Text, useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useBookStore } from 'stores/useBookStore';
+import { useTempStore } from 'stores/useTempStore';
 
 export const BookProgressOverlay = () => {
   const currentBook = useBookStore((state) => state.currentBook);
+  const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
   const { t } = useTranslation('translation', { keyPrefix: 'reader.footer' });
   const { colors } = useTheme();
 
   if (!currentBook) return null;
+  if (!isOverlayVisible) return null;
 
   const { percent = 0, currentBlockScrollPercent = 0, totalCharCount = 1 } = currentBook.misc;
   const bookProgress = Math.min(100, Math.max(0, Math.round(percent * 100)));

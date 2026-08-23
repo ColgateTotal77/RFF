@@ -1,5 +1,5 @@
 import { Animated, Dimensions, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
-import { Portal, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Portal, Text, useTheme } from 'react-native-paper';
 import { Children, ReactElement, ReactNode, useEffect, useRef, useState } from 'react';
 
 const ANIMATION_DURATION = 90;
@@ -14,21 +14,21 @@ interface DropdownMenuItemProps {
 
 const DropdownMenuItem = ({ title, onPress, disabled, icon }: DropdownMenuItemProps) => {
   const theme = useTheme();
-  const [highlighted, setHighlighted] = useState(false);
+
   return (
-    <TouchableRipple
-      onPress={onPress}
-      disabled={disabled}
-      onPressIn={() => setHighlighted(true)}
-      onPressOut={() => setHighlighted(false)}
-      style={[styles.item, highlighted && { backgroundColor: theme.colors.surfaceVariant }]}>
-      <View style={styles.itemContent}>
-        {icon}
-        <Text style={{ color: disabled ? theme.colors.onSurfaceDisabled : theme.colors.onSurface }}>
-          {title}
-        </Text>
-      </View>
-    </TouchableRipple>
+    <Pressable onPress={onPress} disabled={disabled}>
+      {({ pressed }) => (
+        <View style={[styles.item, pressed && { backgroundColor: theme.colors.surfaceVariant }]}>
+          <View style={styles.itemContent}>
+            {icon}
+            <Text
+              style={{ color: disabled ? theme.colors.onSurfaceDisabled : theme.colors.onSurface }}>
+              {title}
+            </Text>
+          </View>
+        </View>
+      )}
+    </Pressable>
   );
 };
 

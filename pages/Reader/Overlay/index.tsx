@@ -29,12 +29,10 @@ export const Overlay = () => {
           <BookMarkButton />
         </>
       )}
-      {(isOverlayVisible || currentSearchResult.blockId > -1) && (
-        <View className="absolute bottom-8 left-0 right-0 items-center gap-2">
-          <BackStackOverlay />
-          {currentSearchResult.blockId > -1 ? <SearchOverlay /> : <BookProgressOverlay />}
-        </View>
-      )}
+      <View className="absolute bottom-8 left-0 right-0 items-center gap-2">
+        <BackStackOverlay />
+        {currentSearchResult.blockId > -1 ? <SearchOverlay /> : <BookProgressOverlay />}
+      </View>
     </>
   );
 };

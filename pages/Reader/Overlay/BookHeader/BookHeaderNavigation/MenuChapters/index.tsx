@@ -38,7 +38,7 @@ const renderChapter = ({ item, extraData }: ListRenderItemInfo<TocItem>) => {
 };
 
 export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation.' });
+  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.navigation' });
   const currentBook = useBookStore((state) => state.currentBook);
   const updateMisc = useBookStore((state) => state.updateMisc);
   const executeImmediateActions = useWebViewStore((state) => state.executeImmediateActions);

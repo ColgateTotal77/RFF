@@ -42,4 +42,4 @@ modules/book-engine/android/cmake-build-debug/
 /scripts/
 .history/
 !/android/app/src/main/res/values
-/lemmatize_prototype/
+/word_frequency_packs/
