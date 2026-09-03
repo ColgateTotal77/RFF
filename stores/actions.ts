@@ -15,7 +15,7 @@ import { useAnkiStore } from './useAnkiStore';
 import { useBookStore } from './useBookStore';
 import { useTempStore } from './useTempStore';
 import { useWebViewStore } from './useWebViewStore';
-import { Linking } from 'react-native';
+
 
 export const toggleTheme = () => {
   const nextTheme = useAppStore.getState().theme === 'dark' ? 'light' : 'dark';
@@ -126,6 +126,8 @@ export const openBook = async (basePath: string) => {
   const configStale = isAnkiConfigStale(bookToOpen);
   const needsDictionaryReload = !!bookSettings.ankiDeckId && configStale;
   const needsBookReload = currentBook?.basePath !== bookToOpen.basePath;
+
+  await BookEngine.addNewLangForSync(bookSettings.bookLang);
 
   try {
     if (needsDictionaryReload || needsBookReload) {

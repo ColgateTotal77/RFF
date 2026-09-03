@@ -12,7 +12,7 @@ interface Props {
 
 export const Other = (props: Props) => {
   const { isOpen, onOpen, onClose, onBookSettingsOpen } = props;
-  const { t } = useTranslation('translation', { keyPrefix: 'bookHeader.other' });
+  const { t } = useTranslation('translation', {keyPrefix: 'common'});
 
   return (
     <DropdownMenu
@@ -22,17 +22,23 @@ export const Other = (props: Props) => {
         <AppbarAction
           icon="dots-vertical"
           onPress={onOpen}
-          accessibilityLabel={t('moreOptions', { keyPrefix: 'common' })}
+          accessibilityLabel={t('moreOptions')}
         />
       }
       elevation={1}>
-      <DropdownMenu.Item onPress={() => toggleTheme()} title={t('switchTheme')} />
+      <DropdownMenu.Item
+        onPress={() => {
+          toggleTheme()
+          onClose()
+        }}
+        title={t('switchTheme')}
+      />
       <DropdownMenu.Item
         onPress={() => {
           onBookSettingsOpen();
           onClose();
         }}
-        title={t('settings')}
+        title={t('settings', { keyPrefix: 'bookHeader.other' })}
       />
     </DropdownMenu>
   );

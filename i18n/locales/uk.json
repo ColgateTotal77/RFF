@@ -8,7 +8,8 @@
     "delete": "Видалити",
     "dismiss": "Сховати",
     "moreOptions": "Більше опцій",
-    "selectAnOption": "Виберіть варіант"
+    "selectAnOption": "Виберіть варіант",
+    "switchTheme": "Змінити тему"
   },
   "search": {
     "placeholder": "Пошук...",
@@ -86,7 +87,6 @@
   "bookHeader": {
     "bookSettings": "Налаштування книги",
     "other": {
-      "switchTheme": "Змінити тему",
       "settings": "Налаштування"
     },
     "navigation": {

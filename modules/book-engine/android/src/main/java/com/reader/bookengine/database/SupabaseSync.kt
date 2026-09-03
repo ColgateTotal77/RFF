@@ -5,6 +5,9 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Serializable
 data class RemoteWordForm(
@@ -13,6 +16,34 @@ data class RemoteWordForm(
     val lemma: String,
     val created_at: String,
 )
+
+fun addNewLangForSync(langCode: String, context: Context, scope: CoroutineScope) {
+    val prefs = context.getSharedPreferences("DictionaryPrefs", Context.MODE_PRIVATE)
+
+    val existingLangs = prefs.getStringSet("sync_langs", emptySet()) ?: emptySet()
+
+    if (existingLangs.contains(langCode)) return
+
+    val updatedLangs = existingLangs.toMutableSet()
+    updatedLangs.add(langCode)
+
+    prefs.edit()
+        .putStringSet("sync_langs", updatedLangs)
+        .remove("sync_cursor_created_at")
+        .remove("sync_cursor_input_word")
+        .apply()
+
+    val myAppDatabase = AppDependencies.getDatabase(context)
+    val mySupabaseClient = AppDependencies.supabaseClient
+
+    scope.launch(Dispatchers.IO) {
+        syncWordFormsFromSupabase(
+            mySupabaseClient,
+            myAppDatabase,
+            context
+        )
+    }
+}
 
 suspend fun syncWordFormsFromSupabase(
     supabase: SupabaseClient,
@@ -24,6 +55,7 @@ suspend fun syncWordFormsFromSupabase(
 
     var cursorCreatedAt: String? = prefs.getString("sync_cursor_created_at", null)
     var cursorInputWord: String? = prefs.getString("sync_cursor_input_word", null)
+    val langs = prefs.getStringSet("sync_langs", emptySet()) ?: emptySet()
 
     var hasMore = true
     var totalSynced = 0
@@ -38,13 +70,17 @@ suspend fun syncWordFormsFromSupabase(
                     order(column = "input_word", order = Order.ASCENDING)
                     order(column = "word_lang_code", order = Order.ASCENDING)
                     limit(count = batchSize)
-                    if (cursorCreatedAt != null && cursorInputWord != null) {
-                        filter {
-                            or {
-                                gt("created_at", cursorCreatedAt!!)
-                                and {
-                                    eq("created_at", cursorCreatedAt!!)
-                                    gt("input_word", cursorInputWord!!)
+                    filter {
+                        isIn("word_lang_code", langs.toList())
+
+                        if (cursorCreatedAt != null && cursorInputWord != null) {
+                            and {
+                                or {
+                                    gt("created_at", cursorCreatedAt!!)
+                                    and {
+                                        eq("created_at", cursorCreatedAt!!)
+                                        gt("input_word", cursorInputWord!!)
+                                    }
                                 }
                             }
                         }
