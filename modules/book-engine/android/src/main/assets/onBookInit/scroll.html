@@ -38,6 +38,7 @@
   let ticking = false;
   let topZoneArmed = true;
   let endZoneArmed = true;
+  let scrollTimeout = null;
 
   function updateScrollPosition() {
     const blocks = document.querySelectorAll('div[id^="block-"]');
@@ -52,10 +53,18 @@
       if (currentRect.bottom > 0) break;
     }
 
-    const currentBlockScrollPercent =
-      Math.abs(Math.min(0, currentRect.top)) / blocks[blockId].offsetHeight;
     const currentBlockId = blocks[blockId].id;
     const actualBlockId = parseInt(currentBlockId.replace('block-', ''));
+
+    let currentBlockScrollPercent;
+
+    if (actualBlockId === window.BookConfig.totalBlocks - 1 && currentRect.bottom <= window.innerHeight + 8) {
+      window.log('scrollToBlock: reached end of book');
+      currentBlockScrollPercent = 1.0;
+    } else {
+      currentBlockScrollPercent =
+        Math.abs(Math.min(0, currentRect.top)) / blocks[blockId].offsetHeight;
+    }
 
     window.ReactNativeWebView.postMessage(
       JSON.stringify({
@@ -117,6 +126,12 @@
         lastSentTime = now;
         updateScrollPosition();
       }
+
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        lastSentTime = Date.now();
+        updateScrollPosition();
+      }, 300);
     },
     { passive: true }
   );

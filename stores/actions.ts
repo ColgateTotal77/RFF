@@ -75,6 +75,7 @@ export const loadWindow = async (targetBlockId: number, blockScrollPercent: numb
         fontSize: settings.font.fontSize,
         fontFamily: settings.font.fontFamily,
         theme: useAppStore.getState().theme,
+        totalBlocks: blocks.length,
       }
     );
 

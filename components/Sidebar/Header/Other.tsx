@@ -28,8 +28,8 @@ export const Other = (props: Props) => {
     >
       <DropdownMenu.Item
         onPress={() => {
-          toggleTheme()
           onClose()
+          toggleTheme()
         }}
         title={t('switchTheme')}
       />

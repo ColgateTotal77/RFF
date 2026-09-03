@@ -28,15 +28,15 @@ export const Other = (props: Props) => {
       elevation={1}>
       <DropdownMenu.Item
         onPress={() => {
-          toggleTheme()
           onClose()
+          toggleTheme()
         }}
         title={t('switchTheme')}
       />
       <DropdownMenu.Item
         onPress={() => {
+          onClose()
           onBookSettingsOpen();
-          onClose();
         }}
         title={t('settings', { keyPrefix: 'bookHeader.other' })}
       />

@@ -35,10 +35,8 @@
   }
 
   body p,
-  body div,
   body section,
-  body article,
-  body span:not([class*='dropcap']) {
+  body article {
     text-align: justify !important;
     text-align-last: left !important;
     hyphens: auto !important;
@@ -48,11 +46,35 @@
 
   :root:not([data-font='Book Default']) body,
   :root:not([data-font='Book Default']) p,
-  :root:not([data-font='Book Default']) div,
   :root:not([data-font='Book Default']) section,
-  :root:not([data-font='Book Default']) article,
-  :root:not([data-font='Book Default']) span {
+  :root:not([data-font='Book Default']) article {
     font-family: var(--book-font-family), Georgia, serif !important;
+  }
+
+  h1, h2, h3, .fb2-title, .chapter-header, .chapter-title {
+    text-align: center !important;
+    text-align-last: center !important;
+    text-transform: uppercase !important;
+    font-size: calc(var(--book-font-size) * 1.5) !important;
+    margin: 1.5em auto !important;
+    width: 100% !important;
+    line-height: 1.3 !important;
+  }
+
+  h1 *,
+  h2 *,
+  h3 *,
+  .fb2-title *,
+  .chapter-header *,
+  .chapter-title * {
+    font-size: inherit !important;
+  }
+
+  body p {
+    max-width: 100% !important;
+    width: auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 
   img {
@@ -85,33 +107,15 @@
     border-radius: 50%;
   }
 
-  .anki-word[data-flag='-1']::after {
-    background-color: #9e9e9e;
-  }
-  .anki-word[data-flag='1']::after {
-    background-color: #ff5252;
-  }
-  .anki-word[data-flag='2']::after {
-    background-color: #ff9800;
-  }
-  .anki-word[data-flag='3']::after {
-    background-color: #4caf50;
-  }
-  .anki-word[data-flag='4']::after {
-    background-color: #2196f3;
-  }
-  .anki-word[data-flag='5']::after {
-    background-color: #e91e63;
-  }
-  .anki-word[data-flag='6']::after {
-    background-color: #00bcd4;
-  }
-  .anki-word[data-flag='7']::after {
-    background-color: #9c27b0;
-  }
-  .anki-word[data-flag='8']::after {
-    background-color: #607d8b;
-  }
+  .anki-word[data-flag='-1']::after { background-color: #9e9e9e; }
+  .anki-word[data-flag='1']::after { background-color: #ff5252; }
+  .anki-word[data-flag='2']::after { background-color: #ff9800; }
+  .anki-word[data-flag='3']::after { background-color: #4caf50; }
+  .anki-word[data-flag='4']::after { background-color: #2196f3; }
+  .anki-word[data-flag='5']::after { background-color: #e91e63; }
+  .anki-word[data-flag='6']::after { background-color: #00bcd4; }
+  .anki-word[data-flag='7']::after { background-color: #9c27b0; }
+  .anki-word[data-flag='8']::after { background-color: #607d8b; }
 
   .fb2-poem {
     margin: 1em 0;

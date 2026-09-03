@@ -34,7 +34,7 @@ const BookProgress = ({ book }: BookProgressProps) => {
     currentBlock.charOffset -
     chapterStartOffset +
     currentBlock.charCount * currentBlockScrollPercent;
-  const chapterProgress = Math.round((currentChapterOffset / currentChapter.charCount) * 100);
+  const chapterProgress = currentChapter.charCount ? Math.round((currentChapterOffset / currentChapter.charCount) * 100) : 0;
 
   return (
     <View className="flex gap-1">
