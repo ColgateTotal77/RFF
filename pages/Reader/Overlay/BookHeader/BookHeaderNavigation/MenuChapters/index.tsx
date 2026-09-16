@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 type ChapterExtra = {
   parentIdsSet: Set<string>;
-  currentChapterId: number | undefined;
+  currentTocId: string | undefined;
   expandedParents: string[];
   onToggle: (tocId: string) => void;
   onPress: (tocItem: TocItem) => void;
@@ -22,13 +22,13 @@ type ChapterExtra = {
 const Separator = () => <View className="h-4" />;
 
 const renderChapter = ({ item, extraData }: ListRenderItemInfo<TocItem>) => {
-  const { parentIdsSet, currentChapterId, expandedParents, onToggle, onPress } =
+  const { parentIdsSet, currentTocId, expandedParents, onToggle, onPress } =
     extraData as ChapterExtra;
 
   return (
     <ChapterCard
       tocItem={item}
-      isCurrentChapter={item.chapterId === currentChapterId}
+      isCurrentChapter={item.id === currentTocId}
       hasChildren={parentIdsSet.has(item.id)}
       isExpanded={expandedParents.includes(item.id)}
       onToggle={() => onToggle(item.id)}
@@ -124,7 +124,7 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
 
   const extraData: ChapterExtra = {
     parentIdsSet,
-    currentChapterId,
+    currentTocId: currentTocChapter?.id,
     expandedParents,
     onToggle: toggleExpand,
     onPress,

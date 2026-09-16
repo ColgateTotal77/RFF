@@ -6,52 +6,55 @@
     --book-text-color: #000000;
     --book-selection-bg: rgba(103, 80, 164, 0.35);
   }
-
   [data-theme='dark'] {
     --book-bg-color: #121212;
     --book-text-color: #e0e0e0;
     --book-selection-bg: rgba(208, 188, 255, 0.4);
   }
 
-  body,
-  body * {
+  body, body * {
     font-kerning: none !important;
     text-rendering: optimizeSpeed !important;
+    background: transparent !important;
+    font-size: var(--book-font-size) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 
   body {
     padding: 20px !important;
     margin: 0 !important;
-    text-align: justify;
-    text-align-last: left;
-    hyphens: auto;
     overflow-wrap: break-word !important;
     overflow-x: hidden !important;
     touch-action: pan-y !important;
     -webkit-tap-highlight-color: transparent !important;
-    background-color: var(--book-bg-color) !important;
-    font-size: var(--book-font-size) !important;
+    background: var(--book-bg-color) !important;
     color: var(--book-text-color) !important;
-  }
-
-  body p,
-  body section,
-  body article {
     text-align: justify !important;
     text-align-last: left !important;
     hyphens: auto !important;
-    font-size: var(--book-font-size) !important;
-    color: var(--book-text-color) !important;
   }
 
-  :root:not([data-font='Book Default']) body,
-  :root:not([data-font='Book Default']) p,
-  :root:not([data-font='Book Default']) section,
-  :root:not([data-font='Book Default']) article {
+  body p, body section, body article {
+    text-align: justify !important;
+    text-align-last: left !important;
+    hyphens: auto !important;
+  }
+
+  div[data-last-block-of-chapter='true'] { min-height: 100vh; }
+
+  body div div:has(p),
+  body section:has(p) {
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+    box-sizing: border-box !important;
+  }
+
+  :root:not([data-font='Book Default']) :is(body, p, section, article) {
     font-family: var(--book-font-family), Georgia, serif !important;
   }
 
-  h1, h2, h3, .fb2-title, .chapter-header, .chapter-title {
+  h1, h2, h3 {
     text-align: center !important;
     text-align-last: center !important;
     text-transform: uppercase !important;
@@ -59,22 +62,6 @@
     margin: 1.5em auto !important;
     width: 100% !important;
     line-height: 1.3 !important;
-  }
-
-  h1 *,
-  h2 *,
-  h3 *,
-  .fb2-title *,
-  .chapter-header *,
-  .chapter-title * {
-    font-size: inherit !important;
-  }
-
-  body p {
-    max-width: 100% !important;
-    width: auto !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
   }
 
   img {
@@ -85,19 +72,10 @@
     margin: 1em auto !important;
   }
 
-  div[data-last-block-of-chapter='true'] {
-    min-height: 100vh;
-  }
+  ::selection { background: var(--book-selection-bg); }
 
-  ::selection {
-    background: var(--book-selection-bg);
-  }
-
-  .anki-word[data-flag]:not([data-flag='0']) {
-    position: relative;
-  }
-
-  .anki-word[data-flag]::after {
+  .anki-word[data-flag]:not([data-flag='0']) { position: relative; }
+  .anki-word[data-flag]:not([data-flag='0'])::after {
     content: '';
     position: absolute;
     top: 3px;
@@ -107,59 +85,24 @@
     border-radius: 50%;
   }
 
-  .anki-word[data-flag='-1']::after { background-color: #9e9e9e; }
-  .anki-word[data-flag='1']::after { background-color: #ff5252; }
-  .anki-word[data-flag='2']::after { background-color: #ff9800; }
-  .anki-word[data-flag='3']::after { background-color: #4caf50; }
-  .anki-word[data-flag='4']::after { background-color: #2196f3; }
-  .anki-word[data-flag='5']::after { background-color: #e91e63; }
-  .anki-word[data-flag='6']::after { background-color: #00bcd4; }
-  .anki-word[data-flag='7']::after { background-color: #9c27b0; }
-  .anki-word[data-flag='8']::after { background-color: #607d8b; }
+  .anki-word[data-flag='-1']::after { background: #9e9e9e; }
+  .anki-word[data-flag='1']::after { background: #ff5252; }
+  .anki-word[data-flag='2']::after { background: #ff9800; }
+  .anki-word[data-flag='3']::after { background: #4caf50; }
+  .anki-word[data-flag='4']::after { background: #2196f3; }
+  .anki-word[data-flag='5']::after { background: #e91e63; }
+  .anki-word[data-flag='6']::after { background: #00bcd4; }
+  .anki-word[data-flag='7']::after { background: #9c27b0; }
+  .anki-word[data-flag='8']::after { background: #607d8b; }
 
-  .fb2-poem {
-    margin: 1em 0;
-  }
-  .fb2-stanza {
-    margin: 0.8em 0;
-  }
-  .fb2-verse {
-    text-align: left !important;
-    text-indent: 0 !important;
-    margin: 0 !important;
-    hyphens: none !important;
-  }
-  .fb2-text-author {
-    text-align: right !important;
-    font-style: italic;
-    margin-top: 0.5em !important;
-  }
-  .fb2-epigraph,
-  .fb2-cite,
-  .fb2-annotation {
-    margin: 1em 1.5em;
-    font-style: italic;
-    opacity: 0.9;
-  }
-  .fb2-date {
-    display: inline;
-    opacity: 0.8;
-  }
-  .fb2-table-wrap {
-    overflow-x: auto;
-    margin: 1em 0;
-  }
-  .fb2-table {
-    border-collapse: collapse;
-    margin: 0 auto;
-  }
-  .fb2-table td,
-  .fb2-table th {
-    border: 1px solid var(--book-text-color);
-    padding: 4px 8px;
-    text-align: left;
-  }
-  .fb2-table th {
-    font-weight: bold;
-  }
+  .fb2-poem { margin: 1em 0; }
+  .fb2-stanza { margin: .8em 0; }
+  .fb2-verse { text-align: left !important; text-indent: 0 !important; margin: 0 !important; hyphens: none !important; }
+  .fb2-text-author { text-align: right !important; font-style: italic; margin-top: .5em !important; }
+  .fb2-epigraph, .fb2-cite, .fb2-annotation { margin: 1em 1.5em; font-style: italic; opacity: .9; }
+  .fb2-date { display: inline; opacity: .8; }
+  .fb2-table-wrap { overflow-x: auto; margin: 1em 0; }
+  .fb2-table { border-collapse: collapse; margin: 0 auto; }
+  .fb2-table td, .fb2-table th { border: 1px solid var(--book-text-color); padding: 4px 8px; text-align: left; }
+  .fb2-table th { font-weight: bold; }
 </style>

@@ -7,30 +7,11 @@ import { ReaderScreen } from 'pages/Reader';
 import { DrawerTab, RootStackParamList } from 'types';
 import { BookListScreen } from 'pages/BookLists';
 import { useTranslation } from 'react-i18next';
-import { useTempStore } from 'stores/useTempStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
 import { GuideScreen } from 'pages/GuideScreen';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
-
-const ReadingScreen = ({ haveRead }: { haveRead: boolean }) => {
-  const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
-  const query = useTempStore((state) => state.bookListQuery).toLowerCase();
-
-  return (
-    <BookListScreen
-      filterFn={(book) =>
-        (haveRead ? book.misc.haveRead : !book.misc.haveRead) &&
-        book.title.toLowerCase().includes(query)
-      }
-      toggleLabel={haveRead ? t('readingNow') : t('haveRead')}
-    />
-  );
-};
-
-const ReadingNowScreen = () => <ReadingScreen haveRead={false} />;
-const HaveReadScreen = () => <ReadingScreen haveRead={true} />;
 
 export const Sidebar = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
@@ -57,12 +38,12 @@ export const Sidebar = () => {
       }}>
       <Drawer.Screen
         name="Reading Now"
-        component={ReadingNowScreen}
+        component={() => <BookListScreen tab = { "Reading Now" }/>}
         options={{ title: t('readingNow') }}
       />
       <Drawer.Screen
         name="Have Read"
-        component={HaveReadScreen}
+        component={() => <BookListScreen tab = { "Have Read" }/>}
         options={{ title: t('haveRead') }}
       />
       <Drawer.Screen name="Guide" component={GuideScreen} options={{ title: t('guide') }} />

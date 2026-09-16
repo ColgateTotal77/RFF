@@ -6,11 +6,12 @@ import { useBookStore } from 'stores/useBookStore';
 import { IconButton } from 'components/ui/IconButton';
 import { DropdownMenu } from 'components/ui/DropdownMenu';
 import { useTranslation } from 'react-i18next';
+import { DrawerTab } from 'types';
 
 interface Props {
   book: Book;
   onPress: () => void;
-  toggleLabel: string;
+  tab: DrawerTab;
   onDeletePress: () => void;
 }
 
@@ -64,7 +65,7 @@ const BookProgress = ({ book }: BookProgressProps) => {
 
 const CHARS_PER_PAGE = 1800;
 
-export const BookCard = ({ book, onPress, toggleLabel, onDeletePress }: Props) => {
+export const BookCard = ({ book, onPress, tab, onDeletePress }: Props) => {
   const { t } = useTranslation('translation', { keyPrefix: 'bookLists' });
   const { toggleHaveRead } = useBookStore();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -88,7 +89,13 @@ export const BookCard = ({ book, onPress, toggleLabel, onDeletePress }: Props) =
                 accessibilityLabel={t('moreOptions', { keyPrefix: 'common' })}
               />
             }>
-            <DropdownMenu.Item onPress={() => toggleHaveRead(book.basePath)} title={toggleLabel} />
+            <DropdownMenu.Item
+              onPress={() => {
+                setMenuVisible(false);
+                toggleHaveRead(book.basePath)
+              }}
+              title={t(tab === 'Have Read' ? 'readingNow' : 'haveRead', { keyPrefix: 'sidebar' })}
+            />
             <DropdownMenu.Item
               onPress={() => {
                 setMenuVisible(false);

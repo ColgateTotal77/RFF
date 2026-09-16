@@ -4,7 +4,6 @@ import { Other } from 'components/Sidebar/Header/Other';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { ParamListBase } from '@react-navigation/native';
 import { AppbarAction } from 'components/ui/AppbarAction';
-import { useAnkiStore } from 'stores/useAnkiStore';
 import { SearchAction } from 'components/Sidebar/Header/SearchAction';
 import { pickDocument } from 'stores/actions';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +17,6 @@ interface Props {
 export const Header = ({ navigation, title, routeName }: Props) => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const decks = useAnkiStore((state) => state.decks);
 
   const isBookListRoute = routeName === 'Reading Now' || routeName === 'Have Read';
 
@@ -53,7 +51,6 @@ export const Header = ({ navigation, title, routeName }: Props) => {
           <AppbarAction
             icon="plus"
             onPress={pickDocument}
-            disabled={!decks.length}
             accessibilityLabel={t('addBook')}
           />
           <Other
