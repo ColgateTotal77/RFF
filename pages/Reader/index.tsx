@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProcessBookLinks } from 'lib/useBookNavigation';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
+import { Toast } from 'components/ui/Toast';
+import i18n from 'i18n';
 import { SelectionMenu } from 'pages/Reader/SelectionMenu';
 import { useTempStore } from 'stores/useTempStore';
 import { useMessageHandler } from './useMessageHandler';
@@ -57,16 +59,25 @@ export const ReaderScreen = () => {
         }}
         onMessage={handleMessage}
         onShouldStartLoadWithRequest={(request) => {
+          if (request.url.startsWith('file://')) return true;
+
           if (/^https?:\/\//.test(request.url)) {
             Linking.openURL(request.url);
             return false;
           }
           if (request.url.startsWith('chapter://')) {
             const url = new URL(request.url);
-            processBookLinks(parseInt(url.hostname), url.hash.replace('#', ''));
+            const chapterId = parseInt(url.hostname, 10);
+            if (Number.isNaN(chapterId)) {
+              Toast.show(i18n.t('toast.brokenBookLink'), 'error');
+              return false;
+            }
+            processBookLinks(chapterId, url.hash.replace('#', ''));
             return false;
           }
-          return true;
+
+          Toast.show(i18n.t('toast.brokenBookLink'), 'error');
+          return false;
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}

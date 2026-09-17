@@ -210,6 +210,7 @@
     "failedToUpdateCard": "Failed to update card",
     "failedToOpenTranslator": "Failed to open translator",
     "failedToDeleteNote": "Failed to delete note",
+    "brokenBookLink": "This link points to a missing part of the book. Please report this book.",
     "installTtsVoice": "Tap to install {{lang}} voice, cards have no audio without it"
   },
   "settings": {

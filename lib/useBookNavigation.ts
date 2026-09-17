@@ -5,6 +5,7 @@ import { useWebViewStore } from 'stores/useWebViewStore';
 import { useAppStore } from 'stores/useAppStore';
 import { loadWindow } from 'stores/actions';
 import i18n from 'i18n';
+import { Toast } from 'components/ui/Toast';
 
 export const useJumpToNextSearchResult = () => {
   const currentSearchResult = useTempStore((state) => state.currentSearchResult);
@@ -108,6 +109,11 @@ export const useProcessBookLinks = () => {
     if (!currentBook) return;
     const chapter = currentBook.mapping.chapterById[chapterId];
 
+    if (!chapter) {
+      Toast.show(i18n.t('toast.brokenBookLink'), 'error');
+      return;
+    }
+
     if (!fragmentId) {
       const blockId = chapter.blockIds[0];
       addToBackStack({
@@ -124,7 +130,10 @@ export const useProcessBookLinks = () => {
     }
 
     const blockId = chapter.anchors[fragmentId];
-    if (!blockId) return;
+    if (!blockId) {
+      Toast.show(i18n.t('toast.brokenBookLink'), 'error');
+      return;
+    }
 
     addToBackStack({
       blockId: currentBook.currentBlock,
