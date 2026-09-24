@@ -41,12 +41,10 @@ const parseNcxNavPoints = (
 
     if (!chapterSrc) continue;
 
-    const baseHref = chapterSrc.split('#')[0];
+    const [baseHref, anchorId] = chapterSrc.split('#');
     const chapterId = mapHrefChapterId[baseHref];
 
-    if (chapterId !== undefined && chapterId !== null) {
-      toc.push({ id: pointId, title, chapterId, level, parentId });
-    }
+    if (chapterId !== undefined && chapterId !== null) toc.push({ id: pointId, title, chapterId, level, parentId, anchorId });
 
     const children = point.navPoint;
     if (children) {
@@ -92,10 +90,12 @@ const parseNavList = (
     if (!a) continue;
 
     const title = (a.text ?? '').trim() || 'Unknown Chapter';
-    const file = (a.getAttribute('href') ?? '').split('#')[0];
-    const chapterId = mapHrefChapterId[file];
 
-    if (chapterId !== undefined) toc.push({ id: pointId, title, chapterId, level, parentId });
+    const href = a.getAttribute('href') ?? '';
+    const [baseHref, anchorId] = href.split('#');
+    const chapterId = mapHrefChapterId[baseHref];
+
+    if (chapterId !== undefined) toc.push({ id: pointId, title, chapterId, level, parentId, anchorId, blockId: -1 });
 
     const nestedOl = child.querySelector('ol');
     if (nestedOl) parseNavList(nestedOl, mapHrefChapterId, level + 1, pointId, toc);

@@ -47,11 +47,13 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
   const addToBackStack = useTempStore((state) => state.addToBackStack);
   const setGlobalLoading = useAppStore((state) => state.setGlobalLoading);
 
-  const currentChapterId = currentBook?.mapping.blockIndex[currentBook.currentBlock]?.chapterId;
-  const currentTocChapter =
-    currentChapterId != null
-      ? (currentBook?.mapping.tocByChapterId[currentChapterId]?.[0] ?? null)
-      : null;
+  const currentBlockId = currentBook?.currentBlock ?? 0;
+  const currentChapterId = currentBook?.mapping.blockIndex[currentBlockId]?.chapterId;
+  const chapterTocItems = currentChapterId != null ? currentBook?.mapping.tocByChapterId[currentChapterId] : [];
+
+  const currentTocChapter = currentBook && chapterTocItems?.length
+    ? [...chapterTocItems].reverse().find(item => item.blockId <= currentBlockId) ?? chapterTocItems[0]
+    : null;
 
   const [expandedParents, setExpandedParents] = useState<string[]>(() => {
     if (!currentTocChapter) return [];
@@ -84,13 +86,8 @@ export const MenuChapters = ({ onClose }: { onClose: () => void }) => {
       scrollPercent: currentBook.misc.currentBlockScrollPercent,
     });
 
+    const targetBlockId = tocItem.blockId;
     const anchorId = tocItem.anchorId;
-    const anchorBlockId = anchorId
-      ? currentBook.mapping.chapterById[tocItem.chapterId]?.anchors[anchorId]
-      : undefined;
-
-    const targetBlockId =
-      anchorBlockId ?? currentBook.mapping.firstBlockByChapterId[tocItem.chapterId];
     const scrollAction: WebViewAction = anchorId
       ? { type: 'scrollToFragment', fragmentId: anchorId }
       : { type: 'scrollToBlock', blockId: targetBlockId };

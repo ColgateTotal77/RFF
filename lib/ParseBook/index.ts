@@ -13,7 +13,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
   try {
     const format = await detectBookFormat(bookUri);
 
-    const {
+    let {
       title,
       author,
       coverPath,
@@ -99,6 +99,18 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
 
     const tocTitleByChapterId = new Map(toc.map((t) => [t.chapterId, t.title]));
 
+    const updatedToc = toc.map((item) => {
+      const chapter = outChapters.find((c) => c.id === item.chapterId);
+
+      const anchorBlockId = item.anchorId && chapter ? chapter.anchors[item.anchorId] : undefined;
+      const firstBlockId = chapter && chapter.blockIds.length > 0 ? chapter.blockIds[0] : 0;
+
+      return {
+        ...item,
+        blockId: anchorBlockId ?? firstBlockId,
+      };
+    });
+
     BookEngine.loadBookInSQL(
       basePath,
       blockPaths,
@@ -118,7 +130,7 @@ export const parseBook = async (bookUri: string, targetLang: LanguageCode): Prom
         targetLang,
       },
       chapters: outChapters,
-      toc,
+      toc: updatedToc,
       blocks,
       bookmarks: [],
       currentBlocks: [0, 1],

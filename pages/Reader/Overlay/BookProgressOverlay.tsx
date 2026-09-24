@@ -25,8 +25,6 @@ export const BookProgressOverlay = () => {
     blockIndex.blockCharCount * currentBlockScrollPercent;
   const chapterProgress = blockIndex.chapterCharCount ? Math.round((currentChapterOffset / blockIndex.chapterCharCount) * 100) : 0;
 
-  console.log("chapterProgress: ", chapterProgress)
-
   const chapterMarkers = currentBook.toc.flatMap((item) => {
     const charOffset = currentBook.mapping.chapterById[item.chapterId]?.charOffset;
     return charOffset != null ? [(charOffset / totalCharCount) * 100] : [];

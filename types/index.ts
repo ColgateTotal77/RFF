@@ -35,6 +35,7 @@ export interface TocItem {
   id: string;
   title: string;
   chapterId: number;
+  blockId: number;
   level: number;
   parentId?: string;
   anchorId?: string;
