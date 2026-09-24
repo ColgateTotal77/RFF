@@ -38,14 +38,17 @@ export const Sidebar = () => {
       }}>
       <Drawer.Screen
         name="Reading Now"
-        component={() => <BookListScreen tab = { "Reading Now" }/>}
         options={{ title: t('readingNow') }}
-      />
+      >
+        {(props) => <BookListScreen {...props} tab="Reading Now" />}
+      </Drawer.Screen>
+
       <Drawer.Screen
         name="Have Read"
-        component={() => <BookListScreen tab = { "Have Read" }/>}
         options={{ title: t('haveRead') }}
-      />
+      >
+        {(props) => <BookListScreen {...props} tab="Have Read" />}
+      </Drawer.Screen>
       <Drawer.Screen name="Guide" component={GuideScreen} options={{ title: t('guide') }} />
       <Drawer.Screen
         name="Settings"

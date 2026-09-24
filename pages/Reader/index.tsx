@@ -59,8 +59,6 @@ export const ReaderScreen = () => {
         }}
         onMessage={handleMessage}
         onShouldStartLoadWithRequest={(request) => {
-          if (request.url.startsWith('file://')) return true;
-
           if (/^https?:\/\//.test(request.url)) {
             Linking.openURL(request.url);
             return false;

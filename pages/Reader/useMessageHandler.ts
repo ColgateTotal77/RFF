@@ -14,7 +14,7 @@ export const useMessageHandler = () => {
   const updateCurrentBlocks = useBookStore((state) => state.updateCurrentBlocks);
   const setSelectionMenu = useTempStore((state) => state.setSelectionMenu);
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
-  const { openSystemTranslator, addNewCard, updateWordTag } = useWordAction();
+  const { openSystemTranslator, addNewCard, updateWordFlag } = useWordAction();
   const executeQueueActions = useWebViewStore((state) => state.executeQueueActions);
   const setIsWebViewReady = useWebViewStore((state) => state.setIsWebViewReady);
   const isOverlayVisible = useTempStore((state) => state.isOverlayVisible);
@@ -84,9 +84,9 @@ export const useMessageHandler = () => {
             if (parsedData.noteIds) {
               if (!parsedData.colorCode || parsedData.colorCode === '-1') return;
 
-              updateWordTag({
+              updateWordFlag({
                 noteIds: parsedData.noteIds,
-                colorCode: String(Number(parsedData.colorCode) + 1),
+                colorCode: String(Math.min(Number(parsedData.colorCode) + 1, 7)),
               });
             } else {
               addNewCard(parsedData.text, parsedData.sentence);
@@ -112,7 +112,7 @@ export const useMessageHandler = () => {
       executeQueueActions,
       openSystemTranslator,
       addNewCard,
-      updateWordTag,
+      updateWordFlag,
       isOverlayVisible,
       setIsOverlayVisible,
     ]

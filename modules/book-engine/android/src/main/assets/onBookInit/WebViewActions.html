@@ -18,8 +18,8 @@
         if (action.fontSize != null) window.setFontSize(action.fontSize);
         if (action.fontFamily != null) window.setFontFamily(action.fontFamily);
         return;
-      case 'updateTag':
-        window.updateTag(action.word, action.noteIds, action.colorCode);
+      case 'updateFlag':
+        window.updateFlag(action.word, action.noteIds, action.colorCode);
         return;
       case 'clearSearch':
         return window.clearSearch();

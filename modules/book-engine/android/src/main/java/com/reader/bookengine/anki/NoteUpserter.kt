@@ -11,7 +11,7 @@ class NoteUpserter(
 ) {
     private val ankiApi = AddContentApi(context)
     private val noteFinder = NoteFinder(context)
-    private val noteTagger = NoteTagger(context, freqDatabase)
+    private val cardFlagger = CardFlagger(context)
     private val fieldMapper = FieldArrayMapper(context, AnkiAudioHelper(context))
     private val cardSuspender = CardSuspender(context)
 
@@ -27,15 +27,12 @@ class NoteUpserter(
         val word = fields["word"] ?: throw Exception("Word field is missing")
         val modelId = (mapping["modalId"] as? String)?.toLong() ?: throw Exception("modalId is missing")
 
-        val tier = freqDatabase?.getFrequencyTier(word) ?: "VeryRare"
-
         val existing = noteFinder.findByModelId(modelId, word)
         return if (existing != null) {
-            retagPair(existing.id, word, deckId, tier, mapping, mirroredMapping, isTwoSided)
+            flagPair(existing.id, word, deckId, mapping, mirroredMapping, isTwoSided)
         } else {
             createPair(
                 word,
-                tier,
                 deckId,
                 modelId,
                 fields,
@@ -48,45 +45,40 @@ class NoteUpserter(
         }
     }
 
-    private fun retagPair(
+    private fun flagPair(
         noteId: Long,
         word: String,
         deckId: Long,
-        tier: String,
         mapping: Map<String, Any?>,
         mirroredMapping: Map<String, Any?>,
         isTwoSided: Boolean,
     ): List<Long> {
-        val tags = arrayOf("Lookups_1", tier)
-        val updatedIds = mutableListOf<Long>()
+        val flaggedIds = mutableListOf<Long>()
 
-        retag(noteId, tags, mapping, mirroredMapping, tier, updatedIds)
+        flagNote(noteId, mapping, mirroredMapping, flaggedIds)
 
         if (isTwoSided) {
             val mirroredId = noteFinder.findMirrored(word, deckId, mapping, mirroredMapping)
             if (mirroredId != null && mirroredId != noteId) {
-                retag(mirroredId, tags, mapping, mirroredMapping, tier, updatedIds)
+                flagNote(mirroredId, mapping, mirroredMapping, flaggedIds)
             }
         }
-        return updatedIds
+        return flaggedIds
     }
 
-    private fun retag(
+    private fun flagNote(
         noteId: Long,
-        tags: Array<String>,
         mapping: Map<String, Any?>,
         mirroredMapping: Map<String, Any?>,
-        tier: String,
-        updatedIds: MutableList<Long>,
+        flaggedIds: MutableList<Long>,
     ) {
-        val (word, colorCode) = noteTagger.updateNoteTags(noteId, tags, mapping, mirroredMapping, tier)
-        updatedIds.add(noteId)
+        val (word, colorCode) = cardFlagger.updateFlag(noteId, NEW_FLAG, mapping, mirroredMapping)
+        flaggedIds.add(noteId)
         if (word.isNotEmpty()) upsertToDictionary(word, longArrayOf(noteId), colorCode)
     }
 
     private suspend fun createPair(
         word: String,
-        tier: String,
         deckId: Long,
         modelId: Long,
         fields: Map<String, String>,
@@ -97,7 +89,8 @@ class NoteUpserter(
         autoSuspend: Boolean,
     ): List<Long> {
         val noteFields = buildNoteFields(fields, word)
-        val tags = setOf("Lookups_1", tier)
+        val tier = freqDatabase?.getFrequencyTier(word) ?: "VeryRare"
+        val tags = setOf(tier)
 
         val mainId =
             ankiApi.addNote(modelId, deckId, fieldMapper.convertFieldsToArray(noteFields, mapping, audioLang), tags)
@@ -114,9 +107,11 @@ class NoteUpserter(
             createdIds.add(mirroredId)
         }
 
+        for (noteId in createdIds) cardFlagger.setFlag(noteId, NEW_FLAG)
+
         if (autoSuspend) cardSuspender.suspendCardsOfNotes(createdIds)
 
-        upsertToDictionary(word, createdIds.toLongArray(), 1)
+        upsertToDictionary(word, createdIds.toLongArray(), NEW_FLAG)
         return createdIds
     }
 
@@ -132,5 +127,9 @@ class NoteUpserter(
             this["word"] = word
             this["examples"] = combinedExamples
         }
+    }
+
+    companion object {
+        private const val NEW_FLAG = 1
     }
 }

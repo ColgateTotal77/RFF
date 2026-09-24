@@ -2,7 +2,7 @@ package com.reader.bookengine
 
 import android.net.Uri
 import com.ichi2.anki.api.AddContentApi
-import com.reader.bookengine.anki.NoteTagger
+import com.reader.bookengine.anki.CardFlagger
 import com.reader.bookengine.anki.NoteUpserter
 import com.reader.bookengine.database.FrequencyDatabase
 import expo.modules.kotlin.functions.Coroutine
@@ -129,16 +129,16 @@ class AnkiModule : Module() {
                     }
                 }
 
-            AsyncFunction("updateNoteTags") Coroutine
-                { noteIds: LongArray, newTags: Array<String>, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
+            AsyncFunction("updateFlag") Coroutine
+                { noteIds: LongArray, flag: Int, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
                     withContext(Dispatchers.IO) {
                         if (noteIds.isEmpty()) return@withContext
 
-                        val noteTagger = NoteTagger(moduleContext, freqDatabase)
-                        val bestTier = noteTagger.getBestFrequencyTier(noteIds, mapping, mirroredMapping)
+                        val clampedFlag = flag.coerceIn(0, 7)
+                        val cardFlagger = CardFlagger(moduleContext)
 
                         for (noteId in noteIds) {
-                            val (word, colorCode) = noteTagger.updateNoteTags(noteId, newTags, mapping, mirroredMapping, bestTier)
+                            val (word, colorCode) = cardFlagger.updateFlag(noteId, clampedFlag, mapping, mirroredMapping)
 
                             if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
                         }

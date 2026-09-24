@@ -9,7 +9,7 @@ export type WebViewAction =
   | { type: 'clearSearch' }
   | { type: 'setTheme'; theme: Theme }
   | { type: 'updateFont'; fontSize?: number; fontFamily?: string }
-  | { type: 'updateTag'; word: string | string[] | null; noteIds: string; colorCode: string };
+  | { type: 'updateFlag'; word: string | string[] | null; noteIds: string; colorCode: string };
 
 type Store = {
   isWebViewReady: boolean;

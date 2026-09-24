@@ -7,7 +7,7 @@ import { Toast } from 'components/ui/Toast';
 import { useTranslation } from 'react-i18next';
 import { bookLanguageToLocaleTag } from 'lib/langHelper';
 
-interface UpdateWordTag {
+interface UpdateWordFlag {
   noteIds: string;
   colorCode: string;
 }
@@ -28,7 +28,7 @@ export const useWordAction = () => {
     try {
       executeImmediateActions([
         {
-          type: 'updateTag',
+          type: 'updateFlag',
           word: text,
           noteIds: '',
           colorCode: '-1',
@@ -67,7 +67,7 @@ export const useWordAction = () => {
         const noteIdsString = JSON.stringify(noteIdsArray);
         executeImmediateActions([
           {
-            type: 'updateTag',
+            type: 'updateFlag',
             word: metadata?.wordForms || text,
             noteIds: noteIdsString,
             colorCode: '1',
@@ -79,7 +79,7 @@ export const useWordAction = () => {
       Toast.show(t('failedToAddCard'), 'error');
       executeImmediateActions([
         {
-          type: 'updateTag',
+          type: 'updateFlag',
           word: text,
           noteIds: '',
           colorCode: 'remove',
@@ -88,7 +88,7 @@ export const useWordAction = () => {
     }
   };
 
-  const updateWordTag = async ({ colorCode, noteIds }: UpdateWordTag) => {
+  const updateWordFlag = async ({ colorCode, noteIds }: UpdateWordFlag) => {
     const bookSettings = getBookSettings();
 
     if (!bookSettings.ankiDeckId || !bookSettings.ankiModelId) {
@@ -96,19 +96,15 @@ export const useWordAction = () => {
       return;
     }
 
-    if (Number(colorCode) > 8) return;
+    const flag = Number(colorCode);
+    if (flag < 0 || flag > 7) return;
     try {
       const idsArray = JSON.parse(noteIds);
 
-      Anki.updateNoteTags(
-        idsArray,
-        [`Lookups_${colorCode}`, 'New'],
-        bookSettings.fieldMapping,
-        bookSettings.mirroredFieldMapping
-      );
+      Anki.updateFlag(idsArray, flag, bookSettings.fieldMapping, bookSettings.mirroredFieldMapping);
       executeImmediateActions([
         {
-          type: 'updateTag',
+          type: 'updateFlag',
           word: null,
           noteIds: noteIds,
           colorCode: colorCode,
@@ -140,7 +136,7 @@ export const useWordAction = () => {
       await Anki.deleteNote(idsArray);
       executeImmediateActions([
         {
-          type: 'updateTag',
+          type: 'updateFlag',
           word,
           noteIds: noteIds,
           colorCode: 'remove',
@@ -152,7 +148,7 @@ export const useWordAction = () => {
     }
   };
 
-  return { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator, deleteNote };
+  return { addNewCard, updateWordFlag, copyToClipboard, openSystemTranslator, deleteNote };
 };
 
 const formatExamples = (examples: string[]) => {

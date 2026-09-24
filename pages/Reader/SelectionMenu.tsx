@@ -18,7 +18,7 @@ interface Props {
 
 export const SelectionMenu = ({ selectionMenu }: Props) => {
   const { t } = useTranslation('translation', { keyPrefix: 'reader.selectionMenu' });
-  const { addNewCard, updateWordTag, copyToClipboard, openSystemTranslator, deleteNote } =
+  const { addNewCard, updateWordFlag, copyToClipboard, openSystemTranslator, deleteNote } =
     useWordAction();
   const closeMenu = useTempStore((state) => state.closeSelectionMenu);
   const { width: screenWidth } = Dimensions.get('window');
@@ -32,9 +32,9 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
 
   const onUpdateTagPress = () => {
     if (selectionMenu.colorCode && selectionMenu.colorCode !== '-1') {
-      updateWordTag({
+      updateWordFlag({
         noteIds: selectionMenu.noteIds!,
-        colorCode: String(Number(selectionMenu.colorCode) + 1),
+        colorCode: String(Math.min(Number(selectionMenu.colorCode) + 1, 7)),
       });
     }
     closeMenu();
@@ -42,7 +42,7 @@ export const SelectionMenu = ({ selectionMenu }: Props) => {
 
   const onDecreaseTagPress = () => {
     if (selectionMenu.colorCode && selectionMenu.colorCode !== '-1') {
-      updateWordTag({
+      updateWordFlag({
         noteIds: selectionMenu.noteIds!,
         colorCode: String(Number(selectionMenu.colorCode) - 1),
       });

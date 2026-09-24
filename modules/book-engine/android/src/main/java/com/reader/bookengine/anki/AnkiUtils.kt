@@ -8,8 +8,6 @@ data class ParsedNoteFields(
 object AnkiUtils {
     const val FIELD_SEPARATOR = "\u001F"
 
-    private val LOOKUPS_REGEX = Regex("Lookups_([1-8])")
-
     private val ANKI_SEARCH_SPECIAL = Regex("""[\\"*_]""")
 
     fun escapeAnkiSearchTerm(term: String): String = term.replace(ANKI_SEARCH_SPECIAL) { "\\${it.value}" }
@@ -25,13 +23,6 @@ object AnkiUtils {
         mapping: Map<String, Any?>,
         mirroredMapping: Map<String, Any?>,
     ): String = parseNote(flds, mapping, mirroredMapping)?.front ?: ""
-
-    fun parseColorCode(tagsStr: String): Int =
-        LOOKUPS_REGEX
-            .find(tagsStr)
-            ?.groupValues
-            ?.get(1)
-            ?.toInt() ?: 0
 
     private fun parseNoteFields(
         flds: String,

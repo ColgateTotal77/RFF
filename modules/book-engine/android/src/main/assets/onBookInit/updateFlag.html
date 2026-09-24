@@ -1,6 +1,6 @@
 <script>
-  window.updateTag = function (words, noteIdsString, colorCode) {
-    window.log(`updateTag: words=${words}, noteIds=${noteIdsString}, colorCode=${colorCode}`);
+  window.updateFlag = function (words, noteIdsString, colorCode) {
+    window.log(`updateFlag: words=${words}, noteIds=${noteIdsString}, colorCode=${colorCode}`);
 
     const wordArray = Array.isArray(words) ? words : [words];
     const targetWords = new Set(
@@ -85,6 +85,6 @@
       }
     });
 
-    window.log('updateTag: completed');
+    window.log('updateFlag: completed');
   };
 </script>

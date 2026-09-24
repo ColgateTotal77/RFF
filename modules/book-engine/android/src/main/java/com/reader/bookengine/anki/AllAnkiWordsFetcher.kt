@@ -23,11 +23,13 @@ class AllAnkiWordsFetcher(
             val noteCursor =
                 resolver.query(
                     notesUri,
-                    arrayOf("_id", "flds", "tags"),
+                    arrayOf("_id", "flds"),
                     ankiSearchQuery,
                     null,
                     null,
                 )
+
+            val flagsByNoteId = CardFlagger(context).getFlagsByNoteId(deckIdString)
 
             data class ParsedNote(
                 val id: Long,
@@ -41,7 +43,6 @@ class AllAnkiWordsFetcher(
             noteCursor?.use { cursor ->
                 val idIndex = cursor.getColumnIndex("_id")
                 val fldsIndex = cursor.getColumnIndex("flds")
-                val tagsIndex = cursor.getColumnIndex("tags")
 
                 while (cursor.moveToNext()) {
                     val flds = cursor.getString(fldsIndex)
@@ -51,9 +52,8 @@ class AllAnkiWordsFetcher(
                     val frontLower = parsed.front.lowercase()
 
                     val noteId = cursor.getLong(idIndex)
-                    val tagsStr = cursor.getString(tagsIndex) ?: ""
 
-                    val colorCode = if (tagsStr.contains("Lookups_")) AnkiUtils.parseColorCode(tagsStr) else 0
+                    val colorCode = flagsByNoteId[noteId] ?: 0
 
                     parsedNotes.add(ParsedNote(noteId, frontLower, colorCode))
                 }
