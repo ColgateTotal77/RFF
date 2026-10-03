@@ -206,6 +206,7 @@
     "ankiPermissionDenied": "Permission not granted. Allow Anki access in Settings to connect.",
     "failedToLoadReader": "Failed to load reader",
     "configureAnkiDeck": "Configure Anki deck in settings",
+    "changeTargetLang": "The book's language matches your target language. Change the target language in book settings to create Anki cards.",
     "failedToAddCard": "Failed to add card",
     "failedToUpdateCard": "Failed to update card",
     "failedToOpenTranslator": "Failed to open translator",

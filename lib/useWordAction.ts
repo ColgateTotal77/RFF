@@ -25,6 +25,11 @@ export const useWordAction = () => {
       return;
     }
 
+    if(bookSettings.bookLang === bookSettings.targetLang) {
+      Toast.show(t('changeTargetLang'), 'error');
+      return;
+    }
+
     try {
       executeImmediateActions([
         {
