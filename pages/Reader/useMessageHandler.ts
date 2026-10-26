@@ -68,6 +68,7 @@ export const useMessageHandler = () => {
           case 'QUEUE_ACTIONS_COMPLETE':
             setIsWebViewReady(true);
             setGlobalLoading({ isLoading: false, message: '' });
+            useBookStore.setState({ isBookOpening: false });
             break;
 
           case 'ONE_TAP':

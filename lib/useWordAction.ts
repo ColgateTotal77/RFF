@@ -65,8 +65,11 @@ export const useWordAction = () => {
         bookSettings.mirroredFieldMapping,
         isTwoSided,
         bookLanguageToLocaleTag(bookSettings.bookLang),
-        bookSettings.autoSuspendNewCards
+        bookSettings.autoSuspendNewCards,
+        bookSettings.bookLang
       );
+
+      console.log(JSON.stringify(metadata?.wordForms));
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);

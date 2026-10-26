@@ -45,6 +45,7 @@ export const extractHeadingToc = (chapters: SourceChapter[]): TocItem[] => {
       level,
       parentId,
       anchorId: heading.anchorId,
+      blockId: -1
     };
   });
 };

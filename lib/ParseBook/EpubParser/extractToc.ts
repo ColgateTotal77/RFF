@@ -44,7 +44,7 @@ const parseNcxNavPoints = (
     const [baseHref, anchorId] = chapterSrc.split('#');
     const chapterId = mapHrefChapterId[baseHref];
 
-    if (chapterId !== undefined && chapterId !== null) toc.push({ id: pointId, title, chapterId, level, parentId, anchorId });
+    if (chapterId !== undefined && chapterId !== null) toc.push({ id: pointId, title, chapterId, level, parentId, anchorId, blockId: -1 });
 
     const children = point.navPoint;
     if (children) {

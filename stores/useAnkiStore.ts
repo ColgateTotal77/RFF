@@ -97,7 +97,7 @@ export const useAnkiStore = create<Store>()((set, get) => ({
       isTwoSided: false,
       fieldMappings: updateNestedMapping(settings.fieldMappings, key, {
         modalId: modelId,
-        fieldCount: 3,
+        fieldCount: 2,
         word: 0,
         translation: 1,
       }),

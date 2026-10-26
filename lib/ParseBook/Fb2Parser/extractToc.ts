@@ -18,4 +18,5 @@ export const extractToc = (sections: Fb2Section[]): TocItem[] =>
       chapterId: id,
       level,
       parentId: parentId !== undefined ? `fb2-${parentId}` : undefined,
+      blockId: -1,
     }));

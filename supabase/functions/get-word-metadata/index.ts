@@ -37,6 +37,8 @@ Deno.serve(async (req) => {
 
     const { word, sentence, word_lang_code, translation_lang_code } = await req.json();
 
+    if (word_lang_code === translation_lang_code) return jsonResponse({ error: 'Same-language generation not allowed' }, 400);
+
     const inputWord = word.trim().toLowerCase();
 
     if (inputWord.length === 0 || inputWord.length > 50) {
@@ -59,8 +61,8 @@ Deno.serve(async (req) => {
     let lemma;
     try {
       lemma = await getLemma(word, fromLang, sentence, deepseekKey);
-    } catch (aiError) {
-      console.error('[Error] AI provider failed (lemma):', aiError);
+    } catch (e) {
+      console.error('[Error] AI provider failed (lemma):', e);
       return jsonResponse({ error: 'Failed to process word via AI provider' }, 502);
     }
 
@@ -73,12 +75,15 @@ Deno.serve(async (req) => {
     }
 
     let cardData;
-    try {
-      cardData = await getCardData(lemma, fromLang, toLang, deepseekKey);
-    } catch (aiError) {
-      console.error('[Error] AI provider failed:', aiError);
-      return jsonResponse({ error: 'Failed to process word via AI provider' }, 502);
+    for (let i = 0; i < 3; i++) {
+      try {
+          cardData = await getCardData(lemma, fromLang, toLang, deepseekKey);
+          break;
+      } catch (e) {
+        console.error('[Error] AI provider failed (card):', e);
+      }
     }
+    if (!cardData) return jsonResponse({ error: 'Failed to process word via AI provider' }, 502);
 
     const newWord = await saveCardInDB(supabase, cardData, word_lang_code, translation_lang_code);
 

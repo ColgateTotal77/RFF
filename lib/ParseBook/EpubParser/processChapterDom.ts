@@ -57,7 +57,7 @@ export const processChapterDom = ({
 
       const matchingChapterId = mapHrefChapterId[normalizedResolvedFile];
 
-      if (matchingChapterId) {
+      if (matchingChapterId !== undefined) {
         return fragmentId
           ? `chapter://${matchingChapterId}#${fragmentId}`
           : `chapter://${matchingChapterId}`;

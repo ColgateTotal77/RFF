@@ -130,7 +130,7 @@ export const useProcessBookLinks = () => {
     }
 
     const blockId = chapter.anchors[fragmentId];
-    if (!blockId) {
+    if (blockId === undefined) {
       Toast.show(i18n.t('toast.brokenBookLink'), 'error');
       return;
     }

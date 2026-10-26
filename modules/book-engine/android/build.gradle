@@ -40,6 +40,10 @@ android {
     def supabaseUrl = System.getenv("EXPO_PUBLIC_SUPABASE_URL") ?: ""
     def supabaseKey = System.getenv("EXPO_PUBLIC_SUPABASE_ANON_KEY") ?: ""
 
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) {
+      throw new GradleException("EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set")
+    }
+
     buildConfigField "String", "SUPABASE_URL", "\"${supabaseUrl}\""
     buildConfigField "String", "SUPABASE_ANON_KEY", "\"${supabaseKey}\""
   }

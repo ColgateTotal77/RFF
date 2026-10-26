@@ -60,6 +60,44 @@ Java_com_reader_bookengine_AnkiModule_upsertWordToAnkiDictionary(
 }
 
 JNIEXPORT void JNICALL
+Java_com_reader_bookengine_AnkiModule_upsertWordsToAnkiDictionary(
+        JNIEnv* env, jobject thiz, jobjectArray jwords, jlongArray noteIds, jint colorCode) {
+
+    if (jwords == NULL) return;
+
+    jsize word_count = (*env)->GetArrayLength(env, jwords);
+    jsize note_count = (*env)->GetArrayLength(env, noteIds);
+    jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
+
+    dict_wrlock();
+
+    for (jsize i = 0; i < word_count; i++) {
+        jstring jword = (jstring) (*env)->GetObjectArrayElement(env, jwords, i);
+        if (jword == NULL) continue;
+
+        const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
+        if (word_str != NULL) {
+
+            bool inserted = global_dictionary != NULL &&
+                            trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
+
+            if (!inserted) {
+                __android_log_print(ANDROID_LOG_WARN, "BookEngine",
+                                    "upsertWords: insert failed for '%s'", word_str);
+            }
+
+            (*env)->ReleaseStringUTFChars(env, jword, word_str);
+        }
+
+        (*env)->DeleteLocalRef(env, jword);
+    }
+
+    dict_unlock();
+
+    (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL
 Java_com_reader_bookengine_AnkiModule_removeNotesFromAnkiDictionary(
         JNIEnv* env, jobject thiz, jlongArray noteIds) {
 

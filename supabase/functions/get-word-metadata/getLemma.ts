@@ -19,7 +19,7 @@ export const getLemma = async (
     'deepseek-v4-flash'
   );
 
-  return flatData.lemma.trim();
+  return flatData.lemma.toLowerCase().trim();
 };
 
 const systemPrompt = `You are a multilingual lemmatizer for a dictionary backend.

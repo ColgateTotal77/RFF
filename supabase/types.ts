@@ -88,7 +88,6 @@ export type Database = {
           created_at: string
           definition: string
           examples: Json | null
-          generated_from: string | null
           id: number
           synonyms: Json | null
           translate_lang_code: string
@@ -101,7 +100,6 @@ export type Database = {
           created_at?: string
           definition?: string
           examples?: Json | null
-          generated_from?: string | null
           id?: number
           synonyms?: Json | null
           translate_lang_code: string
@@ -114,7 +112,6 @@ export type Database = {
           created_at?: string
           definition?: string
           examples?: Json | null
-          generated_from?: string | null
           id?: number
           synonyms?: Json | null
           translate_lang_code?: string

@@ -58,6 +58,12 @@ class BookEngineModule : Module() {
 
             freeAnkiDictionary()
 
+            val frequencyDatabase = AppDependencies.getFrequencyDatabase(moduleContext)
+            if (frequencyDatabase.ensureDownloaded(langCode) && frequencyDatabase.open(langCode)) freqDatabase = frequencyDatabase
+            else freqDatabase = null
+
+            ankiModule.setFrequencyDatabase(freqDatabase)
+
             val ankiWordsFetcher = AllAnkiWordsFetcher(moduleContext)
             val ankiData = ankiWordsFetcher.getAllAnkiWords(deckId, mapping, mirroredMapping)
             if (ankiData.words.isEmpty()) {
@@ -144,16 +150,6 @@ class BookEngineModule : Module() {
 
             val t3 = System.currentTimeMillis()
             android.util.Log.d("BookEngine", "Load Anki Dictionary in C tree took: ${t3 - t2} ms")
-
-            val t4 = System.currentTimeMillis()
-
-            freqDatabase = AppDependencies.getFrequencyDatabase(moduleContext)
-            freqDatabase?.ensureDownloaded(langCode)
-            freqDatabase?.open(langCode)
-            ankiModule.setFrequencyDatabase(freqDatabase)
-
-            val t5 = System.currentTimeMillis()
-            android.util.Log.d("BookEngine", "Freq DB open took: ${t5 - t4} ms")
 
             return true
         } catch (e: Exception) {

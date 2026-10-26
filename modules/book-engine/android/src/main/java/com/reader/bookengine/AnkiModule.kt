@@ -34,6 +34,12 @@ class AnkiModule : Module() {
         colorCode: Int,
     )
 
+    private external fun upsertWordsToAnkiDictionary(
+        words: Array<String>,
+        noteIds: LongArray,
+        colorCode: Int,
+    )
+
     private external fun removeNotesFromAnkiDictionary(noteIds: LongArray)
 
     override fun definition() =
@@ -110,10 +116,11 @@ class AnkiModule : Module() {
                     isTwoSided: Boolean,
                     audioLang: String,
                     autoSuspend: Boolean,
+                    targetLang: String
                     ->
                     withContext(Dispatchers.IO) {
                         try {
-                            NoteUpserter(moduleContext, freqDatabase, ::upsertWordToAnkiDictionary)
+                            NoteUpserter(moduleContext, freqDatabase, ::upsertWordToAnkiDictionary, ::upsertWordsToAnkiDictionary)
                                 .addOrUpdate(
                                     deckIdString.toLong(),
                                     fields,
@@ -122,6 +129,7 @@ class AnkiModule : Module() {
                                     isTwoSided,
                                     audioLang,
                                     autoSuspend,
+                                    targetLang,
                                 )
                         } catch (e: Exception) {
                             throw Exception("Failed to add/update Anki note: ${e.message}", e)

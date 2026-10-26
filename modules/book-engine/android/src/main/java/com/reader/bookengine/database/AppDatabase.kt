@@ -20,6 +20,12 @@ interface WordFormDao {
         langCode: String,
         lemmas: List<String>,
     ): List<WordFormEntity>
+
+    @Query("SELECT input_word FROM word_forms WHERE word_lang_code = :langCode AND lemma == :lemma")
+    suspend fun getFormsForLemma(
+        langCode: String,
+        lemma: String,
+    ): List<String>
 }
 
 @Entity(tableName = "words")

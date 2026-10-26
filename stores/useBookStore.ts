@@ -30,6 +30,7 @@ type Store = {
   books: Book[];
   currentBook: Book | null;
   currentCTree: CurrentCTree | null;
+  isBookOpening: boolean;
 
   setCurrentCTree: (treeData: CurrentCTree) => void;
   jumpToBlock: (currentBlock: number) => void;
@@ -58,6 +59,7 @@ export const useBookStore = create<Store>()(
       currentBook: null,
       books: [],
       currentCTree: null,
+      isBookOpening: false,
 
       setCurrentCTree: (treeData: CurrentCTree) =>
         set((state) => ({
@@ -293,20 +295,20 @@ export const useBookStore = create<Store>()(
           ankiDeckId,
           ankiModelId,
           mirroredAnkiModelId,
-          isTwoSided: currentBookSettings.isTwoSided || settings.isTwoSided,
+          isTwoSided: currentBookSettings.isTwoSided ?? settings.isTwoSided,
           autoSuspendNewCards:
-            currentBookSettings.autoSuspendNewCards || settings.autoSuspendNewCards,
+            currentBookSettings.autoSuspendNewCards ?? settings.autoSuspendNewCards,
           fieldMapping: deepMerge(
-            settings.fieldMappings?.[`${ankiDeckId}:${ankiModelId}`] || {},
-            currentBookSettings.fieldMapping || {}
+            settings.fieldMappings?.[`${ankiDeckId}:${ankiModelId}`] ?? {},
+            currentBookSettings.fieldMapping ?? {}
           ),
           mirroredFieldMapping: deepMerge(
-            settings.mirroredFieldMappings?.[`${ankiDeckId}:${mirroredAnkiModelId}`] || {},
-            currentBookSettings.mirroredFieldMapping || {}
+            settings.mirroredFieldMappings?.[`${ankiDeckId}:${mirroredAnkiModelId}`] ?? {},
+            currentBookSettings.mirroredFieldMapping ?? {}
           ),
           font: {
-            fontFamily: currentBookSettings?.font?.fontFamily || settings.font.fontFamily,
-            fontSize: currentBookSettings?.font?.fontSize || settings.font.fontSize,
+            fontFamily: currentBookSettings?.font?.fontFamily ?? settings.font.fontFamily,
+            fontSize: currentBookSettings?.font?.fontSize ?? settings.font.fontSize,
           },
         };
       },

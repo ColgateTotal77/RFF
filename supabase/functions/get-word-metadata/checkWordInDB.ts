@@ -1,7 +1,4 @@
-import { Database } from '../../types.ts';
 import { getWordForms, Supabase } from './utils.ts';
-
-type WordForm = Database['public']['Tables']['word_forms']['Row'];
 
 export const checkWordInDB = async (
   supabase: Supabase,
@@ -29,7 +26,7 @@ export const checkWordInDB = async (
       wordForms: [
         cachedWord.word,
         ...(wordForms
-          ?.map((w: WordForm) => w.input_word)
+          ?.map((w) => w.input_word)
           .filter((w: string) => w !== cachedWord.word.toLowerCase()) || []),
       ],
     };

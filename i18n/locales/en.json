@@ -201,6 +201,7 @@
   "toast": {
     "failedToLoadBook": "Failed to load book",
     "failedToOpenBook": "Failed to open book",
+    "bookAlreadyOpening": "A book is already opening. Please wait.",
     "failedToRequestAnkiPermission": "Failed to request Anki permission",
     "ankiDroidNotInstalled": "AnkiDroid is needed to grant permission, tap to install it first",
     "ankiPermissionDenied": "Permission not granted. Allow Anki access in Settings to connect.",

@@ -3,17 +3,20 @@ package com.reader.bookengine.anki
 import android.content.Context
 import com.ichi2.anki.api.AddContentApi
 import com.reader.bookengine.database.FrequencyDatabase
+import com.reader.bookengine.database.AppDependencies
 
 class NoteUpserter(
     context: Context,
     private val freqDatabase: FrequencyDatabase?,
-    private val upsertToDictionary: (word: String, noteIds: LongArray, colorCode: Int) -> Unit,
+    private val upsertWordToDictionary: (word: String, noteIds: LongArray, colorCode: Int) -> Unit,
+    private val upsertWordsToDictionary: (words: Array<String>, noteIds: LongArray, colorCode: Int) -> Unit,
 ) {
     private val ankiApi = AddContentApi(context)
     private val noteFinder = NoteFinder(context)
     private val cardFlagger = CardFlagger(context)
     private val fieldMapper = FieldArrayMapper(context, AnkiAudioHelper(context))
     private val cardSuspender = CardSuspender(context)
+    private val myAppDatabase = AppDependencies.getDatabase(context)
 
     suspend fun addOrUpdate(
         deckId: Long,
@@ -23,6 +26,7 @@ class NoteUpserter(
         isTwoSided: Boolean,
         audioLang: String,
         autoSuspend: Boolean,
+        targetLang: String,
     ): List<Long> {
         val word = fields["word"] ?: throw Exception("Word field is missing")
         val modelId = (mapping["modalId"] as? String)?.toLong() ?: throw Exception("modalId is missing")
@@ -41,6 +45,7 @@ class NoteUpserter(
                 isTwoSided,
                 audioLang,
                 autoSuspend,
+                targetLang,
             )
         }
     }
@@ -74,7 +79,7 @@ class NoteUpserter(
     ) {
         val (word, colorCode) = cardFlagger.updateFlag(noteId, NEW_FLAG, mapping, mirroredMapping)
         flaggedIds.add(noteId)
-        if (word.isNotEmpty()) upsertToDictionary(word, longArrayOf(noteId), colorCode)
+        if (word.isNotEmpty()) upsertWordToDictionary(word, longArrayOf(noteId), colorCode)
     }
 
     private suspend fun createPair(
@@ -87,9 +92,10 @@ class NoteUpserter(
         isTwoSided: Boolean,
         audioLang: String,
         autoSuspend: Boolean,
+        targetLang: String
     ): List<Long> {
         val noteFields = buildNoteFields(fields, word)
-        val tier = freqDatabase?.getFrequencyTier(word) ?: "VeryRare"
+        val tier = freqDatabase?.getFrequencyTier(word) ?: "Unknown"
         val tags = setOf(tier)
 
         val mainId =
@@ -111,7 +117,9 @@ class NoteUpserter(
 
         if (autoSuspend) cardSuspender.suspendCardsOfNotes(createdIds)
 
-        upsertToDictionary(word, createdIds.toLongArray(), NEW_FLAG)
+        val wordsToDictionary = myAppDatabase.wordFormDao().getFormsForLemma(targetLang, word)
+
+        upsertWordsToDictionary(wordsToDictionary.toTypedArray(), createdIds.toLongArray(), NEW_FLAG)
         return createdIds
     }
 

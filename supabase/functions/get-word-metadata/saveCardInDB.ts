@@ -21,7 +21,6 @@ export const saveCardInDB = async (
         examples: cardData.examples,
         definition: cardData.definition,
         synonyms: cardData.synonyms,
-        generated_from: cardData.generatedFrom,
       },
       { onConflict: 'word, word_lang_code, translate_lang_code' }
     )

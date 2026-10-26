@@ -201,6 +201,7 @@
   "toast": {
     "failedToLoadBook": "Не удалось загрузить книгу",
     "failedToOpenBook": "Не удалось открыть книгу",
+    "bookAlreadyOpening": "Книга уже открывается. Подождите.",
     "failedToRequestAnkiPermission": "Не удалось запросить разрешение Anki",
     "ankiDroidNotInstalled": "Для выдачи разрешения нужен AnkiDroid, нажмите, чтобы установить",
     "ankiPermissionDenied": "Разрешение не выдано. Разрешите доступ к Anki в настройках, чтобы подключиться.",

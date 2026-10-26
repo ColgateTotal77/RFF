@@ -3,7 +3,8 @@ export const callDeepseek = async <T>(
   userPrompt: string,
   apiKey: string,
   model: string,
-  temperature = 0.2
+  temperature = 0.2,
+  maxTokens?: number
 ): Promise<T> => {
   const response = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
@@ -19,6 +20,7 @@ export const callDeepseek = async <T>(
       ],
       response_format: { type: 'json_object' },
       temperature,
+      max_tokens: maxTokens,
       thinking: { type: 'disabled' },
     }),
   });
@@ -31,7 +33,8 @@ export const callDeepseek = async <T>(
       JSON.stringify(
         {
           total_prompt_tokens: data.usage?.prompt_tokens,
-          cached_tokens: data.usage?.prompt_tokens_details?.cached_tokens,
+          cached_tokens:
+            data.usage?.prompt_tokens_details?.cached_tokens ?? data.usage?.prompt_cache_hit_tokens,
           completion_tokens: data.usage?.completion_tokens,
           reasoning_tokens: data.usage?.completion_tokens_details?.reasoning_tokens,
         },
@@ -48,5 +51,11 @@ export const callDeepseek = async <T>(
 
   logTokenUsage('Token Usage');
 
-  return JSON.parse(data.choices[0].message.content) as T;
+  const choice = data.choices?.[0];
+  if (choice?.finish_reason === 'length')
+    throw new Error('DeepSeek completion-token limit reached.');
+  if (typeof choice?.message?.content !== 'string') {
+    throw new Error('DeepSeek returned no final content.');
+  }
+  return JSON.parse(choice.message.content) as T;
 };

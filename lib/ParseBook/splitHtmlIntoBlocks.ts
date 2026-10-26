@@ -114,6 +114,6 @@ export const splitHtmlIntoBlocks = (html: string, globalBlockId: number): Respon
   }
 
   return blocks.length > 0
-    ? { blocks, finalBlockId: localGlobalBlockId }
+    ? { blocks, finalBlockId: globalBlockId + blocks.length - 1 }
     : { blocks: [html], finalBlockId: globalBlockId };
 };

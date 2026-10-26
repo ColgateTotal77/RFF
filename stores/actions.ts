@@ -117,20 +117,26 @@ export const loadWindow = async (targetBlockId: number, blockScrollPercent: numb
 };
 
 export const openBook = async (basePath: string) => {
-  const { currentBook, books, closeBook, getBookSettings, isAnkiConfigStale } =
+  const { currentBook, books, isBookOpening, closeBook, getBookSettings, isAnkiConfigStale } =
     useBookStore.getState();
 
   const bookToOpen = books.find((book) => book.basePath === basePath);
   if (!bookToOpen) return;
 
-  const bookSettings = getBookSettings(bookToOpen);
-  const configStale = isAnkiConfigStale(bookToOpen);
-  const needsDictionaryReload = !!bookSettings.ankiDeckId && configStale;
-  const needsBookReload = currentBook?.basePath !== bookToOpen.basePath;
-
-  await BookEngine.addNewLangForSync(bookSettings.bookLang);
+  if (isBookOpening) {
+    Toast.show(i18n.t('toast.bookAlreadyOpening', ), 'error');
+    return;
+  }
+  useBookStore.setState({ isBookOpening: true });
 
   try {
+    const bookSettings = getBookSettings(bookToOpen);
+    const configStale = isAnkiConfigStale(bookToOpen);
+    const needsDictionaryReload = !!bookSettings.ankiDeckId && configStale;
+    const needsBookReload = currentBook?.basePath !== bookToOpen.basePath;
+
+    await BookEngine.addNewLangForSync(bookSettings.bookLang);
+
     if (needsDictionaryReload || needsBookReload) {
       useAppStore
         .getState()
@@ -141,12 +147,7 @@ export const openBook = async (basePath: string) => {
       if (needsDictionaryReload) {
         console.log('Loading Anki dictionary for book');
 
-        useBookStore.getState().setCurrentCTree({
-          langCode: bookSettings.bookLang,
-          deckId: bookSettings.ankiDeckId!,
-          fieldMapping: bookSettings.fieldMapping,
-          mirroredFieldMapping: bookSettings.mirroredFieldMapping,
-        });
+        useBookStore.setState({ currentCTree: null });
 
         await BookEngine.loadAnkiDictionary(
           bookSettings.bookLang,
@@ -154,13 +155,20 @@ export const openBook = async (basePath: string) => {
           bookSettings.fieldMapping,
           bookSettings.mirroredFieldMapping
         );
+
+        useBookStore.getState().setCurrentCTree({
+          langCode: bookSettings.bookLang,
+          deckId: bookSettings.ankiDeckId!,
+          fieldMapping: bookSettings.fieldMapping,
+          mirroredFieldMapping: bookSettings.mirroredFieldMapping,
+        });
       }
 
       console.log('Opening book');
 
       const { loadFieldsInto } = useAnkiStore.getState();
-      loadFieldsInto(bookSettings.ankiModelId!, 'bookFields');
-      loadFieldsInto(bookSettings.mirroredAnkiModelId!, 'bookMirroredFields');
+      loadFieldsInto(bookSettings.ankiModelId, 'bookFields');
+      loadFieldsInto(bookSettings.mirroredAnkiModelId, 'bookMirroredFields');
 
       bookToOpen.mapping = buildBookMapping(bookToOpen);
 
@@ -172,6 +180,7 @@ export const openBook = async (basePath: string) => {
       loadWindow(bookToOpen.currentBlock, bookToOpen.misc.currentBlockScrollPercent);
     } else {
       useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
+      useBookStore.setState({ isBookOpening: false });
     }
 
     useAppStore.getState().navigate('Reader');
@@ -193,14 +202,13 @@ export const openBook = async (basePath: string) => {
     }
   } catch (e) {
     useAppStore.getState().setGlobalLoading({ isLoading: false, message: '' });
+    useBookStore.setState({ isBookOpening: false });
     console.error('❌ Failed to open book:', e);
     Toast.show(i18n.t('toast.failedToOpenBook'), 'error');
   }
 };
 
 export const loadBook = async (uri: string) => {
-  useBookStore.getState().closeBook();
-
   try {
     const targetLang =
       normalizeLanguageCode(useAppStore.getState().settings.targetLang) ?? FALLBACK_BOOK_LANGUAGE;
@@ -226,7 +234,7 @@ export const importBook = async (path: string) => {
   const { setGlobalLoading } = useAppStore.getState();
   try {
     setGlobalLoading({ isLoading: true, message: i18n.t('bookLists.importingBook') });
-    loadBook(path);
+    await loadBook(path);
   } catch (e) {
     console.error('Failed to import book:', e);
     setGlobalLoading({ isLoading: false, message: '' });

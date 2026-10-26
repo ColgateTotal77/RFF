@@ -1,8 +1,7 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { Card, Text, useTheme } from 'react-native-paper';
+import { Card, Text, useTheme, Icon } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
-import { Icon } from 'react-native-paper/src';
 
 const GuideItem = ({
   icon,
