@@ -1,4 +1,4 @@
-import { fetchWordMetadata } from 'lib/supabaseRequests';
+import { fetchWordMetadata, WordMetadataError } from 'lib/supabaseRequests';
 import { Anki, BookEngine } from 'modules/book-engine';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useBookStore } from 'stores/useBookStore';
@@ -25,7 +25,7 @@ export const useWordAction = () => {
       return;
     }
 
-    if(bookSettings.bookLang === bookSettings.targetLang) {
+    if (bookSettings.bookLang === bookSettings.targetLang) {
       Toast.show(t('changeTargetLang'), 'error');
       return;
     }
@@ -34,7 +34,7 @@ export const useWordAction = () => {
       executeImmediateActions([
         {
           type: 'updateFlag',
-          word: text,
+          wordForms: text,
           noteIds: '',
           colorCode: '-1',
         },
@@ -50,12 +50,11 @@ export const useWordAction = () => {
       const isTwoSided = bookSettings.isTwoSided;
 
       const fields = {
-        originalWord: text.toLowerCase(),
-        word: metadata?.word || '',
-        translation: metadata?.translation || '',
-        definition: metadata?.definition || '',
-        synonyms: metadata?.synonyms.join(', ') || '',
-        examples: formatExamples(metadata?.examples ?? []),
+        word: metadata.word,
+        translation: metadata.translation,
+        definition: metadata.definition,
+        synonyms: metadata.synonyms.join(', '),
+        examples: formatExamples(metadata.examples),
       };
 
       const noteIdsArray = await Anki.addNote(
@@ -66,17 +65,15 @@ export const useWordAction = () => {
         isTwoSided,
         bookLanguageToLocaleTag(bookSettings.bookLang),
         bookSettings.autoSuspendNewCards,
-        bookSettings.bookLang
-      );
-
-      console.log(JSON.stringify(metadata?.wordForms));
+        metadata.wordForms,
+    );
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);
         executeImmediateActions([
           {
             type: 'updateFlag',
-            word: metadata?.wordForms || text,
+            wordForms: metadata.wordForms,
             noteIds: noteIdsString,
             colorCode: '1',
           },
@@ -84,11 +81,11 @@ export const useWordAction = () => {
       }
     } catch (error) {
       console.error('Anki error:', error);
-      Toast.show(t('failedToAddCard'), 'error');
+      Toast.show(t(error instanceof WordMetadataError ? error.i18key : 'failedToAddCard'), 'error');
       executeImmediateActions([
         {
           type: 'updateFlag',
-          word: text,
+          wordForms: text,
           noteIds: '',
           colorCode: 'remove',
         },
@@ -109,11 +106,11 @@ export const useWordAction = () => {
     try {
       const idsArray = JSON.parse(noteIds);
 
-      Anki.updateFlag(idsArray, flag, bookSettings.fieldMapping, bookSettings.mirroredFieldMapping);
+      await Anki.updateFlag(idsArray, flag, bookSettings.fieldMapping, bookSettings.mirroredFieldMapping);
       executeImmediateActions([
         {
           type: 'updateFlag',
-          word: null,
+          wordForms: null,
           noteIds: noteIds,
           colorCode: colorCode,
         },
@@ -145,7 +142,7 @@ export const useWordAction = () => {
       executeImmediateActions([
         {
           type: 'updateFlag',
-          word,
+          wordForms: word,
           noteIds: noteIds,
           colorCode: 'remove',
         },

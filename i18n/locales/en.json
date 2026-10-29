@@ -213,7 +213,25 @@
     "failedToOpenTranslator": "Failed to open translator",
     "failedToDeleteNote": "Failed to delete note",
     "brokenBookLink": "This link points to a missing part of the book. Please report this book.",
-    "installTtsVoice": "Tap to install {{lang}} voice, cards have no audio without it"
+    "installTtsVoice": "Tap to install {{lang}} voice, cards have no audio without it",
+    "wordMetadata": {
+      "invalidMethod": "This request method is not supported.",
+      "authRequired": "Could not authenticate to create cards.",
+      "invalidSession": "Your session is invalid or has expired.",
+      "invalidRequest": "The card creation request is invalid.",
+      "invalidWord": "Choose a valid word.",
+      "invalidSentence": "The sentence is too long or contains invalid characters.",
+      "sameLanguage": "The translation language must differ from the book's language.",
+      "unsupportedLanguage": "This language pair is not supported.",
+      "rateLimitMinute": "Too many requests. Please wait a minute.",
+      "generationDisabled": "Card creation is temporarily unavailable.",
+      "generationConcurrentLimit": "Too many cards are being created at once.",
+      "generationHourlyLimit": "Hourly card creation limit reached.",
+      "generationDailyLimit": "Daily card creation limit reached.",
+      "quotaUnavailable": "Card creation is temporarily unavailable.",
+      "aiUnavailable": "The card creation service is temporarily unavailable.",
+      "serverError": "Could not create the card."
+    }
   },
   "settings": {
     "tabAnki": "Anki",

@@ -31,14 +31,20 @@ if (useManagedAndroidSdkVersions) {
   }
 }
 
+def envProperties = new Properties()
+def envFile = rootProject.file('../.env')
+if (envFile.exists()) {
+  envFile.withInputStream { envProperties.load(it) }
+}
+
 android {
   namespace "com.reader.bookengine"
   defaultConfig {
     versionCode 1
     versionName "1.0.0"
 
-    def supabaseUrl = System.getenv("EXPO_PUBLIC_SUPABASE_URL") ?: ""
-    def supabaseKey = System.getenv("EXPO_PUBLIC_SUPABASE_ANON_KEY") ?: ""
+    def supabaseUrl = System.getenv("EXPO_PUBLIC_SUPABASE_URL") ?: envProperties.getProperty("EXPO_PUBLIC_SUPABASE_URL", "")
+    def supabaseKey = System.getenv("EXPO_PUBLIC_SUPABASE_ANON_KEY") ?: envProperties.getProperty("EXPO_PUBLIC_SUPABASE_ANON_KEY", "")
 
     if (!supabaseUrl.trim() || !supabaseKey.trim()) {
       throw new GradleException("EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set")

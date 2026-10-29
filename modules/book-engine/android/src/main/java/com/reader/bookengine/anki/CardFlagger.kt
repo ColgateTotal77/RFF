@@ -15,8 +15,8 @@ class CardFlagger(
     fun setFlag(
         noteId: Long,
         flag: Int,
-    ): Boolean {
-        if (flag !in 0..7) return false
+    ) {
+        require(flag in 0..7) { "Invalid Anki flag: $flag" }
 
         val cardsUri =
             Uri
@@ -30,7 +30,7 @@ class CardFlagger(
                 put(COLUMN_FLAGS, flag)
             }
 
-        return try {
+        try {
             var updated = 0
             queryCardOrds(cardsUri).forEach { ord ->
                 val cardUri =
@@ -40,10 +40,10 @@ class CardFlagger(
                         .build()
                 updated += context.contentResolver.update(cardUri, values, null, null)
             }
-            updated > 0
+            check(updated > 0) { "No cards updated for Anki note $noteId" }
         } catch (e: Exception) {
             android.util.Log.e("BookEngine", "Failed to set flag $flag on note $noteId", e)
-            false
+            throw e
         }
     }
 

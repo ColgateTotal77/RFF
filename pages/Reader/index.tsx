@@ -81,7 +81,7 @@ export const ReaderScreen = () => {
         domStorageEnabled={true}
         allowFileAccess={true}
         allowFileAccessFromFileURLs={true}
-        allowUniversalAccessFromFileURLs={true}
+        allowUniversalAccessFromFileURLs={false}
         textZoom={100}
         setBuiltInZoomControls={false}
         setDisplayZoomControls={false}
@@ -91,7 +91,7 @@ export const ReaderScreen = () => {
         renderToHardwareTextureAndroid={true}
         overScrollMode="never"
         scrollEnabled={true}
-        mixedContentMode="always"
+        mixedContentMode="never"
       />
 
       <Overlay />

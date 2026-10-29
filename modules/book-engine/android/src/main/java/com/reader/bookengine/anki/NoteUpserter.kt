@@ -3,12 +3,10 @@ package com.reader.bookengine.anki
 import android.content.Context
 import com.ichi2.anki.api.AddContentApi
 import com.reader.bookengine.database.FrequencyDatabase
-import com.reader.bookengine.database.AppDependencies
 
 class NoteUpserter(
     context: Context,
     private val freqDatabase: FrequencyDatabase?,
-    private val upsertWordToDictionary: (word: String, noteIds: LongArray, colorCode: Int) -> Unit,
     private val upsertWordsToDictionary: (words: Array<String>, noteIds: LongArray, colorCode: Int) -> Unit,
 ) {
     private val ankiApi = AddContentApi(context)
@@ -16,7 +14,6 @@ class NoteUpserter(
     private val cardFlagger = CardFlagger(context)
     private val fieldMapper = FieldArrayMapper(context, AnkiAudioHelper(context))
     private val cardSuspender = CardSuspender(context)
-    private val myAppDatabase = AppDependencies.getDatabase(context)
 
     suspend fun addOrUpdate(
         deckId: Long,
@@ -26,13 +23,13 @@ class NoteUpserter(
         isTwoSided: Boolean,
         audioLang: String,
         autoSuspend: Boolean,
-        targetLang: String,
+        wordForms: List<String>
     ): List<Long> {
         val word = fields["word"] ?: throw Exception("Word field is missing")
         val modelId = (mapping["modalId"] as? String)?.toLong() ?: throw Exception("modalId is missing")
 
         val existing = noteFinder.findByModelId(modelId, word)
-        return if (existing != null) {
+        val noteIds = if (existing != null) {
             flagPair(existing.id, word, deckId, mapping, mirroredMapping, isTwoSided)
         } else {
             createPair(
@@ -45,9 +42,12 @@ class NoteUpserter(
                 isTwoSided,
                 audioLang,
                 autoSuspend,
-                targetLang,
             )
         }
+
+        upsertWordsToDictionary(wordForms.toTypedArray(), noteIds.toLongArray(), NEW_FLAG)
+
+        return noteIds
     }
 
     private fun flagPair(
@@ -60,26 +60,17 @@ class NoteUpserter(
     ): List<Long> {
         val flaggedIds = mutableListOf<Long>()
 
-        flagNote(noteId, mapping, mirroredMapping, flaggedIds)
+        cardFlagger.setFlag(noteId, NEW_FLAG)
+        flaggedIds.add(noteId)
 
         if (isTwoSided) {
             val mirroredId = noteFinder.findMirrored(word, deckId, mapping, mirroredMapping)
             if (mirroredId != null && mirroredId != noteId) {
-                flagNote(mirroredId, mapping, mirroredMapping, flaggedIds)
+                cardFlagger.setFlag(mirroredId, NEW_FLAG)
+                flaggedIds.add(mirroredId)
             }
         }
         return flaggedIds
-    }
-
-    private fun flagNote(
-        noteId: Long,
-        mapping: Map<String, Any?>,
-        mirroredMapping: Map<String, Any?>,
-        flaggedIds: MutableList<Long>,
-    ) {
-        val (word, colorCode) = cardFlagger.updateFlag(noteId, NEW_FLAG, mapping, mirroredMapping)
-        flaggedIds.add(noteId)
-        if (word.isNotEmpty()) upsertWordToDictionary(word, longArrayOf(noteId), colorCode)
     }
 
     private suspend fun createPair(
@@ -92,7 +83,6 @@ class NoteUpserter(
         isTwoSided: Boolean,
         audioLang: String,
         autoSuspend: Boolean,
-        targetLang: String
     ): List<Long> {
         val noteFields = buildNoteFields(fields, word)
         val tier = freqDatabase?.getFrequencyTier(word) ?: "Unknown"
@@ -117,9 +107,6 @@ class NoteUpserter(
 
         if (autoSuspend) cardSuspender.suspendCardsOfNotes(createdIds)
 
-        val wordsToDictionary = myAppDatabase.wordFormDao().getFormsForLemma(targetLang, word)
-
-        upsertWordsToDictionary(wordsToDictionary.toTypedArray(), createdIds.toLongArray(), NEW_FLAG)
         return createdIds
     }
 

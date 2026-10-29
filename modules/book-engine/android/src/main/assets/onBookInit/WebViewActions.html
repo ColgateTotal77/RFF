@@ -19,7 +19,7 @@
         if (action.fontFamily != null) window.setFontFamily(action.fontFamily);
         return;
       case 'updateFlag':
-        window.updateFlag(action.word, action.noteIds, action.colorCode);
+        window.updateFlag(action.wordForms, action.noteIds, action.colorCode);
         return;
       case 'clearSearch':
         return window.clearSearch();

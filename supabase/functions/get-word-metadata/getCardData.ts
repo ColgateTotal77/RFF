@@ -2,11 +2,12 @@ import { CardData } from './sharedTypes.ts';
 import { callDeepseek } from './callDeepseek.ts';
 import {
   CARD_MAX_TOKENS,
-  CARD_MODEL,
-  CARD_TEMPERATURE,
+  MODEL,
+  TEMPERATURE,
+  cardSystemPrompt,
   cardUserPrompt,
-  synonymsPrompt,
-  systemPrompt,
+  synonymSystemPrompt,
+  synonymUserPrompt,
 } from './cardPrompt.ts';
 import { dedupeArray } from './utils.ts';
 
@@ -27,30 +28,28 @@ export const getCardData = async (
   apiKey: string
 ): Promise<CardData> => {
   const core = await callDeepseek<Core>(
-    systemPrompt,
+    cardSystemPrompt,
     cardUserPrompt(lemma, fromLang, toLang),
     apiKey,
-    CARD_MODEL,
-    CARD_TEMPERATURE,
+    MODEL,
+    TEMPERATURE,
     CARD_MAX_TOKENS
   );
   const synonyms = await callDeepseek<Synonyms>(
-    synonymsPrompt,
-    JSON.stringify({
-      word: lemma,
-      source_language: fromLang,
-      senses: core.senses.map(
-        ({ part_of_speech, source_definition, source_example }, i) => ({
-          id: i + 1,
-          part_of_speech,
-          source_definition,
-          source_example,
-        })
-      ),
-    }),
+    synonymSystemPrompt,
+    synonymUserPrompt(
+      lemma,
+      fromLang,
+      core.senses.map(({ part_of_speech, source_definition, source_example }, i) => ({
+        id: i + 1,
+        part_of_speech,
+        source_definition,
+        source_example,
+      }))
+    ),
     apiKey,
-    CARD_MODEL,
-    CARD_TEMPERATURE,
+    MODEL,
+    TEMPERATURE,
     CARD_MAX_TOKENS
   );
 

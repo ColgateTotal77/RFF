@@ -66,10 +66,6 @@ class BookEngineModule : Module() {
 
             val ankiWordsFetcher = AllAnkiWordsFetcher(moduleContext)
             val ankiData = ankiWordsFetcher.getAllAnkiWords(deckId, mapping, mirroredMapping)
-            if (ankiData.words.isEmpty()) {
-                android.util.Log.w("BookEngine", "Anki returned 0 words")
-                return true
-            }
 
             val ankiBaseMap = mutableMapOf<String, Pair<LongArray, Int>>()
             for (i in ankiData.words.indices) {

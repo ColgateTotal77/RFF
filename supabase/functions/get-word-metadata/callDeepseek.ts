@@ -6,8 +6,11 @@ export const callDeepseek = async <T>(
   temperature = 0.2,
   maxTokens?: number
 ): Promise<T> => {
+  const timeout = AbortSignal.timeout(40_000);
+
   const response = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
+    signal: timeout,
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',

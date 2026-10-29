@@ -1,8 +1,40 @@
-export const CARD_MODEL = 'deepseek-flash';
-export const CARD_TEMPERATURE = 0.2;
+
+export const LEMMA_MAX_TOKENS = 128;
+export const MODEL = 'deepseek-flash';
+export const TEMPERATURE = 0.2;
 export const CARD_MAX_TOKENS = 2048;
 
-export const systemPrompt = `Write a learner's dictionary entry for the exact complete headword, including particles in a phrase. Return ONLY JSON:
+export const lemmaSystemPrompt = `You are a multilingual lemmatizer for a dictionary backend.
+
+Return STRICT JSON (no markdown, no commentary):
+{"lemma": "string"}
+
+Given a Word (possibly inflected) in the Source Language, return its dictionary headword (lemma): singular nominative for nouns, infinitive for verbs, positive form for adjectives/adverbs. A Sentence may be provided to disambiguate forms that could map to more than one lemma.
+
+EXAMPLES
+
+Word: "lay", Source language: English, Sentence: "She lay on the grass and watched the clouds drift by."
+{"lemma": "lie"}
+
+Word: "lay", Source language: English, Sentence: "He lay the book on the table before leaving the room."
+{"lemma": "lay"}
+
+Word: "fueron", Source language: Spanish, Sentence: "Ellos fueron al cine ayer por la noche."
+{"lemma": "ir"}
+
+Word: "Männer", Source language: German, Sentence: ""
+{"lemma": "Mann"}
+
+RULES
+- "lemma" MUST be written entirely in the Source Language, using its standard dictionary spelling and casing.
+- If Sentence is empty, return the most common lemma for that surface form.
+- If Sentence is provided and the surface form is ambiguous, pick the lemma that matches the meaning used in that Sentence.
+- Always return a single dictionary headword, never a phrase.`;
+
+export const lemmaUserPrompt = (word: string, fromLang: string, sentence: string) =>
+  `Word: "${word}", Source language: ${fromLang}, Sentence: "${sentence}"`;
+
+export const cardSystemPrompt = `Write a learner's dictionary entry for the exact complete headword, including particles in a phrase. Return ONLY JSON:
 {"senses":[{"part_of_speech":"string","source_definition":"string","source_example":"string","target_translation":"string"}]}
 
 Choose 1–3 genuinely distinct usual meanings, most useful first. Keep important unrelated common uses; stop rather than invent extras. Use ONE entry for one concept: do not split it into narrower applications, different subjects or rewordings.
@@ -20,7 +52,10 @@ Word: "pleased", Source language: English, Target language: Russian
 {"senses":[{"part_of_speech":"adjective","source_definition":"Happy about something.","source_example":"I was pleased to see my old friend.","target_translation":"рад"}]}
 `;
 
-export const synonymsPrompt = `Find another ordinary way of naming each supplied meaning of the exact entry, not associated vocabulary. Return ONLY JSON: {"senses":[{"id":1,"synonyms":["string"]}]}
+export const cardUserPrompt = (word: string, fromLang: string, toLang: string) =>
+  `Source language: ${fromLang}, Target language: ${toLang}\n\nWrite part_of_speech, source_definition and source_example in ${fromLang}.\nWrite only target_translation in ${toLang}.\n\nWord: "${word}"`;
+
+export const synonymSystemPrompt = `Find another ordinary way of naming each supplied meaning of the exact entry, not associated vocabulary. Return ONLY JSON: {"senses":[{"id":1,"synonyms":["string"]}]}
 
 Keep every ID exactly once. Return ZERO OR ONE alternative per sense. Choose the strongest established word or short expression whose own meaning matches this definition and grammatical role. Do not fill a slot merely because a related word exists.
 
@@ -33,8 +68,9 @@ Input: {"word":"pleased","source_language":"English","senses":[{"id":1,"part_of_
 Output: {"senses":[{"id":1,"synonyms":["glad"]}]}
 `;
 
-export const userPrompt = (word: string, fromLang: string, toLang: string) =>
-  `Word: "${word}", Source language: ${fromLang}, Target language: ${toLang}`;
-
-export const cardUserPrompt = (word: string, fromLang: string, toLang: string) =>
-  `${userPrompt(word, fromLang, toLang)}\n\nWrite part_of_speech, source_definition and source_example in ${fromLang}.\nWrite only target_translation in ${toLang}.`;
+export const synonymUserPrompt = (word: string, sourceLanguage: string, senses: unknown[]) =>
+  JSON.stringify({
+    word,
+    source_language: sourceLanguage,
+    senses,
+  });

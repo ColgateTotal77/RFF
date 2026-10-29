@@ -116,11 +116,11 @@ class AnkiModule : Module() {
                     isTwoSided: Boolean,
                     audioLang: String,
                     autoSuspend: Boolean,
-                    targetLang: String
+                    wordForms: List<String>
                     ->
                     withContext(Dispatchers.IO) {
                         try {
-                            NoteUpserter(moduleContext, freqDatabase, ::upsertWordToAnkiDictionary, ::upsertWordsToAnkiDictionary)
+                            NoteUpserter(moduleContext, freqDatabase, ::upsertWordsToAnkiDictionary)
                                 .addOrUpdate(
                                     deckIdString.toLong(),
                                     fields,
@@ -129,7 +129,7 @@ class AnkiModule : Module() {
                                     isTwoSided,
                                     audioLang,
                                     autoSuspend,
-                                    targetLang,
+                                    wordForms
                                 )
                         } catch (e: Exception) {
                             throw Exception("Failed to add/update Anki note: ${e.message}", e)

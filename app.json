@@ -4,7 +4,9 @@
     "slug": "RFF",
     "scheme": "rff",
     "version": "1.0.0",
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "experiments": {
       "tsconfigPaths": true
     },
@@ -22,7 +24,8 @@
             "image": "./assets/icon.png"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,13 +35,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#524388"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#524388"
       },
-      "permissions": ["com.ichi2.anki.permission.READ_WRITE_DATABASE"],
+      "permissions": [
+        "com.ichi2.anki.permission.READ_WRITE_DATABASE"
+      ],
       "package": "com.colgatetotal77.RFF"
     },
     "extra": {
