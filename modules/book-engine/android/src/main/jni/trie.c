@@ -187,6 +187,27 @@ bool trie_insert(Trie* trie, const char* word, const int64_t* note_ids, int note
     return true;
 }
 
+static bool node_update_flags(TrieNode* node, const int64_t* note_ids, int count, int color_code) {
+    bool updated = false;
+    for (int i = 0; i < node->note_count; i++) {
+        if (contains(note_ids, count, node->note_ids[i])) {
+            node->color_code = color_code;
+            updated = true;
+            break;
+        }
+    }
+
+    for (uint32_t i = 0; i < node->child_count; i++) {
+        if (node_update_flags(node->children[i], note_ids, count, color_code)) updated = true;
+    }
+    return updated;
+}
+
+bool trie_update_flags(Trie* trie, const int64_t* note_ids, int count, int color_code) {
+    if (!trie || !note_ids || count <= 0) return false;
+    return node_update_flags(trie->root, note_ids, count, color_code);
+}
+
 TrieNode* trie_search_longest(const Trie* trie, const char* text, size_t* out_len) {
     const TrieNode* curr = trie->root;
     TrieNode* best = NULL;

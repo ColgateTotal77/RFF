@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -21,20 +22,26 @@ class FrequencyDatabase(
         if (dbFile.exists()) return true
 
         return withContext(Dispatchers.IO) {
+            val downloadFile = File(dbFile.parentFile, "${dbFile.name}.download")
             try {
                 val bucket = supabase.storage.from("word_frequency_packs")
 
                 val url = bucket.publicUrl("freq_$langCode.db")
                 java.net.URL(url).openStream().use { input ->
-                    dbFile.outputStream().use { output ->
+                    downloadFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
                 }
 
+                check(downloadFile.renameTo(dbFile)) { "Failed to save ${dbFile.name}" }
                 true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("BookEngine", "Failed to download freq_$langCode.db", e)
                 false
+            } finally {
+                downloadFile.delete()
             }
         }
     }

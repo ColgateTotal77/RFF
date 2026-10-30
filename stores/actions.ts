@@ -7,7 +7,7 @@ import { parseBook } from 'lib/ParseBook';
 import {
   normalizeLanguageCode,
   FALLBACK_BOOK_LANGUAGE,
-  bookLanguageToLocaleTag,
+  ISO_639_3_TO_1,
 } from 'lib/langHelper';
 import { BOOK_LANGUAGE } from 'lib/languagesMappings';
 import { useAppStore } from './useAppStore';
@@ -189,9 +189,7 @@ export const openBook = async (basePath: string) => {
       bookSettings.fieldMapping.audio != null ||
       bookSettings.mirroredFieldMapping.audio != null
     ) {
-      const hasTTSModel = await BookEngine.hasTTSDownloaded(
-        bookLanguageToLocaleTag(bookSettings.bookLang)
-      );
+      const hasTTSModel = await BookEngine.hasTTSDownloaded(ISO_639_3_TO_1[bookSettings.bookLang]);
       if (hasTTSModel) return;
 
       const neededLang = BOOK_LANGUAGE[bookSettings.bookLang];

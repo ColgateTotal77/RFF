@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "android": "expo run:android",
+    "android:apk": "cd android && NODE_ENV=production ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a",
+    "android:apk:all": "cd android && NODE_ENV=production ./gradlew :app:assembleRelease",
     "start": "expo start",
     "prebuild": "expo prebuild",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json,html,css}\"",

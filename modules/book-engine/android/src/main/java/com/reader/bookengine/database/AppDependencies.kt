@@ -7,10 +7,18 @@ import com.reader.bookengine.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import androidx.core.content.edit
 
 object AppDependencies {
     @Volatile
     private var databaseInstance: AppDatabase? = null
+
+    private val frequencyDatabases = mutableMapOf<String, FrequencyDatabase>()
+    private val frequencyDatabaseMutex = Mutex()
 
     val supabaseClient by lazy {
         if (BuildConfig.SUPABASE_URL.isBlank()) {
@@ -41,9 +49,7 @@ object AppDependencies {
                             override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
                                 context
                                     .getSharedPreferences("DictionaryPrefs", Context.MODE_PRIVATE)
-                                    .edit()
-                                    .clear()
-                                    .apply()
+                                    .edit { clear() }
                             }
                         },
                     ).build()
@@ -52,5 +58,17 @@ object AppDependencies {
             instance
         }
 
-    fun getFrequencyDatabase(context: Context): FrequencyDatabase = FrequencyDatabase(context, supabaseClient)
+    suspend fun getFrequencyDatabase(context: Context, langCode: String): FrequencyDatabase? =
+        withContext(Dispatchers.IO) {
+            require(langCode.isNotBlank()) { "Frequency database language is missing" }
+            frequencyDatabaseMutex.withLock {
+                frequencyDatabases[langCode]?.let { return@withLock it }
+
+                val database = FrequencyDatabase(context.applicationContext, supabaseClient)
+                if (!database.ensureDownloaded(langCode) || !database.open(langCode)) return@withLock null
+
+                frequencyDatabases[langCode] = database
+                database
+            }
+        }
 }

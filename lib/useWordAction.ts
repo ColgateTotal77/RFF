@@ -5,7 +5,7 @@ import { useBookStore } from 'stores/useBookStore';
 import { useWebViewStore } from 'stores/useWebViewStore';
 import { Toast } from 'components/ui/Toast';
 import { useTranslation } from 'react-i18next';
-import { bookLanguageToLocaleTag } from 'lib/langHelper';
+import { ISO_639_3_TO_1 } from 'lib/langHelper';
 
 interface UpdateWordFlag {
   noteIds: string;
@@ -63,10 +63,13 @@ export const useWordAction = () => {
         bookSettings.fieldMapping,
         bookSettings.mirroredFieldMapping,
         isTwoSided,
-        bookLanguageToLocaleTag(bookSettings.bookLang),
+        {
+          iso639_3: bookSettings.bookLang,
+          iso639_1: ISO_639_3_TO_1[bookSettings.bookLang],
+        },
         bookSettings.autoSuspendNewCards,
-        metadata.wordForms,
-    );
+        metadata.wordForms
+      );
 
       if (noteIdsArray && noteIdsArray.length > 0) {
         const noteIdsString = JSON.stringify(noteIdsArray);
@@ -106,7 +109,7 @@ export const useWordAction = () => {
     try {
       const idsArray = JSON.parse(noteIds);
 
-      await Anki.updateFlag(idsArray, flag, bookSettings.fieldMapping, bookSettings.mirroredFieldMapping);
+      await Anki.updateFlag(idsArray, flag);
       executeImmediateActions([
         {
           type: 'updateFlag',

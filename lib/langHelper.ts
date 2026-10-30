@@ -30,10 +30,9 @@ export const appLanguageToBookLanguage = (lang: string): LanguageCode =>
 const RTL_APP_LANGUAGES: AppLanguageCode[] = [];
 export const checkIsRTL = (lang: AppLanguageCode): boolean => RTL_APP_LANGUAGES.includes(lang);
 
-const ISO_639_3_TO_1: Record<string, string> = Object.fromEntries(
+export const ISO_639_3_TO_1: Record<string, string> = Object.fromEntries(
   Object.entries(ISO_639_1_TO_3).map(([two, three]) => [three, two])
 );
-export const bookLanguageToLocaleTag = (lang: LanguageCode): string => ISO_639_3_TO_1[lang] ?? lang;
 
 export const isBookLanguage = (lang: string): lang is LanguageCode => lang in BOOK_LANGUAGE;
 

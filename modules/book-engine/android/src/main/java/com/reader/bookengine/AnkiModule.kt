@@ -2,14 +2,13 @@ package com.reader.bookengine
 
 import android.net.Uri
 import com.ichi2.anki.api.AddContentApi
-import com.reader.bookengine.anki.CardFlagger
-import com.reader.bookengine.anki.NoteUpserter
-import com.reader.bookengine.database.FrequencyDatabase
+import com.reader.bookengine.anki.addOrUpdate
 import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 data class AnkiWordsData(
     val words: Array<String>,
@@ -18,24 +17,15 @@ data class AnkiWordsData(
 )
 
 class AnkiModule : Module() {
-    companion object {
-        private var freqDatabase: FrequencyDatabase? = null
-    }
-
-    fun setFrequencyDatabase(database: FrequencyDatabase?) {
-        freqDatabase = database
-    }
-
     private val moduleContext get() = appContext.reactContext ?: throw Exception("React context is null")
 
-    private external fun upsertWordToAnkiDictionary(
-        word: String,
+    external fun upsertWordsToAnkiDictionary(
+        words: Array<String>,
         noteIds: LongArray,
         colorCode: Int,
     )
 
-    private external fun upsertWordsToAnkiDictionary(
-        words: Array<String>,
+    external fun updateDictionaryFlags(
         noteIds: LongArray,
         colorCode: Int,
     )
@@ -58,7 +48,7 @@ class AnkiModule : Module() {
                 withContext(Dispatchers.IO) {
                     try {
                         val ankiApi = AddContentApi(moduleContext)
-                        val deckList = ankiApi.deckList ?: return@withContext emptyList<Map<String, String>>()
+                        val deckList = ankiApi.deckList ?: return@withContext emptyList()
 
                         deckList.map { mapOf("id" to it.key.toString(), "name" to it.value) }
                     } catch (e: Exception) {
@@ -84,7 +74,7 @@ class AnkiModule : Module() {
                 withContext(Dispatchers.IO) {
                     try {
                         val ankiApi = AddContentApi(moduleContext)
-                        val modelList = ankiApi.modelList ?: return@withContext emptyList<Map<String, String>>()
+                        val modelList = ankiApi.modelList ?: return@withContext emptyList()
 
                         modelList.map { mapOf("id" to it.key.toString(), "name" to it.value) }
                     } catch (e: Exception) {
@@ -114,23 +104,23 @@ class AnkiModule : Module() {
                     mapping: Map<String, Any?>,
                     mirroredMapping: Map<String, Any?>,
                     isTwoSided: Boolean,
-                    audioLang: String,
+                    language: Map<String, String>,
                     autoSuspend: Boolean,
                     wordForms: List<String>
                     ->
                     withContext(Dispatchers.IO) {
                         try {
-                            NoteUpserter(moduleContext, freqDatabase, ::upsertWordsToAnkiDictionary)
-                                .addOrUpdate(
-                                    deckIdString.toLong(),
-                                    fields,
-                                    mapping,
-                                    mirroredMapping,
-                                    isTwoSided,
-                                    audioLang,
-                                    autoSuspend,
-                                    wordForms
-                                )
+                            moduleContext.addOrUpdate(
+                                upsertWordsToAnkiDictionary = ::upsertWordsToAnkiDictionary,
+                                deckId = deckIdString.toLong(),
+                                fields = fields,
+                                mapping = mapping,
+                                mirroredMapping = mirroredMapping,
+                                isTwoSided = isTwoSided,
+                                language = language,
+                                autoSuspend = autoSuspend,
+                                wordForms = wordForms,
+                            )
                         } catch (e: Exception) {
                             throw Exception("Failed to add/update Anki note: ${e.message}", e)
                         }
@@ -138,25 +128,23 @@ class AnkiModule : Module() {
                 }
 
             AsyncFunction("updateFlag") Coroutine
-                { noteIds: LongArray, flag: Int, mapping: Map<String, Any?>, mirroredMapping: Map<String, Any?> ->
+                { noteIds: LongArray, flag: Int ->
                     withContext(Dispatchers.IO) {
-                        if (noteIds.isEmpty()) return@withContext
-
-                        val clampedFlag = flag.coerceIn(0, 7)
-                        val cardFlagger = CardFlagger(moduleContext)
+                        val ankiApi = AddContentApi(moduleContext.applicationContext)
+                        val colorCode = flag.coerceIn(0, 7)
 
                         for (noteId in noteIds) {
-                            val (word, colorCode) = cardFlagger.updateFlag(noteId, clampedFlag, mapping, mirroredMapping)
-
-                            if (word.isNotEmpty()) upsertWordToAnkiDictionary(word, noteIds, colorCode)
+                            ankiApi.setFlagRaw(noteId, colorCode)
                         }
+
+                        updateDictionaryFlags(noteIds, colorCode)
                     }
                 }
 
             AsyncFunction("deleteNote") Coroutine { noteIds: LongArray ->
                 withContext(Dispatchers.IO) {
                     try {
-                        val baseUri = Uri.parse("content://com.ichi2.anki.flashcards/notes")
+                        val baseUri = "content://com.ichi2.anki.flashcards/notes".toUri()
 
                         for (noteId in noteIds) {
                             val noteUri = Uri.withAppendedPath(baseUri, noteId.toString())

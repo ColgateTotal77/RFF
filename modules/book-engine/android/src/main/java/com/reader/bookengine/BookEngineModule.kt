@@ -6,11 +6,10 @@ import android.speech.tts.TextToSpeech
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
-import com.reader.bookengine.anki.AllAnkiWordsFetcher
+import com.reader.bookengine.anki.getAllAnkiWords
 import com.reader.bookengine.database.AppDatabase
 import com.reader.bookengine.database.AppDependencies
 import com.reader.bookengine.database.BlockEntity
-import com.reader.bookengine.database.FrequencyDatabase
 import com.reader.bookengine.database.WordFormEntity
 import com.reader.bookengine.database.syncWordFormsFromSupabase
 import com.reader.bookengine.tts.TtsVoiceHelper
@@ -22,7 +21,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.io.File
 import com.reader.bookengine.database.addNewLangForSync
@@ -37,8 +35,6 @@ class BookEngineModule : Module() {
         }
     }
 
-    private val ankiModule = AnkiModule()
-    private var freqDatabase: FrequencyDatabase? = null
     val bookBridge = BookBridge(this)
 
     private val moduleContext get() = appContext.reactContext ?: throw Exception("React context is null")
@@ -58,14 +54,7 @@ class BookEngineModule : Module() {
 
             freeAnkiDictionary()
 
-            val frequencyDatabase = AppDependencies.getFrequencyDatabase(moduleContext)
-            if (frequencyDatabase.ensureDownloaded(langCode) && frequencyDatabase.open(langCode)) freqDatabase = frequencyDatabase
-            else freqDatabase = null
-
-            ankiModule.setFrequencyDatabase(freqDatabase)
-
-            val ankiWordsFetcher = AllAnkiWordsFetcher(moduleContext)
-            val ankiData = ankiWordsFetcher.getAllAnkiWords(deckId, mapping, mirroredMapping)
+            val ankiData = moduleContext.getAllAnkiWords(deckId, mapping, mirroredMapping)
 
             val ankiBaseMap = mutableMapOf<String, Pair<LongArray, Int>>()
             for (i in ankiData.words.indices) {

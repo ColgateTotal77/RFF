@@ -37,29 +37,6 @@ static void dict_unlock(void) {
 }
 
 JNIEXPORT void JNICALL
-Java_com_reader_bookengine_AnkiModule_upsertWordToAnkiDictionary(
-        JNIEnv* env, jobject thiz, jstring jword, jlongArray noteIds, jint colorCode) {
-
-    const char* word_str = (*env)->GetStringUTFChars(env, jword, 0);
-    if (word_str == NULL) return;
-
-    jsize note_count = (*env)->GetArrayLength(env, noteIds);
-    jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
-
-    dict_wrlock();
-    bool inserted = global_dictionary != NULL &&
-                    trie_insert(global_dictionary, word_str, notes, note_count, colorCode);
-    dict_unlock();
-
-    if (!inserted) {
-        __android_log_print(ANDROID_LOG_WARN, "BookEngine", "upsertWordToAnkiDictionary: insert failed for '%s'", word_str);
-    }
-
-    (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
-    (*env)->ReleaseStringUTFChars(env, jword, word_str);
-}
-
-JNIEXPORT void JNICALL
 Java_com_reader_bookengine_AnkiModule_upsertWordsToAnkiDictionary(
         JNIEnv* env, jobject thiz, jobjectArray jwords, jlongArray noteIds, jint colorCode) {
 
@@ -95,6 +72,28 @@ Java_com_reader_bookengine_AnkiModule_upsertWordsToAnkiDictionary(
     dict_unlock();
 
     (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL
+Java_com_reader_bookengine_AnkiModule_updateDictionaryFlags(
+        JNIEnv* env, jobject thiz, jlongArray noteIds, jint colorCode) {
+
+    jsize note_count = (*env)->GetArrayLength(env, noteIds);
+    if (note_count == 0) return;
+
+    jlong* notes = (*env)->GetLongArrayElements(env, noteIds, NULL);
+    if (!notes) return;
+
+    dict_wrlock();
+    bool updated = trie_update_flags(global_dictionary, notes, note_count, colorCode);
+    dict_unlock();
+
+    (*env)->ReleaseLongArrayElements(env, noteIds, notes, JNI_ABORT);
+
+    if (!updated) {
+        __android_log_print(ANDROID_LOG_WARN, "BookEngine",
+                            "updateDictionaryFlags: no entries matched %d note IDs", note_count);
+    }
 }
 
 JNIEXPORT void JNICALL

@@ -34,6 +34,7 @@ void sb_append_char(StringBuffer* sb, char c);
 
 Trie* trie_create(void);
 bool trie_insert(Trie* trie, const char* word, const int64_t* note_ids, int note_count, int color_code);
+bool trie_update_flags(Trie* trie, const int64_t* note_ids, int count, int color_code);
 TrieNode* trie_search_longest(const Trie* trie, const char* text, size_t* out_len);
 void trie_remove_notes(Trie* trie, const int64_t* note_ids, int count);
 void trie_free(Trie* trie);
