@@ -63,14 +63,25 @@ export const ReaderScreen = () => {
             Linking.openURL(request.url);
             return false;
           }
+
           if (request.url.startsWith('chapter://')) {
-            const url = new URL(request.url);
-            const chapterId = parseInt(url.hostname, 10);
-            if (Number.isNaN(chapterId)) {
+            const match = /^chapter:\/\/(\d+)\/?(?:#(.*))?$/.exec(request.url);
+            const chapterId = Number(match?.[1]);
+
+            if (!match || !Number.isSafeInteger(chapterId)) {
               Toast.show(i18n.t('toast.brokenBookLink'), 'error');
               return false;
             }
-            processBookLinks(chapterId, url.hash.replace('#', ''));
+
+            let fragmentId: string;
+            try {
+              fragmentId = decodeURIComponent(match[2] ?? '');
+            } catch {
+              Toast.show(i18n.t('toast.brokenBookLink'), 'error');
+              return false;
+            }
+
+            processBookLinks(chapterId, fragmentId);
             return false;
           }
 

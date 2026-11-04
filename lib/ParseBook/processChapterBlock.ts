@@ -33,7 +33,7 @@ export const processChapterBlocks = async (props: Props): Promise<Response> => {
     let match;
     while ((match = idRegex.exec(blockContent)) !== null) {
       const foundId = match[2] ?? match[3];
-      if (!foundId.startsWith('block-')) chapterAnchors[foundId] = blockId;
+      if (!foundId.startsWith('block-')) chapterAnchors[foundId] ??= blockId;
     }
 
     const isLastBlock = blockId === blockContents.finalBlockId;

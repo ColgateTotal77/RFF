@@ -43,8 +43,8 @@
 
   div[data-last-block-of-chapter='true'] { min-height: 100vh; }
 
-  body div div:has(p),
-  body section:has(p) {
+  body div div:has(> p):not(:has(section)):not([id^='block-'] > div),
+  body section section:has(> p) {
     margin-left: 24px !important;
     margin-right: 24px !important;
     box-sizing: border-box !important;

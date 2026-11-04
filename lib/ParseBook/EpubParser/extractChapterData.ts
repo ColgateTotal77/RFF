@@ -28,8 +28,8 @@ export const extractChapterData = async (
       const chapterDir = href.includes('/') ? href.substring(0, href.lastIndexOf('/')) : '';
       const chapterBasePath = chapterDir ? `${absoluteBasePath}/${chapterDir}` : absoluteBasePath;
 
-      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-      if (bodyMatch) html = bodyMatch[1];
+      const bodyMatch = html.match(/<body\b([^>]*)>([\s\S]*)<\/body>/i);
+      if (bodyMatch) html = `<div${bodyMatch[1]}>${bodyMatch[2]}</div>`;
 
       const chapterId = rawChapters.length;
       rawChapters.push({ chapterBasePath, html });

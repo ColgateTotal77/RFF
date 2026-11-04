@@ -145,7 +145,7 @@
       window.scrollTo({ top: top, behavior: isCloseToTop ? 'smooth' : 'instant' });
       window.log('scrollToFragment: scrolling to ' + fragmentId);
     } else {
-      window.error('scrollToFragment: fragment not found ' + fragmentId);
+      window.log('scrollToFragment: fragment not found ' + fragmentId, 'error');
     }
   };
 </script>
