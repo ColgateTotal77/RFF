@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
 import { GuideScreen } from 'pages/GuideScreen';
+import { useTempStore } from 'stores/useTempStore';
 
 const Drawer = createDrawerNavigator<RootStackParamList>();
 
@@ -17,6 +18,7 @@ export const Sidebar = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'sidebar' });
   const { bottom } = useSafeAreaInsets();
   const theme = useTheme();
+  const isTextSelected = useTempStore((state) => state.selectionMenu.visible);
 
   return (
     <Drawer.Navigator
@@ -58,7 +60,11 @@ export const Sidebar = () => {
       <Drawer.Screen
         name="Reader"
         component={ReaderScreen}
-        options={{ sceneStyle: { paddingBottom: 0 }, drawerItemStyle: { display: 'none' } }}
+        options={{
+          sceneStyle: { paddingBottom: 0 },
+          drawerItemStyle: { display: 'none' },
+          swipeEnabled: !isTextSelected,
+        }}
       />
     </Drawer.Navigator>
   );

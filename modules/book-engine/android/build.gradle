@@ -70,7 +70,7 @@ android {
 }
 
 dependencies {
-  implementation 'com.github.ankidroid:Anki-Android:api-v1.1.0'
+  implementation files('libs/anki-api-2.0.0-kotlin2.1.aar') // temp, later replace with new com.github.ankidroid:Anki-Android where api can work with flags
   implementation 'org.jsoup:jsoup:1.17.2'
 
   implementation 'androidx.room:room-runtime:2.8.4'

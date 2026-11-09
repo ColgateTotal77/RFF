@@ -103,6 +103,7 @@ export const ReaderScreen = () => {
         overScrollMode="never"
         scrollEnabled={true}
         mixedContentMode="never"
+        webviewDebuggingEnabled={true}
       />
 
       <Overlay />

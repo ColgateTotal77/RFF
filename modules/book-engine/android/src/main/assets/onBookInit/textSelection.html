@@ -114,68 +114,214 @@
     event.preventDefault();
   });
 
-  let selectionRafId = null;
+  const SELECTION_HIGHLIGHT = 'book-selection';
+  const WORD_CHAR_REGEX = /[\p{L}\p{M}\d\uD800-\uDFFF]/u;
+
+  let selectedRange = null;
   let lastSelectionText = '';
-  document.addEventListener('selectionchange', () => {
-    if (selectionRafId) cancelAnimationFrame(selectionRafId);
+  let holdTimer = null;
+  let pressedWord = null;
+  let activeCaret = null;
+  let caretGrabOffsetY = 0;
 
-    selectionRafId = requestAnimationFrame(() => {
-      selectionRafId = null;
-      const selection = window.getSelection();
-      const selectedText = selection.toString().trim();
+  const isWordBreak = (ch) => /\s/.test(ch) || DASH_CHARS.includes(ch);
 
-      if (selectedText === lastSelectionText) return;
-      if (selectedText.length <= 0) return;
+  const wordRangeInNode = (node, offset) => {
+    const text = node.textContent;
+    const bounds = resolveWordBounds(text, offset);
+    const index = Math.max(bounds.start, Math.min(offset, bounds.end - 1));
+    if (bounds.end <= bounds.start || isWordBreak(text[index])) return null;
 
-      lastSelectionText = selectedText;
+    let start = index;
+    let end = index + 1;
+    while (start > bounds.start && !isWordBreak(text[start - 1])) start--;
+    while (end < bounds.end && !isWordBreak(text[end])) end++;
+    while (start < end && !WORD_CHAR_REGEX.test(text[start])) start++;
+    while (end > start && !WORD_CHAR_REGEX.test(text[end - 1])) end--;
+    if (start === end) return null;
 
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      const menuX = rect.left + rect.width / 2;
-      const menuY = rect.top;
-      const commonAncestor = range.commonAncestorContainer;
+    const range = document.createRange();
+    range.setStart(node, start);
+    range.setEnd(node, end);
+    return range;
+  };
 
-      let noteIds = null;
-      let colorCode = null;
+  const wordRangeAt = (x, y) => {
+    const caretRange = document.caretRangeFromPoint(x, y);
+    if (caretRange?.startContainer.nodeType !== Node.TEXT_NODE) return null;
 
-      const baseElement =
-        commonAncestor.nodeType === Node.TEXT_NODE
-          ? commonAncestor.parentElement
-          : commonAncestor;
+    const node = caretRange.startContainer;
+    return wordRangeInNode(node, charOffsetAt(node, caretRange.startOffset, x));
+  };
 
-      const highlightedElement = baseElement.closest('.anki-word');
+  const unionRange = (a, b) => {
+    const union = a.cloneRange();
+    if (b.compareBoundaryPoints(Range.START_TO_START, a) < 0) union.setStart(b.startContainer, b.startOffset);
+    if (b.compareBoundaryPoints(Range.END_TO_END, a) > 0) union.setEnd(b.endContainer, b.endOffset);
+    return union;
+  };
 
-      if (highlightedElement) {
-        noteIds = highlightedElement.getAttribute('data-note-ids');
-        colorCode = highlightedElement.getAttribute('data-flag');
-      }
+  const rangeText = (range) => {
+    const fragment = range.cloneContents();
+    fragment.querySelectorAll(SENTENCE_CONTAINER_SELECTOR).forEach((block) => block.append('\n'));
+    return fragment.textContent.replace(/[ \t]*\n\s*/g, '\n').trim();
+  };
 
-      const sentenceContainer = baseElement.closest(SENTENCE_CONTAINER_SELECTOR) || baseElement;
-      const startOffset = getTextOffset(sentenceContainer, range.startContainer, range.startOffset);
-      const endOffset = getTextOffset(sentenceContainer, range.endContainer, range.endOffset);
-      const sentence = extractSentence(sentenceContainer, startOffset, endOffset);
+  const createCaret = () => {
+    const caret = document.createElement('div');
+    caret.className = 'selection-caret';
+    document.documentElement.append(caret);
+    return caret;
+  };
 
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({
-          type: 'TEXT_SELECTED',
-          text: selectedText,
-          sentence,
-          top: menuY,
-          bottom: rect.bottom,
-          left: menuX,
-          noteIds: noteIds ? noteIds : null,
-          colorCode: colorCode ? colorCode : null,
-        })
-      );
+  const startCaret = createCaret();
+  const endCaret = createCaret();
+  const selectionCarets = [startCaret, endCaret];
 
-      window.log(
-        'TEXT_SELECTED: "' +
-        selectedText.substring(0, 20) +
-        (selectedText.length > 20 ? '...' : '') +
-        '"'
-      );
+  const setCaretsStyle = (property, value) =>
+    selectionCarets.forEach((caret) => { caret.style[property] = value; });
+
+  const caretScreenRect = (caret) => {
+    const { left, top, right, bottom } = caret.getBoundingClientRect();
+    return [left, top, right, bottom].map((value) => Math.round(value * window.devicePixelRatio));
+  };
+
+  const updateCaretGestureExclusion = () =>
+    window.BookBridge.setCaretGestureExclusion(
+      JSON.stringify(selectedRange ? selectionCarets.map(caretScreenRect) : [])
+    );
+
+  const placeCaret = (caret, x, rect) => {
+    caret.style.left = `${x}px`;
+    caret.style.top = `${rect.bottom + window.scrollY}px`;
+    caret.style.display = 'block';
+  };
+
+  const placeCarets = () => {
+    const rects = selectedRange.getClientRects();
+    const last = rects[rects.length - 1];
+    placeCaret(startCaret, rects[0].left, rects[0]);
+    placeCaret(endCaret, last.right, last);
+    updateCaretGestureExclusion();
+  };
+
+  const clearSelection = () => {
+    selectedRange = null;
+    lastSelectionText = '';
+    CSS.highlights.delete(SELECTION_HIGHLIGHT);
+    setCaretsStyle('display', 'none');
+    updateCaretGestureExclusion();
+  };
+
+  window.addEventListener('scroll', () => { if (selectedRange) updateCaretGestureExclusion(); }, { passive: true });
+
+  new ResizeObserver(() => {
+    if (selectedRange) selectedRange.collapsed ? clearSelection() : placeCarets();
+  }).observe(document.documentElement);
+
+  const reportSelection = (range) => {
+    const selectedText = rangeText(range);
+
+    if (selectedText === lastSelectionText) return;
+    if (selectedText.length <= 0) return;
+
+    lastSelectionText = selectedText;
+
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const menuX = rect.left + rect.width / 2;
+    const menuY = rect.top;
+    const commonAncestor = range.commonAncestorContainer;
+
+    let noteIds = null;
+    let colorCode = null;
+
+    const baseElement =
+      commonAncestor.nodeType === Node.TEXT_NODE
+        ? commonAncestor.parentElement
+        : commonAncestor;
+
+    const highlightedElement = baseElement.closest('.anki-word');
+
+    if (highlightedElement) {
+      noteIds = highlightedElement.getAttribute('data-note-ids');
+      colorCode = highlightedElement.getAttribute('data-flag');
+    }
+
+    const sentenceContainer = baseElement.closest(SENTENCE_CONTAINER_SELECTOR) || baseElement;
+    const startOffset = getTextOffset(sentenceContainer, range.startContainer, range.startOffset);
+    const endOffset = getTextOffset(sentenceContainer, range.endContainer, range.endOffset);
+    const sentence = extractSentence(sentenceContainer, startOffset, endOffset);
+
+    window.ReactNativeWebView.postMessage(
+      JSON.stringify({
+        type: 'TEXT_SELECTED',
+        text: selectedText,
+        sentence,
+        top: menuY,
+        bottom: rect.bottom,
+        left: menuX,
+        noteIds: noteIds ? noteIds : null,
+        colorCode: colorCode ? colorCode : null,
+      })
+    );
+
+    window.log(
+      'TEXT_SELECTED: "' +
+      selectedText.substring(0, 20) +
+      (selectedText.length > 20 ? '...' : '') +
+      '"'
+    );
+  };
+
+  const setSelection = (range) => {
+    selectedRange = range;
+    CSS.highlights.set(SELECTION_HIGHLIGHT, new Highlight(range));
+    placeCarets();
+    reportSelection(range);
+  };
+
+  const moveActiveCaret = (x, y) => {
+    const word = wordRangeAt(x, y);
+    if (!word) return;
+
+    const movingStart = activeCaret === startCaret;
+    const next = selectedRange.cloneRange();
+    if (movingStart) next.setStart(word.startContainer, word.startOffset);
+    else next.setEnd(word.endContainer, word.endOffset);
+    if (!next.collapsed) return setSelection(next);
+
+    const pivot = movingStart
+      ? wordRangeInNode(selectedRange.endContainer, selectedRange.endOffset - 1)
+      : wordRangeInNode(selectedRange.startContainer, selectedRange.startOffset);
+
+    activeCaret = movingStart ? endCaret : startCaret;
+    setSelection(unionRange(pivot, word));
+  };
+
+  const endCaretDrag = (event) => {
+    event.stopPropagation();
+    activeCaret = null;
+    setCaretsStyle('pointerEvents', '');
+  };
+
+  selectionCarets.forEach((caret) => {
+    caret.addEventListener('touchstart', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      activeCaret = caret;
+      const lineHeight = selectedRange.getClientRects()[0].height;
+      caretGrabOffsetY = event.targetTouches[0].clientY - caret.getBoundingClientRect().top + lineHeight / 2;
+      setCaretsStyle('pointerEvents', 'none');
     });
+
+    caret.addEventListener('touchmove', (event) => {
+      const touch = event.targetTouches[0];
+      moveActiveCaret(touch.clientX, touch.clientY - caretGrabOffsetY);
+    });
+
+    caret.addEventListener('touchend', endCaretDrag);
+    caret.addEventListener('touchcancel', endCaretDrag);
   });
 
   let tapCount = 0;
@@ -190,14 +336,20 @@
 
   const TAP_DELAY = 230;
   const SCROLL_THRESHOLD = 8;
-  const LONG_PRESS_THRESHOLD = 400;
+  const LONG_PRESS_THRESHOLD = 340;
 
   let touchStartX = 0;
   let touchStartY = 0;
   let touchStartTime = 0;
 
+  const endPress = () => {
+    clearTimeout(holdTimer);
+    pressedWord = null;
+  };
+
   document.addEventListener('touchstart', (event) => {
     if(event.touches.length > 1) {
+      endPress();
       resetTap();
       return;
     }
@@ -206,9 +358,32 @@
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
     touchStartTime = event.timeStamp;
+
+    holdTimer = setTimeout(() => {
+      pressedWord = wordRangeAt(touchStartX, touchStartY);
+      if (!pressedWord) return;
+
+      lastSelectionText = '';
+      setSelection(pressedWord);
+    }, LONG_PRESS_THRESHOLD);
   }, { passive: true });
 
+  document.addEventListener('touchmove', (event) => {
+    const { clientX: x, clientY: y } = event.touches[0];
+
+    if (Math.hypot(x - touchStartX, y - touchStartY) > SCROLL_THRESHOLD) clearTimeout(holdTimer);
+    if (!pressedWord) return;
+
+    event.preventDefault();
+    const word = wordRangeAt(x, y);
+    if (word) setSelection(unionRange(pressedWord, word));
+  }, { passive: false });
+
+  document.addEventListener('touchcancel', endPress);
+
   document.addEventListener('touchend', (event) => {
+    endPress();
+
     if(event.touches.length > 0) {
       resetTap();
       return;
@@ -242,7 +417,7 @@
       window.log(`TAP: non-text surface, count=${tapCount}`);
 
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
-      lastSelectionText = '';
+      clearSelection();
       tapCount = 0;
       return;
     }
@@ -269,7 +444,7 @@
 
     if (lastSelectionText) {
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
-      lastSelectionText = '';
+      clearSelection();
       return;
     }
 
@@ -307,7 +482,7 @@
       tapTimer = setTimeout(() => {
         if (tapCount === 1) {
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ONE_TAP' }));
-          lastSelectionText = '';
+          clearSelection();
         } else if (tapCount === 2) {
           window.ReactNativeWebView.postMessage(
             JSON.stringify({ type: 'DOUBLE_TAP', text: selectedText })

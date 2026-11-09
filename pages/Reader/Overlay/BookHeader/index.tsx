@@ -70,16 +70,16 @@ export const BookHeader = () => {
   if (!isOverlayVisible) return null;
   if (!currentBook) return;
 
-  const onSearchSubmit = async (localQuery: string) => {
-    const cleanedQuery = localQuery.trim();
+  const onSearchSubmit = async (query: string) => {
+    const bytes = (s: string) => encodeURIComponent(s).replace(/%[A-F\d]{2}/g, 'x').length;
 
-    if (cleanedQuery.length < 2) return;
+    if (bytes(query) < 2 || (query.length === 1 && bytes(query) < 3)) return;
 
     resetSearch();
-    setSearchQuery(cleanedQuery);
+    setSearchQuery(query);
     setIsSearchLoading(true);
     try {
-      const results = await BookEngine.searchInBook(cleanedQuery, currentBook.basePath);
+      const results = await BookEngine.searchInBook(query, currentBook.basePath);
       setSearchResults(results);
     } finally {
       setIsSearchLoading(false);

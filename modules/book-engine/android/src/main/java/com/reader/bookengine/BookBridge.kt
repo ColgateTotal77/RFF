@@ -53,6 +53,15 @@ class BookBridge(
         }
     }
 
+    @android.webkit.JavascriptInterface
+    fun setCaretGestureExclusion(rectsJson: String) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) return
+
+        val arr = org.json.JSONArray(rectsJson)
+        val rects = (0 until arr.length()).map { i -> arr.getJSONArray(i).run { android.graphics.Rect(getInt(0), getInt(1), getInt(2), getInt(3)) } }
+        webView?.post { webView?.systemGestureExclusionRects = rects }
+    }
+
     private fun injectBlock(
         fetchIndex: Int,
         position: String,
